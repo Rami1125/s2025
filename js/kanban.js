@@ -1,145 +1,87 @@
 // js/kanban.js
-// Manages the logic for the kanban board (drag-and-drop and rendering).
+// Handles the Kanban board drag-and-drop and logic.
 
 import { state } from './state.js';
-import { updateKanbanStatusApi } from './api.js';
 import { updateAllData } from './data.js';
-import { showAlert } from './ui.js';
-
-const overdueColumn = document.getElementById('overdue-column');
-const inTreatmentColumn = document.getElementById('in-treatment-column');
-const treatedColumn = document.getElementById('treated-column');
-let dragged = null;
+import { showToast } from './ui.js'; // התיקון: מייבאים showToast במקום showAlert
 
 /**
- * Renders the kanban board with cards based on order status.
+ * Renders the Kanban board with the given orders.
+ * @param {Array<Object>} orders The list of orders to render.
  */
-export const renderKanbanBoard = () => {
+export const renderKanbanBoard = (orders) => {
+    const overdueColumn = document.getElementById('overdue-column');
+    const inTreatmentColumn = document.getElementById('in-treatment-column');
+    const treatedColumn = document.getElementById('treated-column');
+    
+    // Clear columns
     overdueColumn.innerHTML = '';
     inTreatmentColumn.innerHTML = '';
     treatedColumn.innerHTML = '';
 
-    const overdueOrders = state.orders.filter(o => o['סטטוס'] === 'חורג');
-    const inTreatmentOrders = state.orders.filter(o => o['סטטוס'] === 'בטיפול');
-    const treatedOrders = state.orders.filter(o => o['סטטוס'] === 'טופל');
+    orders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = `bg-gray-100 dark:bg-gray-800 p-4 rounded-md shadow-md mb-4 cursor-grab`;
+        card.setAttribute('draggable', true);
+        card.dataset.id = order['מספר הזמנה'];
+        card.innerHTML = `
+            <h4 class="font-bold text-gray-900 dark:text-gray-100">${order['מספר הזמנה']}</h4>
+            <p class="text-sm text-gray-600 dark:text-gray-400">לקוח: ${order['שם לקוח']}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">סטטוס: ${order['סטטוס']}</p>
+        `;
+        
+        card.addEventListener('dragstart', handleDragStart);
 
-    overdueOrders.forEach(order => createKanbanCard(order, overdueColumn));
-    inTreatmentOrders.forEach(order => createKanbanCard(order, inTreatmentColumn));
-    treatedOrders.forEach(order => createKanbanCard(order, treatedColumn));
-
-    document.getElementById('overdue-count').innerText = overdueOrders.length;
-    document.getElementById('in-treatment-count').innerText = inTreatmentOrders.length;
-    document.getElementById('treated-count').innerText = treatedOrders.length;
-
-    setupDragAndDrop();
-};
-
-/**
- * Creates and appends a single kanban card.
- * @param {object} order The order object.
- * @param {HTMLElement} parentColumn The column to append the card to.
- */
-const createKanbanCard = (order, parentColumn) => {
-    const card = document.createElement('div');
-    card.id = `kanban-card-${order['תעודה']}`;
-    card.className = 'kanban-card p-4 rounded-lg shadow-md';
-    card.setAttribute('draggable', true);
-    card.dataset.id = order.id;
-
-    card.innerHTML = `
-        <div class="font-bold text-lg">${order['שם לקוח']}</div>
-        <div class="text-sm text-text-light">${order['תאריך הזמנה']} - ${order['תעודה']}</div>
-        <div class="text-sm mt-2">${order['הערות'] || ''}</div>
-    `;
-    parentColumn.appendChild(card);
-};
-
-/**
- * Sets up the drag-and-drop event listeners for the kanban board.
- */
-const setupDragAndDrop = () => {
-    const cards = document.querySelectorAll('.kanban-card');
-    const columns = document.querySelectorAll('.kanban-column div[id$="-column"]');
-
-    cards.forEach(card => {
-        card.addEventListener('dragstart', (e) => {
-            dragged = card;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', card.dataset.id);
-            setTimeout(() => card.classList.add('dragging'), 0);
-        });
-
-        card.addEventListener('dragend', () => {
-            dragged.classList.remove('dragging');
-            dragged = null;
-        });
-    });
-
-    columns.forEach(column => {
-        column.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const afterElement = getDragAfterElement(column, e.clientY);
-            const draggable = document.querySelector('.dragging');
-            if (draggable) {
-                if (afterElement == null) {
-                    column.appendChild(draggable);
-                } else {
-                    column.insertBefore(draggable, afterElement);
-                }
-            }
-        });
-    });
-};
-
-/**
- * Finds the element to drop a dragged item after.
- * @param {HTMLElement} container The container element.
- * @param {number} y The Y coordinate of the drag event.
- * @returns {HTMLElement|null} The element to drop after.
- */
-const getDragAfterElement = (container, y) => {
-    const draggableElements = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
+        if (order['סטטוס'] === 'חורג') {
+            overdueColumn.appendChild(card);
+        } else if (order['סטטוס'] === 'בטיפול') {
+            inTreatmentColumn.appendChild(card);
+        } else if (order['סטטוס'] === 'טופל') {
+            treatedColumn.appendChild(card);
         }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+    });
 };
 
 /**
- * Handles the drop event on a kanban column.
+ * Handles the dragstart event for a Kanban card.
+ * @param {Event} event The drag event.
+ */
+const handleDragStart = (event) => {
+    event.dataTransfer.setData('text/plain', event.target.dataset.id);
+    event.dataTransfer.effectAllowed = 'move';
+};
+
+/**
+ * Handles the drop event for a Kanban column.
  * @param {Event} event The drop event.
  */
-export const handleDrop = async (event) => {
+export const handleDrop = (event) => {
     event.preventDefault();
     const orderId = event.dataTransfer.getData('text/plain');
-    const droppedOnColumnId = event.currentTarget.id;
-    const order = state.orders.find(o => o.id === orderId);
+    const targetColumn = event.currentTarget.id;
 
-    if (order) {
-        let newStatus;
-        if (droppedOnColumnId === 'overdue-column') {
+    const order = state.allOrders.find(o => o['מספר הזמנה'] === orderId);
+    if (!order) {
+        showToast('הזמנה לא נמצאה!', 'error'); // התיקון: קוראים ל-showToast
+        return;
+    }
+
+    let newStatus = '';
+    switch (targetColumn) {
+        case 'overdue-column':
             newStatus = 'חורג';
-        } else if (droppedOnColumnId === 'in-treatment-column') {
+            break;
+        case 'in-treatment-column':
             newStatus = 'בטיפול';
-        } else if (droppedOnColumnId === 'treated-column') {
+            break;
+        case 'treated-column':
             newStatus = 'טופל';
-        }
+            break;
+    }
 
-        if (newStatus && order['סטטוס'] !== newStatus) {
-            try {
-                await updateKanbanStatusApi(orderId, newStatus);
-                showAlert(`סטטוס הזמנה ${order['תעודה']} עודכן ל: ${newStatus}`, 'success');
-                await updateAllData();
-            } catch (error) {
-                showAlert(`שגיאה בעדכון סטטוס: ${error.message}`, 'error');
-                // Re-render to revert local changes if API call fails
-                renderKanbanBoard();
-            }
-        }
+    if (newStatus && order['סטטוס'] !== newStatus) {
+        order['סטטוס'] = newStatus;
+        showToast(`סטטוס הזמנה ${orderId} עודכן בהצלחה ל"${newStatus}"`, 'success'); // התיקון: קוראים ל-showToast
+        updateAllData(); // Re-render the entire app to reflect changes
     }
 };
