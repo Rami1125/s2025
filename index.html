@@ -4,648 +4,551 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת CRM לניהול שכירות מכולות</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js CDN for charts -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        /* Define color palette as CSS variables for easy theming */
-        :root {
-            /* Light Theme Palette */
-            --primary-brand: #6D28D9; /* Deep Purple */
-            --secondary-brand: #8B5CF6; /* Lighter Purple */
-            --accent-color: #3B82F6; /* Blue Accent */
-            --background-light: #F8FAFC; /* Lightest Background */
-            --surface-light: #FFFFFF; /* Card/Modal Surface */
-            --text-dark: #1F2937; /* Dark text */
-            --text-light: #6B7280; /* Light text */
-            --text-on-brand: #FFFFFF; /* Text on brand colors */
-            --border-color: #E5E7EB; /* Border color */
-            --success-bg: #D1FAE5;
-            --success-text: #065F46;
-            --error-bg: #FEE2E2;
-            --error-text: #991B1B;
-            --warning-bg: #FEF3C7;
-            --warning-text: #92400E;
-            --info-bg: #DBEAFE;
-            --info-text: #1E40AF;
-        }
-
-        [data-theme="dark"] {
-            --primary-brand: #A78BFA;
-            --secondary-brand: #C4B5FD;
-            --accent-color: #60A5FA;
-            --background-light: #1F2937;
-            --surface-light: #374151;
-            --text-dark: #F3F4F6;
-            --text-light: #D1D5DB;
-            --text-on-brand: #1F2937;
-            --border-color: #4B5563;
-            --success-bg: #047857;
-            --success-text: #D1FAE5;
-            --error-bg: #B91C1C;
-            --error-text: #FEE2E2;
-            --warning-bg: #B45309;
-            --warning-text: #FEF3C7;
-            --info-bg: #1C64F2;
-            --info-text: #DBEAFE;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease;
-        }
-        
-        /* Custom scrollbar styles */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background-color: transparent;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background-color: var(--border-color);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background-color: var(--secondary-brand);
-        }
-
-        .modal-overlay.active, .toast.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        .modal-overlay.mobile-drawer .modal-content {
-            transform: translateX(0);
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .active-link {
-            border-bottom: 2px solid var(--primary-brand);
-        }
-    
-        .data-card {
-            background-color: var(--surface-light);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .table-header th {
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-        }
-        
-        .table-header th:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        .table-header th .sort-icon {
-            margin-left: 5px;
-            font-size: 0.8em;
-            color: var(--text-light);
-            transition: color 0.3s ease;
-        }
-        
-        .table-header th.sorted-asc .sort-icon.up,
-        .table-header th.sorted-desc .sort-icon.down {
-            color: var(--primary-brand);
-        }
-        
-        .table-header th.sorted-asc .sort-icon.down,
-        .table-header th.sorted-desc .sort-icon.up {
-            color: var(--text-light);
-        }
-
-        .search-container {
-            position: relative;
-        }
-        
-        .autocomplete-list {
-            position: absolute;
-            z-index: 20;
-            background-color: var(--surface-light);
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            max-height: 200px;
-            overflow-y: auto;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .autocomplete-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .autocomplete-item:hover, .autocomplete-item.active {
-            background-color: var(--background-light);
-        }
-        
-        /* KanBan board styles */
-        .kanban-column {
-            background-color: var(--background-light);
-            border: 1px solid var(--border-color);
-        }
-        
-        .kanban-card {
-            background-color: var(--surface-light);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            cursor: grab;
-            transition: transform 0.2s ease-in-out;
-        }
-        
-        .kanban-card:active {
-            cursor: grabbing;
-        }
-        
-        .kanban-card.dragging {
-            transform: scale(1.05);
-            opacity: 0.7;
-        }
-        
-        .drag-over {
-            box-shadow: 0 0 0 3px var(--secondary-brand) inset;
-        }
-        
-        .kanban-header {
-            border-bottom: 2px solid var(--border-color);
-        }
-        
-        /* Toast notification styles */
-        .toast-container {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            display: flex;
-            flex-direction: column-reverse;
-            gap: 1rem;
-            z-index: 50;
-        }
-        
-        .toast {
-            min-width: 300px;
-            max-width: 400px;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            animation: slideInRight 0.5s ease-out;
-        }
-        
-        .toast.success {
-            background-color: var(--success-bg);
-            color: var(--success-text);
-        }
-        
-        .toast.error {
-            background-color: var(--error-bg);
-            color: var(--error-text);
-        }
-
-        .toast.warning {
-            background-color: var(--warning-bg);
-            color: var(--warning-text);
-        }
-
-        .toast.info {
-            background-color: var(--info-bg);
-            color: var(--info-text);
-        }
-        
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-
-        /* Fullscreen chart styles */
-        .chart-container.chart-fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 50;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-    </style>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-background-light text-text-dark transition-colors duration-300">
+<body class="bg-gray-50 text-gray-800">
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-surface-light border-t border-border-color z-40 md:hidden shadow-lg">
-        <div class="flex justify-around items-center h-16">
-            <button id="mobile-nav-dashboard" class="flex flex-col items-center justify-center text-text-light hover:text-primary-brand transition-colors duration-200">
-                <i class="fas fa-home text-xl"></i>
-                <span class="text-xs mt-1">לוח מחוונים</span>
-            </button>
-            <button id="mobile-nav-orders" class="flex flex-col items-center justify-center text-text-light hover:text-primary-brand transition-colors duration-200">
-                <i class="fas fa-list-ul text-xl"></i>
-                <span class="text-xs mt-1">הזמנות</span>
-            </button>
-            <button id="mobile-nav-inventory" class="flex flex-col items-center justify-center text-text-light hover:text-primary-brand transition-colors duration-200">
-                <i class="fas fa-box-open text-xl"></i>
-                <span class="text-xs mt-1">מלאי</span>
-            </button>
-            <button id="mobile-nav-treatment" class="flex flex-col items-center justify-center text-text-light hover:text-primary-brand transition-colors duration-200">
-                <i class="fas fa-clipboard-list text-xl"></i>
-                <span class="text-xs mt-1">לוח טיפול</span>
-            </button>
-            <button id="mobile-nav-add-order" class="flex flex-col items-center justify-center text-text-light hover:text-primary-brand transition-colors duration-200" onclick="openOrderModal('add')">
-                <i class="fas fa-plus-circle text-xl"></i>
-                <span class="text-xs mt-1">הזמנה חדשה</span>
-            </button>
+    <!-- Loader Spinner -->
+    <div id="loader-overlay" class="loader-overlay hidden active">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Container for Alerts (Toasts) -->
+    <div id="alert-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Modals - Order, Close, Delete, Autofill, Order Details, Container History, Containers on Site, Export -->
+    <div id="order-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeOrderModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">הוסף הזמנה חדשה</h2>
+            <form id="order-form" class="space-y-4">
+                <div>
+                    <label for="תאריך הזמנה" class="block text-sm font-medium text-gray-700 mb-1">תאריך הזמנה</label>
+                    <input type="date" id="תאריך הזמנה" name="תאריך הזמנה" class="form-input" required>
+                </div>
+                <div>
+                    <label for="תעודה" class="block text-sm font-medium text-gray-700 mb-1">תעודה</label>
+                    <input type="text" id="תעודה" name="תעודה" class="form-input" required aria-autocomplete="list" aria-controls="autocomplete-docid">
+                    <div id="autocomplete-docid" class="autocomplete-container"></div>
+                </div>
+                <div>
+                    <label for="שם סוכן" class="block text-sm font-medium text-gray-700 mb-1">שם סוכן</label>
+                    <input type="text" id="שם סוכן" name="שם סוכן" class="form-input" required aria-autocomplete="list" aria-controls="autocomplete-agent">
+                    <div id="autocomplete-agent" class="autocomplete-container"></div>
+                </div>
+                <div>
+                    <label for="שם לקוח" class="block text-sm font-medium text-gray-700 mb-1">שם לקוח</label>
+                    <input type="text" id="שם לקוח" name="שם לקוח" class="form-input" required onblur="checkCustomerExistenceAndAutofill()" aria-autocomplete="list" aria-controls="autocomplete-customer">
+                    <div id="autocomplete-customer" class="autocomplete-container"></div>
+                </div>
+                <div>
+                    <label for="כתובת" class="block text-sm font-medium text-gray-700 mb-1">כתובת</label>
+                    <input type="text" id="כתובת" name="כתובת" class="form-input" required onblur="checkCustomerExistenceAndAutofill()" aria-autocomplete="list" aria-controls="autocomplete-address">
+                    <div id="autocomplete-address" class="autocomplete-container"></div>
+                </div>
+                <div>
+                    <label for="סוג פעולה" class="block text-sm font-medium text-gray-700 mb-1">סוג פעולה</label>
+                    <select id="סוג פעולה" name="סוג פעולה" class="form-select" required onchange="handleActionTypeChange()">
+                        <option value="הורדה">הורדה</option>
+                        <option value="העלאה">העלאה</option>
+                        <option value="החלפה">החלפה</option>
+                    </select>
+                </div>
+                <div id="container-taken-div">
+                    <label for="מספר מכולה ירדה" class="block text-sm font-medium text-gray-700 mb-1">מספר מכולה ירדה (או יחידה)</label>
+                    <input type="text" id="מספר מכולה ירדה" name="מספר מכולה ירדה" class="form-input" aria-autocomplete="list" aria-controls="autocomplete-container-taken">
+                    <div id="autocomplete-container-taken" class="autocomplete-container"></div>
+                </div>
+                <div id="container-brought-div" class="hidden">
+                    <label for="מספר מכולה עלתה" class="block text-sm font-medium text-gray-700 mb-1">מספר מכולה עלתה</label>
+                    <input type="text" id="מספר מכולה עלתה" name="מספר מכולה עלתה" class="form-input" aria-autocomplete="list" aria-controls="autocomplete-container-brought">
+                    <div id="autocomplete-container-brought" class="autocomplete-container"></div>
+                </div>
+                <div>
+                    <label for="תאריך סיום צפוי" class="block text-sm font-medium text-gray-700 mb-1">תאריך סיום צפוי</label>
+                    <input type="date" id="תאריך סיום צפוי" name="תאריך סיום צפוי" class="form-input">
+                </div>
+                 <div>
+                    <label for="תאריך וזמן עדכון הערה" class="block text-sm font-medium text-gray-700 mb-1">תאריך וזמן עדכון הערה</label>
+                    <input type="datetime-local" id="תאריך וזמן עדכון הערה" name="תאריך וזמן עדכון הערה" class="form-input">
+                </div>
+                <div>
+                    <label for="predefined-notes" class="block text-sm font-medium text-gray-700 mb-1">הערות מובנות</label>
+                    <select id="predefined-notes" class="form-select mb-2" onchange="addPredefinedNote()">
+                        <option value="">בחר הערה מובנית</option>
+                        <option value="סטטוס טיפול: הלקוח רוצה עוד יומיים להוציא את המכולה.">סטטוס טיפול: הלקוח רוצה עוד יומיים להוציא את המכולה.</option>
+                        <option value="בוצע איסוף מכולה מהלקוח.">בוצע איסוף מכולה מהלקוח.</option>
+                        <option value="תיאום החלפת מכולה לשבוע הבא.">תיאום החלפת מכולה לשבוע הבא.</option>
+                        <option value="מכולה ממתינה לתיקון.">מכולה ממתינה לתיקון.</option>
+                    </select>
+                    <label for="הערות" class="block text-sm font-medium text-gray-700 mb-1">הערות</label>
+                    <textarea id="הערות" name="הערות" rows="3" class="form-textarea"></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" class="btn btn-secondary" onclick="closeOrderModal()" aria-label="ביטול">ביטול</button>
+                    <button type="submit" class="btn btn-primary" aria-label="שמור הזמנה">שמור הזמנה</button>
+                </div>
+            </form>
         </div>
-    </nav>
+    </div>
 
-    <div class="p-6 md:p-8 relative">
-
-        <header class="flex flex-col md:flex-row justify-between items-center mb-6">
-            <h1 id="page-title" class="text-3xl font-extrabold text-primary-brand md:text-4xl">מערכת CRM</h1>
-            <div class="flex items-center gap-4 mt-4 md:mt-0">
-                <button id="theme-toggle" class="p-2 rounded-full hover:bg-surface-light transition-colors">
-                    <i class="fas fa-sun text-lg text-text-dark hidden" id="sun-icon"></i>
-                    <i class="fas fa-moon text-lg text-text-dark" id="moon-icon"></i>
-                </button>
-                <span id="current-datetime" class="text-sm font-light text-text-light hidden md:block"></span>
+    <div id="close-order-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="close-modal-title">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeCloseOrderModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="close-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">סגור הזמנה</h2>
+            <p class="mb-4 text-gray-600">האם אתה בטוח שברצונך לסגור את הזמנה מספר <span id="close-order-id" class="font-bold"></span>?</p>
+            <div class="mb-4">
+                <label for="close-notes" class="block text-sm font-medium text-gray-700 mb-1">הערות סיום (אופציונלי)</label>
+                <textarea id="close-notes" rows="3" class="form-textarea"></textarea>
             </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" class="btn btn-secondary" onclick="closeCloseOrderModal()" aria-label="ביטול">ביטול</button>
+                <button type="button" class="btn btn-primary" id="confirm-close-btn" aria-label="אשר סגירה">אשר סגירה</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeDeleteConfirmModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="delete-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">אשר מחיקה</h2>
+            <p class="mb-6 text-gray-600">האם אתה בטוח שברצונך למחוק את הזמנה מספר <span id="delete-order-id" class="font-bold"></span>? פעולה זו בלתי הפיכה.</p>
+            <div class="flex justify-end gap-3">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirmModal()" aria-label="ביטול">ביטול</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn" aria-label="מחק">מחק</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="overdue-customers-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="overdue-modal-title">
+        <div class="modal-content modal-full-width">
+            <button class="modal-close-btn" onclick="closeOverdueCustomersModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="overdue-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">לקוחות חורגים בשכירות</h2>
+            <div class="modal-body table-container">
+                <table id="overdue-customers-table" class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th>שם לקוח</th>
+                            <th>תעודה</th>
+                            <th>כתובת</th>
+                            <th>ימים שעברו</th>
+                            <th>מספרי מכולות</th>
+                            <th>הערות</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+                <p id="no-overdue-customers" class="text-center text-gray-500 mt-4 hidden">אין לקוחות חורגים לטיפול כרגע. 🎉</p>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="btn btn-secondary" onclick="closeOverdueCustomersModal()" aria-label="סגור">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="autofill-confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="autofill-modal-title">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="hideAutofillConfirmModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="autofill-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">לקוח זוהה!</h2>
+            <p class="mb-6 text-gray-600">לקוח/כתובת זוהו במערכת. תרצה למלא אוטומטי את נתוני ההזמנה האחרונה?</p>
+            <div class="flex justify-center gap-4">
+                <button type="button" class="btn btn-primary" onclick="confirmAutofill(true)" aria-label="כן">כן</button>
+                <button type="button" class="btn btn-secondary" onclick="confirmAutofill(false)" aria-label="לא">לא</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="order-details-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="details-modal-title">
+        <div class="modal-content modal-full-width">
+            <button class="modal-close-btn" onclick="closeOrderDetailsModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="details-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">פרטי הזמנה</h2>
+            <div class="modal-body">
+                <div id="current-order-card" class="order-card-detail">
+                    <!-- Current order details will be loaded here -->
+                </div>
+
+                <button class="history-section-toggle" onclick="toggleCustomerHistorySection()" aria-expanded="false" aria-controls="customer-history-section">
+                    <span id="history-toggle-text">הצג היסטוריית לקוח</span> <i class="fas fa-chevron-down ml-2"></i>
+                </button>
+
+                <div id="customer-history-section" class="history-content table-container mt-4" role="region" aria-live="polite">
+                    <table id="customer-history-table" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>תאריך הזמנה</th>
+                                <th>תעודה</th>
+                                <th>סוג פעולה</th>
+                                <th>מספר מכולה ירדה</th>
+                                <th>מספר מכולה עלתה</th>
+                                <th>סטטוס</th>
+                                <th>ימים שעברו</th>
+                                <th>תאריך סגירה</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                    <p id="no-customer-history" class="text-center text-gray-500 mt-4 hidden">אין היסטוריית הזמנות עבור לקוח זה.</p>
+                </div>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="btn btn-secondary" onclick="closeOrderDetailsModal()" aria-label="סגור">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="container-history-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="container-history-modal-title">
+        <div class="modal-content modal-full-width">
+            <button class="modal-close-btn" onclick="closeContainerHistoryModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="container-history-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">היסטוריית מכולה: <span id="history-container-number"></span></h2>
+            <div class="modal-body table-container">
+                <table id="container-history-table" class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th>תאריך הזמנה</th>
+                            <th>תעודה</th>
+                            <th>שם לקוח</th>
+                            <th>סוג פעולה</th>
+                            <th>מספר מכולה ירדה</th>
+                            <th>מספר מכולה עלתה</th>
+                            <th>סטטוס הזמנה</th>
+                            <th>תאריך סיום צפוי</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+                <p id="no-container-history" class="text-center text-gray-500 mt-4 hidden">אין היסטוריית שינויים עבור מכולה זו.</p>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="btn btn-secondary" onclick="closeContainerHistoryModal()" aria-label="סגור">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="containers-on-site-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="site-containers-modal-title">
+        <div class="modal-content modal-full-width">
+            <button class="modal-close-btn" onclick="closeContainersOnSiteModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="site-containers-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">מכולות באתרים</h2>
+            <div class="modal-body table-container">
+                <table id="containers-on-site-table" class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th>שם לקוח</th>
+                            <th>כתובת</th>
+                            <th>מכולות בשימוש פעיל</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Containers data will be loaded here -->
+                    </tbody>
+                </table>
+                <p id="no-active-containers-msg" class="text-center text-gray-500 mt-4 hidden">אין מכולות פעילות כרגע באתרים.</p>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="btn btn-secondary" onclick="closeContainersOnSiteModal()" aria-label="סגור">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="export-actions-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeExportActionsModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="export-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">פעולות ייצוא והדפסה</h2>
+            <div class="export-buttons-container">
+                <button class="btn btn-secondary" onclick="printTable()" aria-label="הדפס טבלה">
+                    <i class="fas fa-print ml-2"></i> הדפס טבלה
+                </button>
+                <button class="btn btn-secondary" onclick="exportToExcel()" aria-label="יצא לאקסל">
+                    <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="min-h-screen flex flex-col p-4 md:p-8">
+        <header class="mb-8 text-center flex flex-col items-center justify-center">
+            <div class="flex items-center justify-center mb-4">
+                <img src="https://placehold.co/80x80/6D28D9/FFFFFF?text=CRM" alt="Company Logo" class="h-20 w-20 rounded-full shadow-lg border-2 border-purple-300 mr-4" aria-label="לוגו החברה">
+                <h1 class="page-header m-0">מערכת CRM למכולות</h1>
+            </div>
+            <p class="text-lg text-gray-600 mb-2">ניהול שכירות מכולות בקלות וביעילות</p>
+            <div class="text-sm text-gray-500 font-mono tracking-wide">
+                <span id="current-date" class="mr-2 text-purple-600 font-semibold"></span> |
+                <span id="current-time" class="ml-2 text-blue-600 font-semibold animate-pulse"></span>
+            </div>
+            <!-- Dark/Light Mode Toggle -->
+            <button id="theme-toggle" class="mt-4 px-4 py-2 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 transition-colors flex items-center gap-2" aria-label="החלף מצב כהה/בהיר">
+                <i class="fas fa-sun" id="sun-icon"></i><i class="fas fa-moon hidden" id="moon-icon"></i>
+                <span>מצב בהיר</span>
+            </button>
         </header>
 
-        <nav class="hidden md:flex justify-between items-center mb-6 py-2 border-b-2 border-border-color">
-            <div class="flex items-center gap-6 text-text-light font-medium">
-                <button id="desktop-nav-dashboard" class="py-2 hover:text-primary-brand transition-colors duration-200 active-link">לוח מחוונים</button>
-                <button id="desktop-nav-orders" class="py-2 hover:text-primary-brand transition-colors duration-200">הזמנות</button>
-                <button id="desktop-nav-inventory" class="py-2 hover:text-primary-brand transition-colors duration-200">מלאי מכולות</button>
-                <button id="desktop-nav-treatment" class="py-2 hover:text-primary-brand transition-colors duration-200">לוח טיפול</button>
-            </div>
-            <button id="add-order-btn-desktop" class="bg-primary-brand text-text-on-brand py-2 px-4 rounded-full shadow-lg hover:bg-secondary-brand transition-colors" onclick="openOrderModal('add')">
-                <i class="fas fa-plus-circle ml-2"></i>הזמנה חדשה
+        <!-- Desktop Navigation Bar -->
+        <nav class="nav-tabs">
+            <button id="nav-dashboard" class="nav-tab-btn active" onclick="showPage('dashboard')" aria-controls="dashboard-page" aria-selected="true" role="tab">
+                <i class="fas fa-tachometer-alt ml-2"></i> דאשבורד וטבלת הזמנות
+            </button>
+            <button id="nav-container-inventory" class="nav-tab-btn" onclick="showPage('container-inventory')" aria-controls="container-inventory-page" aria-selected="false" role="tab">
+                <i class="fas fa-boxes ml-2"></i> מלאי מכולות
+            </button>
+            <button id="nav-treatment-board" class="nav-tab-btn" onclick="showPage('treatment-board')" aria-controls="treatment-board-page" aria-selected="false" role="tab">
+                <i class="fas fa-exclamation-circle ml-2"></i> לוח טיפול (הזמנות דורשות התייחסות)
             </button>
         </nav>
 
-        <main class="mt-8 relative z-10">
-
-            <section id="dashboard-page" class="page fade-in">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="data-card p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-text-light">הזמנות פתוחות</p>
-                            <h2 id="open-orders-count" class="text-3xl font-bold mt-1">0</h2>
-                        </div>
-                        <i class="fas fa-box text-3xl text-primary-brand opacity-20"></i>
-                    </div>
-                    <div class="data-card p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-text-light">הזמנות חורגות</p>
-                            <h2 id="overdue-orders-count" class="text-3xl font-bold mt-1">0</h2>
-                        </div>
-                        <i class="fas fa-exclamation-triangle text-3xl text-error-text opacity-20"></i>
-                    </div>
-                    <div class="data-card p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-text-light">מכולות בשימוש</p>
-                            <h2 id="in-use-containers-count" class="text-3xl font-bold mt-1">0</h2>
-                        </div>
-                        <i class="fas fa-boxes text-3xl text-secondary-brand opacity-20"></i>
-                    </div>
-                    <div class="data-card p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-text-light">לקוחות פעילים</p>
-                            <h2 id="active-customers-count" class="text-3xl font-bold mt-1">0</h2>
-                        </div>
-                        <i class="fas fa-users text-3xl text-accent-color opacity-20"></i>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="data-card p-6 rounded-lg shadow-md">
-                        <h3 class="text-lg font-bold mb-4">מכולות בשימוש לפי לקוח</h3>
-                        <div id="containers-by-customer-chart" class="chart-container w-full h-80"></div>
-                        <div id="chart-controls" class="flex justify-end gap-2 mt-2">
-                            <button id="fullscreen-chart-btn" class="p-2 rounded-full hover:bg-background-light text-text-light transition-colors" title="מסך מלא">
-                                <i class="fas fa-expand"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="data-card p-6 rounded-lg shadow-md">
-                        <h3 class="text-lg font-bold mb-4">חלוקת הזמנות לפי סטטוס</h3>
-                        <div id="status-pie-chart" class="chart-container w-full h-80"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="orders-page" class="page hidden">
-                <h2 class="text-2xl font-bold mb-4">טבלת הזמנות</h2>
-                <div class="bg-surface-light p-4 rounded-lg shadow-md">
-                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-                        <div class="flex items-center gap-2 w-full sm:w-auto search-container">
-                            <i class="fas fa-search text-text-light"></i>
-                            <input type="text" id="search-input" class="w-full sm:w-64 p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" placeholder="חפש הזמנה...">
-                            <div id="search-autocomplete-list" class="autocomplete-list w-full sm:w-64 hidden"></div>
-                        </div>
-                        <div class="flex gap-2 w-full sm:w-auto justify-end">
-                            <select id="status-filter" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand">
-                                <option value="all">כל הסטטוסים</option>
-                                <option value="פתוח">פתוח</option>
-                                <option value="חורג">חורג</option>
-                                <option value="סגור">סגור</option>
-                                <option value="ממתין/לא תקין">ממתין/לא תקין</option>
-                            </select>
-                            <select id="action-filter" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand">
-                                <option value="all">כל הפעולות</option>
-                                <option value="הורדה">הורדה</option>
-                                <option value="העלאה">העלאה</option>
-                                <option value="החלפה">החלפה</option>
-                            </select>
-                            <button id="export-btn" class="p-2 rounded-md bg-secondary-brand text-white hover:bg-primary-brand transition-colors"><i class="fas fa-download"></i></button>
-                            <button id="print-btn" class="p-2 rounded-md bg-secondary-brand text-white hover:bg-primary-brand transition-colors"><i class="fas fa-print"></i></button>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
-                        <table class="w-full text-right text-sm text-text-dark divide-y divide-border-color">
-                            <thead class="text-xs text-text-light uppercase bg-background-light sticky top-0">
-                                <tr id="orders-table-header" class="table-header">
-                                    <th scope="col" class="py-3 px-6">פעולות</th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="ימי חריגה">ימי חריגה<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="סטטוס">סטטוס<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="מספרים מכולה">מספרים מכולה<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="פעולה">פעולה<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="כתובת">כתובת<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="שם לקוח">שם לקוח<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="סוכן">סוכן<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="תעודה">תעודה<i class="fas fa-sort sort-icon"></i></th>
-                                    <th scope="col" class="py-3 px-6" data-sort-by="תאריך הזמנה">תאריך הזמנה<i class="fas fa-sort sort-icon"></i></th>
-                                </tr>
-                            </thead>
-                            <tbody id="orders-table-body" class="divide-y divide-border-color">
-                                </tbody>
-                        </table>
-                        <div id="no-results" class="text-center p-4 text-text-light hidden">לא נמצאו הזמנות תואמות.</div>
-                    </div>
-                    <div class="flex justify-between items-center mt-4">
-                        <div id="pagination-info" class="text-sm text-text-light"></div>
-                        <div id="pagination-controls" class="flex gap-2">
-                            <button id="prev-page" class="px-4 py-2 rounded-md bg-background-light border border-border-color hover:bg-border-color transition-colors">הקודם</button>
-                            <button id="next-page" class="px-4 py-2 rounded-md bg-background-light border border-border-color hover:bg-border-color transition-colors">הבא</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="inventory-page" class="page hidden">
-                <h2 class="text-2xl font-bold mb-4">מלאי מכולות</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-surface-light p-4 rounded-lg shadow-md">
-                        <h3 class="text-xl font-bold mb-4">מכולות בשימוש</h3>
-                        <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
-                            <table class="w-full text-right text-sm text-text-dark divide-y divide-border-color">
-                                <thead class="text-xs text-text-light uppercase bg-background-light">
-                                    <tr>
-                                        <th scope="col" class="py-3 px-6">תעודה</th>
-                                        <th scope="col" class="py-3 px-6">תאריך פעולה</th>
-                                        <th scope="col" class="py-3 px-6">לקוח</th>
-                                        <th scope="col" class="py-3 px-6">מספר מכולה</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="in-use-containers-table-body" class="divide-y divide-border-color">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-surface-light p-4 rounded-lg shadow-md">
-                        <h3 class="text-xl font-bold mb-4">מכולות פנויות</h3>
-                        <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
-                            <table class="w-full text-right text-sm text-text-dark divide-y divide-border-color">
-                                <thead class="text-xs text-text-light uppercase bg-background-light">
-                                    <tr>
-                                        <th scope="col" class="py-3 px-6">הזמנה קשורה</th>
-                                        <th scope="col" class="py-3 px-6">תאריך פנוי</th>
-                                        <th scope="col" class="py-3 px-6">מספר מכולה</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="available-containers-table-body" class="divide-y divide-border-color">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4 p-4 rounded-md bg-surface-light shadow-md flex justify-between items-center">
-                    <p class="text-sm text-text-light">סה"כ מכולות במערכת: <span id="total-containers-count" class="font-bold">0</span></p>
-                    <button id="add-new-container-btn" class="bg-primary-brand text-text-on-brand py-2 px-4 rounded-full shadow-lg hover:bg-secondary-brand transition-colors" onclick="openAddNewContainerModal()">
-                        <i class="fas fa-plus-circle ml-2"></i>הוסף מכולה חדשה
+        <main class="flex-grow">
+            <!-- Dashboard and Orders Table Page -->
+            <section id="dashboard-page" class="page-content main-content-wrapper" role="tabpanel" aria-labelledby="nav-dashboard">
+                <!-- Top Buttons -->
+                <div class="flex flex-col md:flex-row justify-center items-center mb-8 gap-4 flex-wrap">
+                    <button class="btn btn-primary" onclick="openOrderModal('add')" aria-label="הוסף הזמנה חדשה" accesskey="n">
+                        <i class="fas fa-plus-circle ml-2"></i> הוסף הזמנה חדשה (Alt+N)
+                    </button>
+                    <button class="btn btn-danger" id="overdue-customers-btn" onclick="openOverdueCustomersModal()" aria-label="לקוחות חורגים לטיפול">
+                        <i class="fas fa-hand-paper ml-2"></i> לקוחות חורגים לטיפול <span id="overdue-customers-badge" class="mr-2 bg-white text-red-600 px-2 py-1 rounded-full text-xs font-bold dark:bg-gray-800 dark:text-red-400">0</span>
+                    </button>
+                    <button class="btn btn-primary" onclick="openContainersOnSiteModal()" aria-label="מכולות באתרים">
+                        <i class="fas fa-map-marked-alt ml-2"></i> מכולות באתרים
+                    </button>
+                    <button class="btn btn-secondary" onclick="openExportActionsModal()" aria-label="פעולות ייצוא">
+                        <i class="fas fa-cogs ml-2"></i> פעולות ייצוא
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshData()" aria-label="רענן נתונים">
+                        <i class="fas fa-sync-alt ml-2"></i> רענן נתונים
                     </button>
                 </div>
-            </section>
 
-            <section id="treatment-page" class="page hidden">
-                <h2 class="text-2xl font-bold mb-4">לוח טיפול</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="kanban-column p-4 rounded-lg shadow-md">
-                        <h3 class="kanban-header text-xl font-bold mb-4 pb-2 text-error-text">חורגות (<span id="overdue-count">0</span>)</h3>
-                        <div id="overdue-column" class="min-h-[200px] overflow-y-auto max-h-[calc(100vh-250px)] space-y-4">
-                            </div>
+                <!-- Dashboard Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="card flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">הזמנות פתוחות</p>
+                            <p id="open-orders-count" class="text-3xl font-bold text-gray-900 mt-1 dark:text-gray-100">0</p>
+                        </div>
+                        <i class="fas fa-box-open text-blue-500 text-4xl opacity-75"></i>
                     </div>
-                    <div class="kanban-column p-4 rounded-lg shadow-md">
-                        <h3 class="kanban-header text-xl font-bold mb-4 pb-2 text-warning-text">בטיפול (<span id="in-treatment-count">0</span>)</h3>
-                        <div id="in-treatment-column" class="min-h-[200px] overflow-y-auto max-h-[calc(100vh-250px)] space-y-4">
-                            </div>
+                    <div class="card flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">הזמנות חורגות</p>
+                            <p id="overdue-orders-count" class="text-3xl font-bold text-red-500 mt-1 dark:text-red-400">0</p>
+                        </div>
+                        <i class="fas fa-exclamation-triangle text-red-500 text-4xl opacity-75"></i>
                     </div>
-                    <div class="kanban-column p-4 rounded-lg shadow-md">
-                        <h3 class="kanban-header text-xl font-bold mb-4 pb-2 text-success-text">טופלו (<span id="treated-count">0</span>)</h3>
-                        <div id="treated-column" class="min-h-[200px] overflow-y-auto max-h-[calc(100vh-250px)] space-y-4">
-                            </div>
+                    <div class="card flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">מכולות בשימוש</p>
+                            <p id="containers-in-use" class="text-3xl font-bold text-gray-900 mt-1 dark:text-gray-100">0</p>
+                        </div>
+                        <i class="fas fa-truck-moving text-green-500 text-4xl opacity-75"></i>
+                    </div>
+                    <div class="card flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">לקוחות פעילים</p>
+                            <p id="active-customers-count" class="text-3xl font-bold text-gray-900 mt-1 dark:text-gray-100">0</p>
+                        </div>
+                        <i class="fas fa-users text-purple-500 text-4xl opacity-75"></i>
+                    </div>
+                </div>
+
+                <!-- Charts and Diagrams -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div id="chart-containers-by-customer" class="chart-container">
+                        <button class="action-btn absolute top-3 left-3 z-10" onclick="toggleFullscreen('chart-containers-by-customer')" aria-label="הגדל תרשים מכולות לפי לקוח">
+                            <i class="fas fa-expand-alt"></i>
+                        </button>
+                        <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">מכולות בשימוש לפי לקוח</h3>
+                    </div>
+                    <div id="chart-status-pie" class="chart-container">
+                        <button class="action-btn absolute top-3 left-3 z-10" onclick="toggleFullscreen('chart-status-pie')" aria-label="הגדל תרשים חלוקת סטטוסים">
+                            <i class="fas fa-expand-alt"></i>
+                        </button>
+                        <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">חלוקת הזמנות לפי סטטוס</h3>
+                    </div>
+                </div>
+
+                <!-- Quick Summary above table -->
+                <div class="flex justify-around items-center mb-6 p-4 rounded-xl bg-purple-50 dark:bg-gray-700 shadow-inner">
+                    <div class="text-center">
+                        <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">פתוחות:</p>
+                        <span id="summary-open" class="text-2xl font-bold text-green-600 dark:text-green-400">0</span>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">חורגות:</p>
+                        <span id="summary-overdue" class="text-2xl font-bold text-red-600 dark:text-red-400">0</span>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">סגורות:</p>
+                        <span id="summary-closed" class="text-2xl font-bold text-gray-600 dark:text-gray-400">0</span>
+                    </div>
+                </div>
+
+                <!-- Dynamic Orders Table -->
+                <div class="card p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-200">רשימת הזמנות</h2>
+
+                    <!-- Search and Filter Bar -->
+                    <div class="flex flex-col md:flex-row gap-4 mb-6">
+                        <input type="text" id="search-input" placeholder="חפש לפי לקוח, תעודה, כתובת, מכולה..."
+                               class="flex-grow px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+                               onkeyup="filterTable()" aria-label="חיפוש חכם">
+                        <select id="filter-status" onchange="filterTable()"
+                                class="px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" aria-label="סינון לפי סטטוס">
+                            <option value="all">כל הסטטוסים</option>
+                            <option value="פתוח">פתוח</option>
+                            <option value="חורג">חורג</option>
+                            <option value="סגור">סגור</option>
+                            <option value="ממתין/לא תקין">ממתין/לא תקין</option>
+                        </select>
+                        <select id="filter-action-type" onchange="filterTable()"
+                                class="px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" aria-label="סינון לפי סוג פעולה">
+                            <option value="all">כל סוגי הפעולות</option>
+                            <option value="הורדה">הורדה</option>
+                            <option value="העלאה">העלאה</option>
+                            <option value="החלפה">החלפה</option>
+                        </select>
+                    </div>
+
+                    <div class="table-container" id="printable-table">
+                        <table id="orders-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortTable(0)">תאריך הזמנה <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(1)">תעודה <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(2)">שם סוכן <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(3)"><i class="fas fa-user-circle ml-2"></i> שם לקוח <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(4)">כתובת <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(5)">סוג פעולה <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(6)">ימים שעברו <i class="fas fa-sort"></i></th>
+                                    <th><i class="fas fa-box ml-2"></i> מכולות קשורות</th>
+                                    <th onclick="sortTable(8)">סטטוס <i class="fas fa-sort"></i></th>
+                                    <th>הערות</th>
+                                    <th onclick="sortTable(10)">תאריך סיום צפוי <i class="fas fa-sort"></i></th>
+                                    <th>הערות סיום</th>
+                                    <th onclick="sortTable(12)">תאריך סגירה <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(13)">ימים שעברו (עלתה) <i class="fas fa-sort"></i></th>
+                                    <th class="w-24">פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Order data will be loaded here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                     <!-- Pagination Controls -->
+                    <div class="pagination-controls">
+                        <button class="pagination-btn" id="prev-page" onclick="changePage(-1)" aria-label="עמוד קודם" disabled>קודם</button>
+                        <span id="page-info" class="pagination-info">עמוד 1 מתוך 1</span>
+                        <button class="pagination-btn" id="next-page" onclick="changePage(1)" aria-label="עמוד הבא" disabled>הבא</button>
                     </div>
                 </div>
             </section>
+
+            <!-- Container Inventory Page -->
+            <section id="container-inventory-page" class="page-content hidden main-content-wrapper" role="tabpanel" aria-labelledby="nav-container-inventory">
+                <h2 class="page-header">מלאי מכולות</h2>
+                <div class="inventory-flex-container mb-8">
+                    <!-- Containers in Use + In Return Process Table -->
+                    <div class="card p-6 flex-1">
+                        <h3 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">מכולות בשימוש <i class="fas fa-truck-moving text-red-500 mr-2"></i></h3>
+                        <div class="table-container">
+                            <table id="containers-in-use-table" class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>מספר מכולה</th>
+                                        <th>לקוח</th>
+                                        <th>תאריך פעולה</th>
+                                        <th>תעודה</th>
+                                        <th>סטטוס</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Inventory data will be loaded here -->
+                                </tbody>
+                            </table>
+                            <p id="no-containers-in-use" class="text-center text-gray-500 mt-4 hidden">אין מכולות בשימוש כרגע. 🎉</p>
+                        </div>
+                    </div>
+
+                    <!-- Available Containers Table -->
+                    <div class="card p-6 flex-1">
+                        <h3 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">מכולות פנויות <i class="fas fa-boxes text-green-500 mr-2"></i></h3>
+                        <div class="table-container">
+                            <table id="containers-available-table" class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>מספר מכולה</th>
+                                        <th>תאריך פנוי</th>
+                                        <th>הזמנה קשורה</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Inventory data will be loaded here -->
+                                </tbody>
+                            </table>
+                            <p id="no-containers-available" class="text-center text-gray-500 mt-4 hidden">אין מכולות פנויות כרגע.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Treatment Board Page (Kanban Style) -->
+            <section id="treatment-board-page" class="page-content hidden main-content-wrapper" role="tabpanel" aria-labelledby="nav-treatment-board">
+                <h2 class="page-header">לוח טיפול - הזמנות דורשות התייחסות</h2>
+                <p class="text-lg text-gray-600 mb-6 text-center">כאן תמצא את כל ההזמנות החורגות שדורשות טיפול מיידי.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div id="column-overdue" class="kanban-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <h3 class="text-xl font-bold text-red-600 dark:text-red-400">חורגות <i class="fas fa-exclamation-triangle mr-2"></i></h3>
+                        <!-- Overdue orders will be dragged here -->
+                    </div>
+                    <div id="column-in-progress" class="kanban-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <h3 class="text-xl font-bold text-blue-600 dark:text-blue-400">בטיפול <i class="fas fa-spinner mr-2"></i></h3>
+                        <!-- In progress orders will be dragged here -->
+                    </div>
+                    <div id="column-resolved" class="kanban-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <h3 class="text-xl font-bold text-green-600 dark:text-green-400">טופלו <i class="fas fa-check-circle mr-2"></i></h3>
+                        <!-- Resolved orders will be dragged here -->
+                    </div>
+                </div>
+                <p id="no-treatment-orders" class="text-center text-gray-500 mt-4 hidden">אין הזמנות לטיפול כרגע. כל הכבוד! 🎉</p>
+            </section>
+
         </main>
 
-        <div id="order-modal-overlay" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4">
-            <div id="order-modal" class="modal-content bg-surface-light rounded-lg shadow-xl w-full max-w-4xl p-6 transition-transform duration-300 transform -translate-y-full opacity-0 relative">
-                <button class="modal-close-btn absolute top-4 left-4 text-text-light hover:text-text-dark transition-colors" onclick="closeOrderModal()">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="modal-title" class="text-2xl font-bold">הוספת הזמנה חדשה</h2>
-                    <div id="order-modal-actions" class="flex gap-2">
-                        <button id="close-order-btn" class="bg-gray-400 text-white py-2 px-4 rounded-full hover:bg-gray-500 transition-colors hidden" onclick="closeOrder()"><i class="fas fa-check-circle ml-2"></i>סגור הזמנה</button>
-                        <button id="duplicate-order-btn" class="bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors hidden" onclick="duplicateOrder()"><i class="fas fa-copy ml-2"></i>שכפל</button>
-                        <button id="delete-order-btn" class="bg-red-500 text-white py-2 px-4 rounded-full hover:bg-red-600 transition-colors hidden" onclick="showDeleteConfirmation()"><i class="fas fa-trash-alt ml-2"></i>מחק</button>
-                    </div>
-                </div>
-                <form id="order-form">
-                    <input type="hidden" id="order-id">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                        <div class="flex flex-col">
-                            <label for="order-date" class="mb-1 text-sm font-medium text-text-light">תאריך הזמנה</label>
-                            <input type="date" id="order-date" name="order-date" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" required>
-                        </div>
-                        <div class="flex flex-col relative search-container">
-                            <label for="order-document" class="mb-1 text-sm font-medium text-text-light">תעודה</label>
-                            <input type="text" id="order-document" name="order-document" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" placeholder="הקלד תעודה..." required>
-                            <div id="document-autocomplete-list" class="autocomplete-list w-full hidden"></div>
-                        </div>
-                        <div class="flex flex-col relative search-container">
-                            <label for="order-agent" class="mb-1 text-sm font-medium text-text-light">סוכן</label>
-                            <input type="text" id="order-agent" name="order-agent" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" placeholder="הקלד שם סוכן..." required>
-                            <div id="agent-autocomplete-list" class="autocomplete-list w-full hidden"></div>
-                        </div>
-                        <div class="flex flex-col relative search-container">
-                            <label for="order-customer" class="mb-1 text-sm font-medium text-text-light">שם לקוח</label>
-                            <input type="text" id="order-customer" name="order-customer" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" placeholder="הקלד שם לקוח..." required>
-                            <div id="customer-autocomplete-list" class="autocomplete-list w-full hidden"></div>
-                        </div>
-                        <div class="flex flex-col relative search-container">
-                            <label for="order-address" class="mb-1 text-sm font-medium text-text-light">כתובת</label>
-                            <input type="text" id="order-address" name="order-address" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" placeholder="הקלד כתובת..." required>
-                            <div id="address-autocomplete-list" class="autocomplete-list w-full hidden"></div>
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="order-action" class="mb-1 text-sm font-medium text-text-light">סוג פעולה</label>
-                            <select id="order-action" name="order-action" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" required>
-                                <option value="" disabled selected>בחר פעולה</option>
-                                <option value="הורדה">הורדה</option>
-                                <option value="העלאה">העלאה</option>
-                                <option value="החלפה">החלפה</option>
-                            </select>
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="order-container-numbers" class="mb-1 text-sm font-medium text-text-light">מספרים מכולה (מופרדים בפסיק)</label>
-                            <input type="text" id="order-container-numbers" name="order-container-numbers" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" placeholder="1234, 5678" required>
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="order-notes" class="mb-1 text-sm font-medium text-text-light">הערות</label>
-                            <div class="flex gap-2 mb-2">
-                                <button type="button" class="py-1 px-3 bg-gray-200 text-text-dark text-xs rounded hover:bg-gray-300" onclick="addPredefinedNote('אין גישה')">אין גישה</button>
-                                <button type="button" class="py-1 px-3 bg-gray-200 text-text-dark text-xs rounded hover:bg-gray-300" onclick="addPredefinedNote('תשלום חורג')">תשלום חורג</button>
-                                <button type="button" class="py-1 px-3 bg-gray-200 text-text-dark text-xs rounded hover:bg-gray-300" onclick="addPredefinedNote('להעביר למנהל')">להעביר למנהל</button>
-                            </div>
-                            <textarea id="order-notes" name="order-notes" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" rows="3"></textarea>
-                        </div>
-                        <div class="flex flex-col hidden" id="finish-date-container">
-                            <label for="finish-date" class="mb-1 text-sm font-medium text-text-light">תאריך סיום</label>
-                            <input type="date" id="finish-date" name="finish-date" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand">
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="order-expected-end-date" class="mb-1 text-sm font-medium text-text-light">תאריך סיום צפוי</label>
-                            <input type="date" id="order-expected-end-date" name="order-expected-end-date" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand">
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center mt-6">
-                        <button type="button" class="bg-gray-500 text-white py-2 px-4 rounded-full hover:bg-gray-600 transition-colors" onclick="closeOrderModal()">ביטול</button>
-                        <button type="submit" id="submit-btn" class="bg-primary-brand text-text-on-brand py-2 px-6 rounded-full shadow-lg hover:bg-secondary-brand transition-colors"><i class="fas fa-spinner fa-spin hidden ml-2" id="submit-loader"></i>שמור הזמנה</button>
-                    </div>
-                </form>
-                <div id="order-details-pane" class="mt-6 hidden">
-                    <h3 class="text-xl font-bold mb-4">פרטי הזמנה מלאים</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div id="order-details-container"></div>
-                        <div class="p-4 bg-background-light rounded-lg">
-                            <h4 class="font-bold mb-2">היסטוריית לקוח</h4>
-                            <div id="customer-history-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="delete-modal-overlay" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4 hidden">
-            <div class="modal-content bg-surface-light rounded-lg shadow-xl w-full max-w-sm p-6 transition-transform duration-300 transform -translate-y-full opacity-0">
-                <h2 class="text-2xl font-bold mb-4">אזהרה</h2>
-                <p class="text-text-dark mb-6">האם אתה בטוח שברצונך למחוק הזמנה זו? פעולה זו היא בלתי הפיכה.</p>
-                <div class="flex justify-end gap-4">
-                    <button class="bg-gray-500 text-white py-2 px-4 rounded-full hover:bg-gray-600 transition-colors" onclick="closeDeleteConfirmation()">ביטול</button>
-                    <button class="bg-red-500 text-white py-2 px-4 rounded-full hover:bg-red-600 transition-colors" onclick="deleteOrder()"><i class="fas fa-trash-alt ml-2"></i>מחק</button>
-                </div>
-            </div>
-        </div>
+        <!-- Mobile Bottom Navigation Bar -->
+        <nav class="bottom-nav-bar" role="tablist">
+            <button id="bottom-nav-dashboard" class="bottom-nav-btn active" onclick="showPage('dashboard')" aria-controls="dashboard-page" aria-selected="true" role="tab">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>דאשבורד</span>
+            </button>
+            <button id="bottom-nav-container-inventory" class="bottom-nav-btn" onclick="showPage('container-inventory')" aria-controls="container-inventory-page" aria-selected="false" role="tab">
+                <i class="fas fa-boxes"></i>
+                <span>מלאי</span>
+            </button>
+            <button id="bottom-nav-treatment-board" class="bottom-nav-btn" onclick="showPage('treatment-board')" aria-controls="treatment-board-page" aria-selected="false" role="tab">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>טיפול</span>
+            </button>
+        </nav>
 
-        <div id="containers-at-sites-modal-overlay" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4 hidden">
-            <div id="containers-at-sites-modal" class="modal-content bg-surface-light rounded-lg shadow-xl w-full max-w-2xl p-6 transition-transform duration-300 transform -translate-y-full opacity-0 relative">
-                <button class="modal-close-btn absolute top-4 left-4 text-text-light hover:text-text-dark transition-colors" onclick="closeContainersAtSitesModal()">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-                <h2 class="text-2xl font-bold mb-4">מכולות בכתובות</h2>
-                <div id="containers-at-sites-list" class="space-y-4 max-h-[80vh] overflow-y-auto">
-                    </div>
-            </div>
-        </div>
-
-        <div id="add-new-container-modal-overlay" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4 hidden">
-            <div id="add-new-container-modal" class="modal-content bg-surface-light rounded-lg shadow-xl w-full max-w-sm p-6 transition-transform duration-300 transform -translate-y-full opacity-0 relative">
-                <button class="modal-close-btn absolute top-4 left-4 text-text-light hover:text-text-dark transition-colors" onclick="closeAddNewContainerModal()">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-                <h2 class="text-2xl font-bold mb-4">הוסף מכולה חדשה</h2>
-                <form id="add-container-form">
-                    <div class="flex flex-col mb-4">
-                        <label for="new-container-number" class="mb-1 text-sm font-medium text-text-light">מספר מכולה</label>
-                        <input type="text" id="new-container-number" name="new-container-number" class="p-2 rounded-md bg-background-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary-brand" placeholder="הקלד מספר מכולה..." required>
-                    </div>
-                    <div class="flex justify-end gap-4 mt-6">
-                        <button type="button" class="bg-gray-500 text-white py-2 px-4 rounded-full hover:bg-gray-600 transition-colors" onclick="closeAddNewContainerModal()">ביטול</button>
-                        <button type="submit" id="add-container-btn" class="bg-primary-brand text-text-on-brand py-2 px-6 rounded-full shadow-lg hover:bg-secondary-brand transition-colors">
-                            <i class="fas fa-spinner fa-spin hidden ml-2" id="add-container-loader"></i>הוסף
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <div id="container-history-modal-overlay" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4 hidden">
-            <div id="container-history-modal" class="modal-content bg-surface-light rounded-lg shadow-xl w-full max-w-2xl p-6 transition-transform duration-300 transform -translate-y-full opacity-0 relative">
-                <button class="modal-close-btn absolute top-4 left-4 text-text-light hover:text-text-dark transition-colors" onclick="closeContainerHistoryModal()">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-                <h2 id="container-history-title" class="text-2xl font-bold mb-4">היסטוריית מכולה: #<span id="container-history-number"></span></h2>
-                <div id="container-history-list" class="space-y-2 max-h-[80vh] overflow-y-auto">
-                    </div>
-            </div>
-        </div>
-
-        <div id="toast-container" class="toast-container"></div>
-
-        <div id="fullscreen-chart-modal" class="modal-overlay fixed inset-0 z-50 justify-center items-center p-4 hidden">
-            <div class="relative w-full h-full p-4">
-                <div id="fullscreen-chart-content" class="w-full h-full flex justify-center items-center"></div>
-                <button class="absolute top-4 left-4 p-2 rounded-full bg-surface-light text-text-dark hover:bg-background-light transition-colors" onclick="closeFullscreenChart()">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-        </div>
-
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>&copy; 2025 מערכת CRM למכולות. כל הזכויות שמורות.</p>
+        </footer>
     </div>
 
-    <script type="module" src="./js/app.js"></script>
-
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
 </body>
 </html>
