@@ -1,7 +1,7 @@
 // js/api.js
 // Handles all communication with the Google Apps Script backend.
 
-const SCRIPT_WEB_APP_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec';
 
 const BACKOFF_TIME = 1000;
 const MAX_RETRIES = 5;
