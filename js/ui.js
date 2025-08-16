@@ -1,23 +1,4 @@
-// js/ui.js
-// Manages general UI interactions, like showing pages, modals, loaders and toasts.
-// js/ui.js
-// (שאר קוד הקובץ...)
 
-/**
- * Displays the loading overlay.
- */
-export const showLoader = () => {
-    document.getElementById('loader-overlay').classList.add('active');
-};
-
-/**
- * Hides the loading overlay.
- */
-export const hideLoader = () => {
-    document.getElementById('loader-overlay').classList.remove('active');
-};
-
-// ... וודא שאתה מייצא גם את הפונקציות האחרות כמו showPage וכו'.
 import { state } from './state.js';
 import { updateDateTime } from './utils.js';
 
@@ -126,3 +107,23 @@ export const setupDateTimeDisplay = () => {
 
 // Expose loader functions
 export { showLoader, hideLoader };
+// js/ui.js
+// Manages general UI interactions, like showing pages, modals, loaders and toasts.
+// js/ui.js
+// (שאר קוד הקובץ...)
+
+/**
+ * Displays the loading overlay.
+ */
+export const showLoader = () => {
+    document.getElementById('loader-overlay').classList.add('active');
+};
+
+/**
+ * Hides the loading overlay.
+ */
+export const hideLoader = () => {
+    document.getElementById('loader-overlay').classList.remove('active');
+};
+
+// ... וודא שאתה מייצא גם את הפונקציות האחרות כמו showPage וכו'.
