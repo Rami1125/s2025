@@ -135,30 +135,29 @@ const setupEventListeners = () => {
 };
 
 /**
- * Fetches all data and updates the application state.
+ * Fetches all data from the Google Apps Script Web App and updates the application state.
  */
 const updateAllData = async () => {
     showLoader();
     try {
-        const [ordersResponse, customersResponse, documentsResponse, agentsResponse, containersResponse, sitesResponse] = await Promise.all([
-            fetch('data/orders.json'),
-            fetch('data/customers.json'),
-            fetch('data/documents.json'),
-            fetch('data/agents.json'),
-            fetch('data/containers.json'),
-            fetch('data/sites.json')
-        ]);
-
-        if (!ordersResponse.ok || !customersResponse.ok || !documentsResponse.ok || !agentsResponse.ok || !containersResponse.ok || !sitesResponse.ok) {
-            throw new Error("One or more data files failed to load.");
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec';
+        
+        // Fetch all data in one go from the Web App
+        const response = await fetch(scriptUrl);
+        
+        if (!response.ok) {
+            throw new Error("Failed to load data from the Google Apps Script. Check the URL and permissions.");
         }
 
-        state.allOrders = await ordersResponse.json();
-        state.customers = await customersResponse.json();
-        state.documents = await documentsResponse.json();
-        state.agents = await agentsResponse.json();
-        state.containers = await containersResponse.json();
-        state.sites = await sitesResponse.json();
+        const data = await response.json();
+
+        // Assuming the script returns a single object containing all the data arrays
+        state.allOrders = data.orders || [];
+        state.customers = data.customers || [];
+        state.documents = data.documents || [];
+        state.agents = data.agents || [];
+        state.containers = data.containers || [];
+        state.sites = data.sites || [];
 
         // Populate autocomplete cache
         state.autocompleteCache.customers = state.customers.map(c => c['שם לקוח']);
