@@ -1,16 +1,17 @@
 // js/app.js
-// The main entry point for the application. Initializes all modules and listeners.
+// (שאר קוד הקובץ...)
 
 import { state } from './state.js';
 import { updateAllData } from './data.js';
-import { showPage, initializeTheme, toggleTheme, setupDateTimeDisplay } from './ui.js';
+import { showPage, initializeTheme, toggleTheme, setupDateTimeDisplay, showLoader, hideLoader } from './ui.js'; // הוספת showLoader ו-hideLoader
 import { openOrderModal, handleOrderFormSubmit, handleAddContainerFormSubmit, closeOrder, deleteOrder, duplicateOrder, addPredefinedNote, showOrderDetails, showContainerHistory, showContainersAtSites } from './modals.js';
 import { handleSort, handleStatusFilterChange, handleActionFilterChange, handleSearchInputChange, goToNextPage, goToPrevPage, updateAutocomplete } from './tables.js';
-import { debounce } from './utils.js'; // The fix: importing debounce from utils.js
+import { debounce } from './utils.js';
 import { toggleFullscreenChart, closeFullscreenChart } from './charts.js';
 import { handleDrop } from './kanban.js';
 import { isMobile } from './utils.js';
 
+// ... (שאר הקוד)
 /**
  * Initializes the application.
  */
