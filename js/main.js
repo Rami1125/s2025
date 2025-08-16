@@ -140,6 +140,7 @@ const setupEventListeners = () => {
 const updateAllData = async () => {
     showLoader();
     try {
+        // THIS IS THE URL FOR YOUR GOOGLE APPS SCRIPT WEB APP
         const scriptUrl = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec';
         
         // Fetch all data in one go from the Web App
