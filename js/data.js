@@ -3,8 +3,7 @@
 import { state } from './state.js';
 import { renderOrdersTable, renderContainersTable, renderTreatmentTable } from './tables.js';
 import { drawDashboardCharts } from './charts.js';
-import { showToast } from './ui.js';
-import { showLoader, hideLoader } from './ui.js'; // הוספת showLoader ו-hideLoader
+import { showToast, showLoader, hideLoader } from './ui.js'; // ייבוא showLoader ו-hideLoader
 
 /**
  * Fetches all data and updates the application state.
