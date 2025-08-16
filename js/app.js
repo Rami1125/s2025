@@ -5,7 +5,8 @@ import { state } from './state.js';
 import { updateAllData } from './data.js';
 import { showPage, initializeTheme, toggleTheme, setupDateTimeDisplay } from './ui.js';
 import { openOrderModal, handleOrderFormSubmit, handleAddContainerFormSubmit, closeOrder, deleteOrder, duplicateOrder, addPredefinedNote, showOrderDetails, showContainerHistory, showContainersAtSites } from './modals.js';
-import { handleSort, handleStatusFilterChange, handleActionFilterChange, handleSearchInputChange, goToNextPage, goToPrevPage, updateAutocomplete, debounce } from './tables.js';
+import { handleSort, handleStatusFilterChange, handleActionFilterChange, handleSearchInputChange, goToNextPage, goToPrevPage, updateAutocomplete } from './tables.js';
+import { debounce } from './utils.js'; // The fix: importing debounce from utils.js
 import { toggleFullscreenChart, closeFullscreenChart } from './charts.js';
 import { handleDrop } from './kanban.js';
 import { isMobile } from './utils.js';
