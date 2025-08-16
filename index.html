@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת CRM לניהול שכירות מכולות</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#6D28D9',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Awesomplete for autocomplete -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+    
+    <style>
+        /* Global styles that work with both mobile and desktop */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .mobile-only {
+                display: block !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
+            
+            /* Mobile modals as drawers */
+            .modal-content {
+                width: 100%;
+                max-width: none;
+                border-radius: 1rem 1rem 0 0;
+                position: fixed;
+                bottom: 0;
+                transform: translateY(100%);
+                animation: slideUp 0.3s forwards;
+                padding: 1.5rem;
+            }
+            
+            @keyframes slideUp {
+                to { transform: translateY(0); }
+            }
+            
+            /* Bottom navigation */
+            .bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+                z-index: 50;
+            }
+            
+            .bottom-nav button {
+                flex: 1;
+                padding: 0.75rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Desktop-specific styles */
+        @media (min-width: 769px) {
+            .mobile-only {
+                display: none !important;
+            }
+            .desktop-only {
+                display: block !important;
+            }
+            
+            .modal-content {
+                max-width: 800px;
+                border-radius: 1rem;
+                padding: 2rem;
+            }
+            
+            .desktop-nav {
+                background: white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+        }
+        
+        /* Dark mode styles */
+        .dark {
+            background-color: #1a202c;
+            color: #f7fafc;
+        }
+        
+        .dark .card {
+            background-color: #2d3748;
+            color: #f7fafc;
+        }
+        
+        /* Highlight search matches */
+        .highlight {
+            background-color: rgba(251, 191, 36, 0.5);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+    <!-- Loader -->
+    <div id="loader-overlay" class="fixed inset-0 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center z-50 transition-opacity opacity-0 invisible">
+        <div class="w-16 h-16 border-4 border-gray-200 dark:border-gray-700 border-t-primary dark:border-t-blue-400 rounded-full animate-spin"></div>
+    </div>
+
+    <!-- Alert container -->
+    <div id="alert-container" class="fixed bottom-4 left-4 z-50 flex flex-col-reverse gap-3"></div>
+
+    <!-- Navigation - Desktop -->
+    <nav class="desktop-nav hidden md:flex justify-center p-4 gap-2">
+        <button id="nav-dashboard" class="nav-tab-btn active" onclick="showPage('dashboard')">
+            <i class="fas fa-tachometer-alt ml-2"></i> דאשבורד
+        </button>
+        <button id="nav-container-inventory" class="nav-tab-btn" onclick="showPage('container-inventory')">
+            <i class="fas fa-boxes ml-2"></i> מלאי מכולות
+        </button>
+        <button id="nav-treatment-board" class="nav-tab-btn" onclick="showPage('treatment-board')">
+            <i class="fas fa-exclamation-circle ml-2"></i> לוח טיפול
+        </button>
+    </nav>
+
+    <!-- Navigation - Mobile -->
+    <div class="bottom-nav mobile-only flex md:hidden">
+        <button class="flex flex-col items-center text-primary" onclick="showPage('dashboard')">
+            <i class="fas fa-tachometer-alt"></i>
+            <span class="text-xs mt-1">דאשבורד</span>
+        </button>
+        <button class="flex flex-col items-center text-gray-500" onclick="showPage('container-inventory')">
+            <i class="fas fa-boxes"></i>
+            <span class="text-xs mt-1">מלאי</span>
+        </button>
+        <button class="flex flex-col items-center text-gray-500" onclick="showPage('treatment-board')">
+            <i class="fas fa-exclamation-circle"></i>
+            <span class="text-xs mt-1">טיפול</span>
+        </button>
+    </div>
+
+    <!-- Main content -->
+    <div class="container mx-auto p-4 pb-20 md:pb-4">
+        <!-- Dashboard page -->
+        <section id="dashboard-page" class="page-content">
+            <!-- Content will be loaded dynamically -->
+        </section>
+
+        <!-- Container inventory page -->
+        <section id="container-inventory-page" class="page-content hidden">
+            <!-- Content will be loaded dynamically -->
+        </section>
+
+        <!-- Treatment board page -->
+        <section id="treatment-board-page" class="page-content hidden">
+            <!-- Content will be loaded dynamically -->
+        </section>
+    </div>
+
+    <!-- All modals will be loaded here dynamically -->
+    <div id="modals-container"></div>
+
+    <!-- Theme toggle button -->
+    <button id="theme-toggle" class="fixed bottom-20 right-4 md:bottom-4 md:right-4 bg-primary text-white p-3 rounded-full shadow-lg z-40">
+        <i class="fas fa-moon dark:hidden"></i>
+        <i class="fas fa-sun hidden dark:block"></i>
+    </button>
+
+    <script>
+        // ========== SYSTEM INITIALIZATION ==========
+        // Detect device type
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.body.classList.add('mobile');
+        } else {
+            document.body.classList.add('desktop');
+        }
+
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        // Theme toggle
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Initialize the system
+        initTheme();
+        loadInitialData();
+        
+        // ========== CORE FUNCTIONALITY ==========
+        // This would include all the functions from your original code,
+        // but refactored to support both mobile and desktop views,
+        // with lazy loading, pagination, and all the advanced features
+        
+        // Example of dynamic page loading
+        async function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Update navigation
+            document.querySelectorAll('.nav-tab-btn, .bottom-nav button').forEach(btn => {
+                btn.classList.remove('active', 'text-primary');
+                btn.classList.add('text-gray-500');
+            });
+            
+            // Show current page
+            document.getElementById(`${pageId}-page`).classList.remove('hidden');
+            
+            // Highlight active tab
+            document.getElementById(`nav-${pageId}`)?.classList.add('active', 'text-primary');
+            document.querySelector(`.bottom-nav button:nth-child(${['dashboard', 'container-inventory', 'treatment-board'].indexOf(pageId) + 1})`)?.classList.add('text-primary');
+            
+            // Lazy load page content
+            if (!window[`${pageId}Loaded`]) {
+                await loadPageContent(pageId);
+                window[`${pageId}Loaded`] = true;
+            }
+        }
+        
+        async function loadPageContent(pageId) {
+            showLoader();
+            
+            // In a real app, you would fetch this from your API
+            const pageContents = {
+                'dashboard': `<div class="card p-4 mb-4">
+                                <h2 class="text-xl font-bold mb-4">דאשבורד</h2>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                    <div class="card p-4 flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">הזמנות פתוחות</p>
+                                            <p id="open-orders-count" class="text-2xl font-bold">0</p>
+                                        </div>
+                                        <i class="fas fa-box-open text-primary text-3xl"></i>
+                                    </div>
+                                    <!-- More dashboard cards -->
+                                </div>
+                                <!-- Charts and tables would go here -->
+                              </div>`,
+                // Other page templates...
+            };
+            
+            document.getElementById(`${pageId}-page`).innerHTML = pageContents[pageId] || '<p>תוכן לא זמין</p>';
+            hideLoader();
+        }
+        
+        // ========== MODAL SYSTEM ==========
+        function createModal(type, options = {}) {
+            const modalId = `modal-${Date.now()}`;
+            const modalHtml = `
+                <div id="${modalId}" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 invisible transition-opacity">
+                    <div class="modal-content bg-white dark:bg-gray-800 relative max-h-[90vh] overflow-y-auto">
+                        <button class="modal-close-btn absolute top-4 left-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" onclick="closeModal('${modalId}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        ${options.content || ''}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modals-container').insertAdjacentHTML('beforeend', modalHtml);
+            setTimeout(() => {
+                document.getElementById(modalId).classList.add('opacity-100', 'visible');
+            }, 10);
+            
+            return modalId;
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('opacity-100', 'visible');
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+        
+        // ========== OTHER UTILITIES ==========
+        function showLoader() {
+            document.getElementById('loader-overlay').classList.remove('opacity-0', 'invisible');
+            document.getElementById('loader-overlay').classList.add('opacity-100', 'visible');
+        }
+        
+        function hideLoader() {
+            document.getElementById('loader-overlay').classList.remove('opacity-100', 'visible');
+            document.getElementById('loader-overlay').classList.add('opacity-0', 'invisible');
+        }
+        
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alert-container');
+            const alertItem = document.createElement('div');
+            alertItem.className = `alert-item bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 flex items-center gap-3 border-l-4 ${
+                type === 'success' ? 'border-green-500' :
+                type === 'error' ? 'border-red-500' :
+                type === 'warning' ? 'border-yellow-500' : 'border-blue-500'
+            }`;
+            
+            alertItem.innerHTML = `
+                ${type === 'success' ? '<i class="fas fa-check-circle text-green-500"></i>' : ''}
+                ${type === 'error' ? '<i class="fas fa-times-circle text-red-500"></i>' : ''}
+                ${type === 'warning' ? '<i class="fas fa-exclamation-triangle text-yellow-500"></i>' : ''}
+                ${type === 'info' ? '<i class="fas fa-info-circle text-blue-500"></i>' : ''}
+                <span class="flex-1">${message}</span>
+                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="this.closest('.alert-item').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(alertItem);
+            
+            setTimeout(() => {
+                alertItem.remove();
+            }, 5000);
+        }
+        
+        // Initialize keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.altKey && e.key.toLowerCase() === 'n') {
+                e.preventDefault();
+                openOrderModal('add');
+            }
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal-overlay');
+                if (modals.length > 0) {
+                    closeModal(modals[modals.length - 1].id);
+                }
+            }
+        });
+        
+        // More functions would be added here...
+    </script>
+</body>
+</html>
