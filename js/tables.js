@@ -1,239 +1,232 @@
 // js/tables.js
-// Handles the rendering, filtering, and sorting of the orders table.
+// Handles all table rendering, filtering, sorting, and pagination logic.
 
 import { state } from './state.js';
-import { openOrderModal, showOrderDetails, showContainerHistory } from './modals.js';
-import { formatDate, calculateOverdueDays, highlightText } from './utils.js';
+import { showOrderDetails, openOrderModal } from './modals.js';
+import { highlightText } from './utils.js';
 
-const ordersTableBody = document.getElementById('orders-table-body');
-const paginationInfo = document.getElementById('pagination-info');
-const noResultsMessage = document.getElementById('no-results');
-const itemsPerPage = 15;
-
-/**
- * Renders the orders table with the current state data.
- */
-export const renderOrdersTable = () => {
-    const filteredAndSortedOrders = getFilteredAndSortedOrders();
-    state.totalItems = filteredAndSortedOrders.length;
-    state.totalPages = Math.ceil(state.totalItems / itemsPerPage);
-
-    const startIndex = (state.currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedOrders = filteredAndSortedOrders.slice(startIndex, endIndex);
-
-    ordersTableBody.innerHTML = '';
-    if (paginatedOrders.length === 0) {
-        noResultsMessage.classList.remove('hidden');
-    } else {
-        noResultsMessage.classList.add('hidden');
-        paginatedOrders.forEach(order => {
-            const row = createOrderRow(order);
-            ordersTableBody.appendChild(row);
-        });
-    }
-
-    updatePaginationControls();
-};
+let currentPage = 1;
+const rowsPerPage = 10;
+let currentSortColumn = null;
+let currentSortDirection = 'asc';
 
 /**
- * Creates a single table row for an order.
- * @param {object} order The order object.
- * @returns {HTMLTableRowElement} The created table row element.
+ * Renders the orders table with the given data.
+ * @param {Array<Object>} orders The list of orders to render.
  */
-const createOrderRow = (order) => {
-    const row = document.createElement('tr');
-    row.className = `border-b ${order['סטטוס'] === 'סגור' ? 'text-text-light' : ''}`;
+export const renderOrdersTable = (orders) => {
+    const tableBody = document.getElementById('orders-table-body');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
     
-    const overdueDays = calculateOverdueDays(order);
-    const overdueClass = overdueDays > 0 ? 'text-red-500 font-bold' : '';
-    const statusClass = order['סטטוס'] === 'חורג' ? 'text-red-500' :
-                        order['סטטוס'] === 'סגור' ? 'text-green-500' : '';
-                        
-    const searchTerm = state.searchQuery.toLowerCase();
-    
-    const highlightedCustomer = highlightText(order['שם לקוח'], searchTerm);
-    const highlightedDocument = highlightText(order['תעודה'], searchTerm);
+    // Apply filters and search
+    let filteredOrders = orders;
+    const searchTerm = state.filters.searchTerm.toLowerCase();
+    const statusFilter = state.filters.statusFilter;
+    const actionFilter = state.filters.actionFilter;
 
-    const containerNumbersHtml = order['מספרים מכולה'] ? order['מספרים מכולה'].split(',').map(num => 
-        `<button class="text-primary-brand hover:underline p-0 m-0 bg-transparent border-none" onclick="showContainerHistory('${num.trim()}')">${num.trim()}</button>`
-    ).join(', ') : '';
-
-    row.innerHTML = `
-        <td class="py-3 px-6 whitespace-nowrap">
-            <button onclick="openOrderModal('edit', '${order['תעודה']}')" class="text-accent-color hover:underline">ערוך</button>
-            <button onclick="showOrderDetails('${order['תעודה']}')" class="text-accent-color hover:underline ml-2">הצג</button>
-        </td>
-        <td class="py-3 px-6 whitespace-nowrap ${overdueClass}">${overdueDays}</td>
-        <td class="py-3 px-6 whitespace-nowrap ${statusClass}">${order['סטטוס'] || ''}</td>
-        <td class="py-3 px-6 whitespace-nowrap">${containerNumbersHtml}</td>
-        <td class="py-3 px-6 whitespace-nowrap">${order['פעולה'] || ''}</td>
-        <td class="py-3 px-6 whitespace-nowrap">${highlightText(order['כתובת'], searchTerm)}</td>
-        <td class="py-3 px-6 whitespace-nowrap">${highlightedCustomer}</td>
-        <td class="py-3 px-6 whitespace-nowrap">${highlightText(order['סוכן'], searchTerm)}</td>
-        <td class="py-3 px-6 whitespace-nowrap">${highlightedDocument}</td>
-        <td class="py-3 px-6 whitespace-nowrap">${order['תאריך הזמנה'] ? formatDate(order['תאריך הזמנה']) : ''}</td>
-    `;
-    return row;
-};
-
-/**
- * Filters and sorts the orders based on the current state.
- * @returns {Array} The filtered and sorted array of orders.
- */
-const getFilteredAndSortedOrders = () => {
-    let filteredOrders = state.orders;
-
-    // Filter by status
-    if (state.statusFilter !== 'all') {
-        filteredOrders = filteredOrders.filter(order => order['סטטוס'] === state.statusFilter);
-    }
-    
-    // Filter by action
-    if (state.actionFilter !== 'all') {
-        filteredOrders = filteredOrders.filter(order => order['פעולה'] === state.actionFilter);
-    }
-
-    // Filter by search query
-    if (state.searchQuery) {
-        const query = state.searchQuery.toLowerCase();
-        filteredOrders = filteredOrders.filter(order =>
-            Object.values(order).some(val => 
-                val && String(val).toLowerCase().includes(query)
-            )
+    if (searchTerm) {
+        filteredOrders = filteredOrders.filter(order => 
+            (order['מספר הזמנה'] && order['מספר הזמנה'].toLowerCase().includes(searchTerm)) ||
+            (order['שם לקוח'] && order['שם לקוח'].toLowerCase().includes(searchTerm)) ||
+            (order['מספר מסמך'] && order['מספר מסמך'].toLowerCase().includes(searchTerm)) ||
+            (order['סטטוס'] && order['סטטוס'].toLowerCase().includes(searchTerm)) ||
+            (order['הערות'] && order['הערות'].toLowerCase().includes(searchTerm))
         );
     }
+    
+    if (statusFilter !== 'all') {
+        filteredOrders = filteredOrders.filter(order => order['סטטוס'] === statusFilter);
+    }
 
-    // Sort
-    if (state.sortColumn) {
-        const sortDirection = state.sortDirection === 'asc' ? 1 : -1;
-        filteredOrders.sort((a, b) => {
-            const valA = a[state.sortColumn];
-            const valB = b[state.sortColumn];
-            
-            if (state.sortColumn === 'תאריך הזמנה' || state.sortColumn === 'ימי חריגה') {
-                const dateA = new Date(valA);
-                const dateB = new Date(valB);
-                return (dateA - dateB) * sortDirection;
-            }
-            
-            if (valA < valB) return -1 * sortDirection;
-            if (valA > valB) return 1 * sortDirection;
-            return 0;
+    if (actionFilter !== 'all') {
+        filteredOrders = filteredOrders.filter(order => {
+            const actions = {
+                'open': order.statusClass === 'status-open',
+                'overdue': order.statusClass === 'status-overdue'
+            };
+            return actions[actionFilter];
         });
     }
 
-    return filteredOrders;
+    // Sort data
+    if (currentSortColumn) {
+        filteredOrders.sort((a, b) => {
+            const aVal = a[currentSortColumn] || '';
+            const bVal = b[currentSortColumn] || '';
+
+            if (typeof aVal === 'string') {
+                return currentSortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            }
+            return currentSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        });
+    }
+
+    state.filteredOrders = filteredOrders;
+    
+    // Pagination
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const paginatedOrders = state.filteredOrders.slice(start, end);
+    const totalPages = Math.ceil(state.filteredOrders.length / rowsPerPage);
+    document.getElementById('page-info').textContent = `עמוד ${currentPage} מתוך ${totalPages}`;
+
+    paginatedOrders.forEach(order => {
+        const row = document.createElement('tr');
+        row.className = 'border-b hover:bg-gray-50 dark:hover:bg-gray-700';
+        row.innerHTML = `
+            <td class="py-2 px-4 text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">${highlightText(order['מספר הזמנה'], searchTerm)}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${highlightText(order['שם לקוח'], searchTerm)}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${highlightText(order['מספר מסמך'], searchTerm)}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${highlightText(order['שם סוכן'], searchTerm)}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${highlightText(order['כתובת'], searchTerm)}</td>
+            <td class="py-2 px-4 text-sm text-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.statusClass}">${highlightText(order['סטטוס'], searchTerm)}</span>
+            </td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${highlightText(order['תאריך יצירה'], searchTerm)}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${order['תאריך סיום צפוי'] || '-'}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${order.overdueDays > 0 ? `<span class="text-red-500">${order.overdueDays} ימים</span>` : '-'}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">
+                <div class="flex items-center space-x-2 space-x-reverse">
+                    <button onclick="showOrderDetails('${order['מספר הזמנה']}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300" title="צפה בפרטים">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="openOrderModal('edit', '${order['מספר הזמנה']}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300" title="ערוך">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="window.duplicateOrder('${order['מספר הזמנה']}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300" title="שכפל">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
 };
 
 /**
- * Updates the pagination info and button states.
+ * Renders the containers inventory table.
+ * @param {Array<Object>} containers The list of containers to render.
  */
-const updatePaginationControls = () => {
-    const prevBtn = document.getElementById('prev-page');
-    const nextBtn = document.getElementById('next-page');
-
-    paginationInfo.innerText = `עמוד ${state.currentPage} מתוך ${state.totalPages} (${state.totalItems} תוצאות)`;
-    prevBtn.disabled = state.currentPage === 1;
-    nextBtn.disabled = state.currentPage === state.totalPages;
+export const renderContainersTable = (containers) => {
+    const tableBody = document.getElementById('containers-table-body');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+    
+    containers.forEach(container => {
+        const row = document.createElement('tr');
+        row.className = 'border-b hover:bg-gray-50 dark:hover:bg-gray-700';
+        row.innerHTML = `
+            <td class="py-2 px-4 text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">${container['מספר מכולה']}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${container['מיקום']}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${container['סטטוס']}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${container['תאריך אחרון במלאי']}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">${container['הערות'] || '-'}</td>
+            <td class="py-2 px-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">
+                <div class="flex items-center space-x-2 space-x-reverse">
+                    <button onclick="showContainerHistory('${container['מספר מכולה']}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300" title="היסטוריה">
+                        <i class="fas fa-history"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
 };
 
 /**
- * Handles the click on a table header for sorting.
- * @param {HTMLElement} header The clicked header element.
+ * Renders the treatment table for the Kanban board.
+ * @param {Array<Object>} orders The list of orders to render.
+ */
+export const renderTreatmentTable = (orders) => {
+    // This is part of the Kanban board, so it will handle rendering its own cards.
+    // For now, it remains a placeholder.
+    console.log("Rendering Kanban treatment board...");
+};
+
+/**
+ * Handles table sorting.
+ * @param {HTMLElement} header The table header element that was clicked.
  */
 export const handleSort = (header) => {
-    const sortBy = header.dataset.sortBy;
-    if (state.sortColumn === sortBy) {
-        state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+    const column = header.dataset.sortBy;
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
     } else {
-        document.querySelectorAll('.table-header th').forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
-        state.sortColumn = sortBy;
-        state.sortDirection = 'asc';
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
     }
-    
-    header.classList.add(`sorted-${state.sortDirection}`);
-    
-    renderOrdersTable();
+    document.querySelectorAll('#orders-table-header th').forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+    header.classList.add(`sorted-${currentSortDirection}`);
+    renderOrdersTable(state.allOrders);
 };
 
 /**
- * Handles the change of the status filter.
- * @param {string} value The selected status value.
+ * Handles status filter change.
+ * @param {string} status The status to filter by.
  */
-export const handleStatusFilterChange = (value) => {
-    state.statusFilter = value;
-    state.currentPage = 1;
-    renderOrdersTable();
+export const handleStatusFilterChange = (status) => {
+    state.filters.statusFilter = status;
+    renderOrdersTable(state.allOrders);
 };
 
 /**
- * Handles the change of the action filter.
- * @param {string} value The selected action value.
+ * Handles action filter change.
+ * @param {string} action The action to filter by.
  */
-export const handleActionFilterChange = (value) => {
-    state.actionFilter = value;
-    state.currentPage = 1;
-    renderOrdersTable();
+export const handleActionFilterChange = (action) => {
+    state.filters.actionFilter = action;
+    renderOrdersTable(state.allOrders);
 };
 
 /**
- * Handles the change of the search input.
- * @param {string} value The search query.
+ * Handles search input change.
+ * @param {string} term The search term.
  */
-export const handleSearchInputChange = (value) => {
-    state.searchQuery = value;
-    state.currentPage = 1;
-    renderOrdersTable();
+export const handleSearchInputChange = (term) => {
+    state.filters.searchTerm = term;
+    renderOrdersTable(state.allOrders);
 };
 
 /**
- * Moves the table to the next page.
+ * Goes to the next page of the orders table.
  */
 export const goToNextPage = () => {
-    if (state.currentPage < state.totalPages) {
-        state.currentPage++;
-        renderOrdersTable();
+    const totalPages = Math.ceil(state.filteredOrders.length / rowsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderOrdersTable(state.allOrders);
     }
 };
 
 /**
- * Moves the table to the previous page.
+ * Goes to the previous page of the orders table.
  */
 export const goToPrevPage = () => {
-    if (state.currentPage > 1) {
-        state.currentPage--;
-        renderOrdersTable();
+    if (currentPage > 1) {
+        currentPage--;
+        renderOrdersTable(state.allOrders);
     }
 };
 
 /**
- * Updates the autocomplete suggestions for a given input field.
+ * Updates the autocomplete suggestions for a given input.
  * @param {string} inputId The ID of the input field.
- * @param {string} listId The ID of the autocomplete list.
- * @param {Array<string>} suggestions The array of suggestions.
+ * @param {string} listId The ID of the datalist.
+ * @param {Array<string>} suggestions The list of suggestions.
  */
 export const updateAutocomplete = (inputId, listId, suggestions) => {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
+    if (!input || !list) return;
+
+    const inputValue = input.value.toLowerCase();
     list.innerHTML = '';
-    list.classList.add('hidden');
 
-    if (input.value.length < 2) return;
-
-    const filtered = suggestions.filter(s => s.toLowerCase().includes(input.value.toLowerCase()));
-    
-    if (filtered.length > 0) {
-        list.classList.remove('hidden');
-        filtered.slice(0, 10).forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'autocomplete-item';
-            div.innerText = item;
-            div.addEventListener('click', () => {
-                input.value = item;
-                list.classList.add('hidden');
-            });
-            list.appendChild(div);
-        });
-    }
+    suggestions.filter(s => s && s.toLowerCase().includes(inputValue))
+               .forEach(s => {
+                   const option = document.createElement('option');
+                   option.value = s;
+                   list.appendChild(option);
+               });
 };
