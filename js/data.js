@@ -1,47 +1,100 @@
 // js/data.js
-// Handles fetching and processing of all application data.
 
 import { state } from './state.js';
-import { fetchAllOrders } from './api.js';
-import { renderDashboard } from './dashboard.js';
-import { renderOrdersTable, updateAutocomplete } from './tables.js';
-import { renderInventoryTables } from './inventory.js';
-import { renderKanbanBoard } from './kanban.js';
-import { showAlert } from './ui.js';
+import { renderOrdersTable, renderContainersTable, renderTreatmentTable } from './tables.js';
+import { drawDashboardCharts } from './charts.js';
+import { showToast } from './ui.js';
+import { showLoader, hideLoader } from './ui.js'; // הוספת showLoader ו-hideLoader
 
 /**
- * Fetches all orders from the API and updates the application state.
+ * Fetches all data and updates the application state.
  */
 export const updateAllData = async () => {
+    showLoader(); // הצגת מסך הטעינה
+    console.log("Starting data fetch...");
     try {
-        const orders = await fetchAllOrders();
-        state.orders = orders;
+        const [ordersResponse, customersResponse, documentsResponse, agentsResponse, containersResponse, sitesResponse] = await Promise.all([
+            fetch('data/orders.json'),
+            fetch('data/customers.json'),
+            fetch('data/documents.json'),
+            fetch('data/agents.json'),
+            fetch('data/containers.json'),
+            fetch('data/sites.json')
+        ]);
+
+        if (!ordersResponse.ok || !customersResponse.ok || !documentsResponse.ok || !agentsResponse.ok || !containersResponse.ok || !sitesResponse.ok) {
+            throw new Error("One or more data files failed to load.");
+        }
+
+        state.allOrders = await ordersResponse.json();
+        state.customers = await customersResponse.json();
+        state.documents = await documentsResponse.json();
+        state.agents = await agentsResponse.json();
+        state.containers = await containersResponse.json();
+        state.sites = await sitesResponse.json();
+
+        // Populate autocomplete cache
+        state.autocompleteCache.customers = state.customers.map(c => c['שם לקוח']);
+        state.autocompleteCache.documents = state.documents.map(d => d['מספר מסמך']);
+        state.autocompleteCache.agents = state.agents.map(a => a['שם סוכן']);
+        state.autocompleteCache.addresses = [...new Set(state.allOrders.map(o => o['כתובת']))];
+
+        // Process orders data
+        state.allOrders.forEach(order => {
+            order.statusClass = getStatusClass(order['סטטוס']);
+            order.overdueDays = calculateOverdueDays(order);
+        });
+
+        // Initial rendering
+        renderOrdersTable(state.allOrders);
+        renderContainersTable(state.containers);
+        renderTreatmentTable(state.allOrders);
+        drawDashboardCharts(state.allOrders);
         
-        // Process data for dashboard, tables, etc.
-        updateAutocompleteCache();
-        
-        renderDashboard();
-        renderOrdersTable();
-        renderInventoryTables();
-        renderKanbanBoard();
-        
+        console.log("Data loaded and rendered successfully.");
+
     } catch (error) {
-        console.error('Failed to fetch data:', error);
-        showAlert('שגיאה בטעינת נתונים: ' + error.message, 'error');
+        console.error("Error loading data:", error);
+        showToast('שגיאה בטעינת הנתונים: ' + error.message, 'error');
+    } finally {
+        hideLoader(); // הסתרת מסך הטעינה בסיום התהליך
     }
 };
 
 /**
- * Updates the autocomplete cache from the current orders data.
+ * Determines the CSS class for an order's status.
+ * @param {string} status The order status.
+ * @returns {string} The corresponding CSS class.
  */
-const updateAutocompleteCache = () => {
-    const allCustomers = [...new Set(state.orders.map(o => o['שם לקוח']).filter(Boolean))];
-    const allAgents = [...new Set(state.orders.map(o => o['סוכן']).filter(Boolean))];
-    const allDocuments = [...new Set(state.orders.map(o => o['תעודה']).filter(Boolean))];
-    const allAddresses = [...new Set(state.orders.map(o => o['כתובת']).filter(Boolean))];
-    
-    state.autocompleteCache.customers = allCustomers;
-    state.autocompleteCache.agents = allAgents;
-    state.autocompleteCache.documents = allDocuments;
-    state.autocompleteCache.addresses = allAddresses;
+const getStatusClass = (status) => {
+    switch (status) {
+        case 'פתוח':
+            return 'status-open';
+        case 'סגור':
+            return 'status-closed';
+        case 'חורג':
+            return 'status-overdue';
+        case 'מושהה':
+            return 'status-warning';
+        case 'ממתין':
+            return 'status-pending';
+        default:
+            return '';
+    }
+};
+
+/**
+ * Calculates the number of days an order is overdue.
+ * @param {object} order The order object.
+ * @returns {number} The number of overdue days.
+ */
+const calculateOverdueDays = (order) => {
+    if (order['סטטוס'] !== 'חורג' || !order['תאריך סיום צפוי']) {
+        return 0;
+    }
+    const today = new Date();
+    const expectedEndDate = new Date(order['תאריך סיום צפוי']);
+    const diffTime = today - expectedEndDate;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
 };
