@@ -1,5 +1,5 @@
 // js/app.js
-// (שאר קוד הקובץ...)
+// The main entry point for the application. Initializes all modules and listeners.
 
 import { state } from './state.js';
 import { updateAllData } from './data.js';
@@ -11,7 +11,6 @@ import { toggleFullscreenChart, closeFullscreenChart } from './charts.js';
 import { handleDrop } from './kanban.js';
 import { isMobile } from './utils.js';
 
-// ... (שאר הקוד)
 /**
  * Initializes the application.
  */
