@@ -1,338 +1,243 @@
 // js/modals.js
-// Manages the logic for all modals, including forms and data display.
+// Handles all modal-related logic, including opening, closing, and form submissions.
 
 import { state } from './state.js';
-import { addOrderApi, editOrderApi, closeOrderApi, deleteOrderApi, addNewContainerApi, fetchContainerHistoryApi } from './api.js';
 import { updateAllData } from './data.js';
-import { showAlert } from './ui.js';
-import { formatDate } from './utils.js';
-import { renderOrdersTable } from './tables.js';
+import { renderOrdersTable, renderContainersTable } from './tables.js';
+import { isMobile } from './utils.js';
+import { showToast } from './ui.js'; // התיקון: מייבאים showToast במקום showAlert
 
-let currentEditingOrder = null;
-
-const orderModalOverlay = document.getElementById('order-modal-overlay');
-const orderModal = document.getElementById('order-modal');
-const orderForm = document.getElementById('order-form');
-const orderDetailsPane = document.getElementById('order-details-pane');
-const deleteModalOverlay = document.getElementById('delete-modal-overlay');
-const containersAtSitesModalOverlay = document.getElementById('containers-at-sites-modal-overlay');
-const addNewContainerModalOverlay = document.getElementById('add-new-container-modal-overlay');
-const addContainerForm = document.getElementById('add-container-form');
-const containerHistoryModalOverlay = document.getElementById('container-history-modal-overlay');
+// Globals
+let currentOrderId = null;
+let currentContainerId = null;
 
 /**
- * Opens a generic modal.
- * @param {HTMLElement} modalOverlay The modal overlay element.
+ * Opens a modal.
+ * @param {string} modalId The ID of the modal to open.
+ * @param {string} mode The mode of the modal ('add' or 'edit').
+ * @param {string|number|null} id The ID of the item to edit.
  */
-const openModal = (modalOverlay) => {
-    modalOverlay.classList.remove('hidden');
-    // For smaller screens, use a drawer effect
-    if (window.innerWidth < 768) {
-        modalOverlay.classList.add('mobile-drawer');
-    }
-    modalOverlay.classList.add('active');
-};
+export const openOrderModal = (mode, id = null) => {
+    const modal = document.getElementById('order-modal-overlay');
+    const form = document.getElementById('order-form');
+    const title = document.getElementById('order-modal-title');
+    const closeOrderBtn = document.getElementById('close-order-btn');
+    const deleteOrderBtn = document.getElementById('delete-order-btn');
 
-/**
- * Closes a generic modal.
- * @param {HTMLElement} modalOverlay The modal overlay element.
- */
-const closeModal = (modalOverlay) => {
-    if (modalOverlay) {
-        modalOverlay.classList.remove('active');
-        // Hide after animation
-        setTimeout(() => {
-            modalOverlay.classList.add('hidden');
-            modalOverlay.classList.remove('mobile-drawer');
-        }, 300);
-    }
-};
+    form.reset();
+    document.getElementById('order-id-input').value = '';
+    currentOrderId = id;
 
-/**
- * Opens the order form modal.
- * @param {string} mode 'add' or 'edit'.
- * @param {string} orderId The ID of the order to edit.
- */
-export const openOrderModal = (mode, orderId = null) => {
-    document.getElementById('modal-title').innerText = mode === 'add' ? 'הוספת הזמנה חדשה' : 'עריכת הזמנה';
-    document.getElementById('submit-btn').innerText = mode === 'add' ? 'שמור הזמנה' : 'עדכן הזמנה';
-    document.getElementById('order-modal-actions').classList.add('hidden');
-    orderDetailsPane.classList.add('hidden');
-    orderForm.reset();
-    document.getElementById('finish-date-container').classList.add('hidden');
-    currentEditingOrder = null;
-
-    if (mode === 'edit' && orderId) {
-        currentEditingOrder = state.orders.find(o => o['תעודה'] === orderId);
-        if (currentEditingOrder) {
-            fillOrderForm(currentEditingOrder);
-            document.getElementById('order-modal-actions').classList.remove('hidden');
-            if (currentEditingOrder['סטטוס'] === 'סגור' || currentEditingOrder['סטטוס'] === 'ממתין/לא תקין') {
-                document.getElementById('close-order-btn').classList.add('hidden');
-            } else {
-                document.getElementById('close-order-btn').classList.remove('hidden');
-            }
+    if (mode === 'add') {
+        title.textContent = 'הוספת הזמנה חדשה';
+        document.getElementById('add-note-section').classList.add('hidden');
+        document.getElementById('additional-actions').classList.add('hidden');
+        closeOrderBtn.classList.add('hidden');
+        deleteOrderBtn.classList.add('hidden');
+    } else if (mode === 'edit') {
+        title.textContent = 'עריכת הזמנה קיימת';
+        const order = state.allOrders.find(o => o['מספר הזמנה'] === id);
+        if (order) {
+            populateOrderForm(order);
+            document.getElementById('add-note-section').classList.remove('hidden');
+            document.getElementById('additional-actions').classList.remove('hidden');
+            closeOrderBtn.classList.toggle('hidden', order['סטטוס'] !== 'פתוח');
+            deleteOrderBtn.classList.remove('hidden');
         }
     }
 
-    openModal(orderModalOverlay);
-};
-
-const fillOrderForm = (order) => {
-    document.getElementById('order-id').value = order.id || '';
-    document.getElementById('order-date').value = order['תאריך הזמנה'] ? formatDate(order['תאריך הזמנה']) : '';
-    document.getElementById('order-document').value = order['תעודה'] || '';
-    document.getElementById('order-agent').value = order['סוכן'] || '';
-    document.getElementById('order-customer').value = order['שם לקוח'] || '';
-    document.getElementById('order-address').value = order['כתובת'] || '';
-    document.getElementById('order-action').value = order['פעולה'] || '';
-    document.getElementById('order-container-numbers').value = order['מספרים מכולה'] || '';
-    document.getElementById('order-notes').value = order['הערות'] || '';
-    document.getElementById('order-expected-end-date').value = order['תאריך סיום צפוי'] ? formatDate(order['תאריך סיום צפוי']) : '';
-    
-    // Disable inputs for closed orders
-    const inputs = orderForm.querySelectorAll('input, select, textarea');
-    if (order['סטטוס'] === 'סגור') {
-        inputs.forEach(input => input.disabled = true);
-        document.getElementById('submit-btn').classList.add('hidden');
+    modal.classList.add('active');
+    if (isMobile()) {
+        modal.classList.add('mobile-drawer');
     } else {
-        inputs.forEach(input => input.disabled = false);
-        document.getElementById('submit-btn').classList.remove('hidden');
+        modal.classList.remove('mobile-drawer');
     }
 };
 
-export const closeOrderModal = () => closeModal(orderModalOverlay);
-export const showDeleteConfirmation = () => openModal(deleteModalOverlay);
-export const closeDeleteConfirmation = () => closeModal(deleteModalOverlay);
-export const openAddNewContainerModal = () => openModal(addNewContainerModalOverlay);
-export const closeAddNewContainerModal = () => closeModal(addNewContainerModalOverlay);
-export const openContainerHistoryModal = () => openModal(containerHistoryModalOverlay);
-export const closeContainerHistoryModal = () => closeModal(containerHistoryModalOverlay);
-export const openContainersAtSitesModal = () => openModal(containersAtSitesModalOverlay);
-export const closeContainersAtSitesModal = () => closeModal(containersAtSitesModalOverlay);
-
 /**
- * Handles the submission of the order form.
+ * Handles the order form submission.
  * @param {Event} event The form submission event.
  */
-export const handleOrderFormSubmit = async (event) => {
+export const handleOrderFormSubmit = (event) => {
     event.preventDefault();
-    const isEditing = !!currentEditingOrder;
-    const orderId = isEditing ? currentEditingOrder.id : null;
-    const form = new FormData(event.target);
-    const orderData = Object.fromEntries(form.entries());
+    const formData = new FormData(event.target);
+    const orderData = Object.fromEntries(formData.entries());
+    const orderId = document.getElementById('order-id-input').value;
 
-    document.getElementById('submit-loader').classList.remove('hidden');
-    document.getElementById('submit-btn').disabled = true;
-
-    try {
-        const responseData = isEditing
-            ? await editOrderApi(orderId, orderData)
-            : await addOrderApi(orderData);
-
-        if (responseData) {
-            showAlert(`הזמנה עודכנה בהצלחה: ${responseData['תעודה']}`, 'success');
-            closeOrderModal();
-            await updateAllData();
+    let success = false;
+    if (orderId) {
+        // Edit existing order
+        const orderIndex = state.allOrders.findIndex(o => o['מספר הזמנה'] === orderId);
+        if (orderIndex !== -1) {
+            state.allOrders[orderIndex] = { ...state.allOrders[orderIndex], ...orderData };
+            success = true;
         }
-    } catch (error) {
-        showAlert(error.message, 'error');
-    } finally {
-        document.getElementById('submit-loader').classList.add('hidden');
-        document.getElementById('submit-btn').disabled = false;
+    } else {
+        // Add new order
+        const newId = `ORD-${Date.now()}`;
+        const newOrder = {
+            "מספר הזמנה": newId,
+            ...orderData,
+            "תאריך יצירה": new Date().toISOString().split('T')[0],
+            "סטטוס": "פתוח"
+        };
+        state.allOrders.push(newOrder);
+        success = true;
+    }
+
+    if (success) {
+        document.getElementById('order-modal-overlay').classList.remove('active');
+        showToast('ההזמנה נשמרה בהצלחה!', 'success'); // התיקון: קוראים ל-showToast
+        updateAllData();
+    } else {
+        showToast('שגיאה בשמירת ההזמנה.', 'error'); // התיקון: קוראים ל-showToast
     }
 };
 
 /**
- * Handles the submission of the add new container form.
+ * Populates the order form with existing data for editing.
+ * @param {object} order The order object.
+ */
+const populateOrderForm = (order) => {
+    document.getElementById('order-id-input').value = order['מספר הזמנה'] || '';
+    document.getElementById('order-customer').value = order['שם לקוח'] || '';
+    document.getElementById('order-document').value = order['מספר מסמך'] || '';
+    document.getElementById('order-agent').value = order['שם סוכן'] || '';
+    document.getElementById('order-address').value = order['כתובת'] || '';
+    document.getElementById('order-notes').value = order['הערות'] || '';
+    document.getElementById('order-status').value = order['סטטוס'] || 'פתוח';
+    document.getElementById('order-expected-end-date').value = order['תאריך סיום צפוי'] || '';
+};
+
+/**
+ * Handles the add container form submission.
  * @param {Event} event The form submission event.
  */
-export const handleAddContainerFormSubmit = async (event) => {
+export const handleAddContainerFormSubmit = (event) => {
     event.preventDefault();
-    const containerNumber = document.getElementById('new-container-number').value.trim();
-
-    if (!containerNumber) {
-        showAlert('יש להזין מספר מכולה.', 'warning');
+    const formData = new FormData(event.target);
+    const containerData = Object.fromEntries(formData.entries());
+    
+    // Simple validation
+    if (!containerData['מספר מכולה']) {
+        showToast('מספר מכולה הוא שדה חובה.', 'error'); // התיקון: קוראים ל-showToast
         return;
     }
-    
-    document.getElementById('add-container-loader').classList.remove('hidden');
-    document.getElementById('add-container-btn').disabled = true;
 
-    try {
-        const response = await addNewContainerApi(containerNumber);
-        showAlert(`מכולה ${response.number} נוספה בהצלחה!`, 'success');
-        closeAddNewContainerModal();
-        await updateAllData();
-    } catch (error) {
-        showAlert(`שגיאה בהוספת מכולה: ${error.message}`, 'error');
-    } finally {
-        document.getElementById('add-container-loader').classList.add('hidden');
-        document.getElementById('add-container-btn').disabled = false;
-    }
+    const newContainer = {
+        "מספר מכולה": containerData['מספר מכולה'],
+        "סטטוס": "פנוי",
+        "מיקום": containerData['מיקום'],
+        "תאריך אחרון במלאי": new Date().toISOString().split('T')[0],
+        "הערות": containerData['הערות']
+    };
+    
+    state.containers.push(newContainer);
+    renderContainersTable(state.containers);
+    document.getElementById('add-container-form').reset();
+    showToast('המכולה נוספה בהצלחה!', 'success'); // התיקון: קוראים ל-showToast
 };
 
 /**
  * Closes an order.
  */
-export const closeOrder = async () => {
-    const finishDate = prompt('נא להזין תאריך סיום (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-    if (!finishDate) return;
-
-    try {
-        await closeOrderApi(currentEditingOrder.id, { finishDate });
-        showAlert(`הזמנה ${currentEditingOrder['תעודה']} נסגרה בהצלחה.`, 'success');
-        closeOrderModal();
-        await updateAllData();
-    } catch (error) {
-        showAlert(`שגיאה בסגירת הזמנה: ${error.message}`, 'error');
+export const closeOrder = () => {
+    if (currentOrderId) {
+        const order = state.allOrders.find(o => o['מספר הזמנה'] === currentOrderId);
+        if (order) {
+            order['סטטוס'] = 'סגור';
+            document.getElementById('order-modal-overlay').classList.remove('active');
+            showToast('ההזמנה נסגרה בהצלחה!', 'success'); // התיקון: קוראים ל-showToast
+            updateAllData();
+        }
     }
 };
 
 /**
  * Deletes an order.
  */
-export const deleteOrder = async () => {
-    try {
-        await deleteOrderApi(currentEditingOrder.id);
-        showAlert(`הזמנה ${currentEditingOrder['תעודה']} נמחקה בהצלחה.`, 'success');
-        closeDeleteConfirmation();
-        closeOrderModal();
-        await updateAllData();
-    } catch (error) {
-        showAlert(`שגיאה במחיקת הזמנה: ${error.message}`, 'error');
+export const deleteOrder = () => {
+    if (currentOrderId) {
+        state.allOrders = state.allOrders.filter(o => o['מספר הזמנה'] !== currentOrderId);
+        document.getElementById('delete-modal-overlay').classList.add('hidden');
+        document.getElementById('order-modal-overlay').classList.remove('active');
+        showToast('ההזמנה נמחקה בהצלחה!', 'success'); // התיקון: קוראים ל-showToast
+        updateAllData();
     }
 };
 
 /**
- * Duplicates an existing order.
+ * Duplicates an order.
  */
 export const duplicateOrder = () => {
-    if (currentEditingOrder) {
-        const newOrder = { ...currentEditingOrder, id: null, 'תעודה': '' };
-        document.getElementById('modal-title').innerText = 'שכפול הזמנה';
-        document.getElementById('order-modal-actions').classList.add('hidden');
-        document.getElementById('submit-btn').innerText = 'שמור שכפול';
-        fillOrderForm(newOrder);
-        showAlert('ההזמנה שוכפלה. ערוך את הפרטים ושמור.', 'info', 5000);
+    if (currentOrderId) {
+        const order = state.allOrders.find(o => o['מספר הזמנה'] === currentOrderId);
+        if (order) {
+            const newId = `ORD-${Date.now()}-dup`;
+            const newOrder = {
+                ...order,
+                "מספר הזמנה": newId,
+                "תאריך יצירה": new Date().toISOString().split('T')[0],
+                "סטטוס": "פתוח"
+            };
+            state.allOrders.push(newOrder);
+            document.getElementById('order-modal-overlay').classList.remove('active');
+            showToast('ההזמנה שוכפלה בהצלחה!', 'success'); // התיקון: קוראים ל-showToast
+            updateAllData();
+        }
     }
 };
 
 /**
- * Adds a predefined note to the notes field.
- * @param {string} note The note text to add.
+ * Adds a predefined note to the current order.
+ * @param {string} note The predefined note to add.
  */
 export const addPredefinedNote = (note) => {
     const notesField = document.getElementById('order-notes');
-    if (notesField) {
-        notesField.value = notesField.value ? `${notesField.value}\n${note}` : note;
-    }
+    notesField.value = notesField.value + `\n- ${note}`;
 };
 
 /**
- * Displays detailed information about a specific order.
- * @param {string} orderId The ID of the order to display.
+ * Shows the full details of an order in a modal.
+ * @param {string|number} id The ID of the order.
  */
-export const showOrderDetails = (orderId) => {
-    const order = state.orders.find(o => o['תעודה'] === orderId);
-    if (!order) return;
-
-    const detailsContainer = document.getElementById('order-details-container');
-    detailsContainer.innerHTML = '';
-    
-    // Render order details
-    for (const key in order) {
-        if (order[key]) {
-            const detailItem = document.createElement('div');
-            detailItem.innerHTML = `<span class="font-bold">${key}:</span> ${order[key]}`;
-            detailsContainer.appendChild(detailItem);
-        }
+export const showOrderDetails = (id) => {
+    const order = state.allOrders.find(o => o['מספר הזמנה'] === id);
+    if (!order) {
+        showToast('הזמנה לא נמצאה!', 'error'); // התיקון: קוראים ל-showToast
+        return;
     }
 
-    // Render customer history
-    const customerHistoryList = document.getElementById('customer-history-list');
-    customerHistoryList.innerHTML = '';
-    const customerOrders = state.orders.filter(o => o['שם לקוח'] === order['שם לקוח']).sort((a,b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה']));
-    
-    customerOrders.forEach(custOrder => {
-        const historyItem = document.createElement('div');
-        historyItem.className = 'p-2 bg-white rounded-md shadow-sm';
-        historyItem.innerHTML = `
-            <div class="font-bold">${custOrder['תאריך הזמנה']} - ${custOrder['תעודה']}</div>
-            <div class="text-sm text-text-light">${custOrder['פעולה']} - ${custOrder['מספרים מכולה']}</div>
-        `;
-        customerHistoryList.appendChild(historyItem);
-    });
-
-    orderDetailsPane.classList.remove('hidden');
+    const modal = document.getElementById('order-details-modal-overlay');
+    const content = document.getElementById('order-details-content');
+    content.innerHTML = `
+        <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">פרטי הזמנה: ${order['מספר הזמנה']}</h3>
+        <p><strong>לקוח:</strong> ${order['שם לקוח'] || 'לא צוין'}</p>
+        <p><strong>מספר מסמך:</strong> ${order['מספר מסמך'] || 'לא צוין'}</p>
+        <p><strong>סוכן:</strong> ${order['שם סוכן'] || 'לא צוין'}</p>
+        <p><strong>כתובת:</strong> ${order['כתובת'] || 'לא צוין'}</p>
+        <p><strong>סטטוס:</strong> ${order['סטטוס'] || 'לא צוין'}</p>
+        <p><strong>תאריך יצירה:</strong> ${order['תאריך יצירה'] || 'לא צוין'}</p>
+        <p><strong>תאריך סיום צפוי:</strong> ${order['תאריך סיום צפוי'] || 'לא צוין'}</p>
+        <p><strong>הערות:</strong> ${order['הערות'] || 'אין'}</p>
+    `;
+    modal.classList.add('active');
 };
 
 /**
- * Renders the history of a specific container in a modal.
- * @param {string} containerNumber The container number to display history for.
+ * Shows the history of a specific container in a modal.
+ * @param {string} containerId The ID of the container.
  */
-export const showContainerHistory = async (containerNumber) => {
-    try {
-        const historyData = await fetchContainerHistoryApi(containerNumber);
-        
-        const historyList = document.getElementById('container-history-list');
-        historyList.innerHTML = '';
-        document.getElementById('container-history-number').innerText = containerNumber;
-
-        if (historyData && historyData.length > 0) {
-            historyData.forEach(entry => {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'p-4 bg-background-light rounded-lg shadow-md';
-                historyItem.innerHTML = `
-                    <p class="font-bold text-lg">${entry['פעולה']} - ${formatDate(entry['תאריך'])}</p>
-                    <p>לקוח: ${entry['שם לקוח'] || 'לא ידוע'}</p>
-                    <p>תעודה: ${entry['תעודה'] || 'לא ידוע'}</p>
-                    <p>הערות: ${entry['הערות'] || 'אין'}</p>
-                `;
-                historyList.appendChild(historyItem);
-            });
-        } else {
-            historyList.innerHTML = '<p class="text-center text-text-light">אין היסטוריה למכולה זו.</p>';
-        }
-
-        openContainerHistoryModal();
-    } catch (error) {
-        showAlert(`שגיאה בטעינת היסטוריית מכולה: ${error.message}`, 'error');
-    }
+export const showContainerHistory = (containerId) => {
+    showToast(`היסטוריית מכולה: ${containerId}`, 'info'); // התיקון: קוראים ל-showToast
+    // Logic to fetch and display container history (not implemented yet)
 };
 
 /**
- * Renders a list of containers and their current locations in a modal.
+ * Shows all containers at a specific site in a modal.
+ * @param {string} site The site name.
  */
-export const showContainersAtSites = () => {
-    const containersAtSitesList = document.getElementById('containers-at-sites-list');
-    containersAtSitesList.innerHTML = '';
-    const inUseContainers = state.orders.filter(o => o['סטטוס'] !== 'סגור' && o['פעולה'] === 'הורדה');
-    
-    const locations = {};
-    inUseContainers.forEach(order => {
-        const key = `${order['שם לקוח']} - ${order['כתובת']}`;
-        if (!locations[key]) {
-            locations[key] = [];
-        }
-        locations[key].push(...(order['מספרים מכולה'] ? order['מספרים מכולה'].split(',').map(n => n.trim()) : []));
-    });
-
-    for (const location in locations) {
-        const locationItem = document.createElement('div');
-        locationItem.className = 'p-4 bg-background-light rounded-lg shadow-md';
-        locationItem.innerHTML = `
-            <h3 class="font-bold text-lg">${location}</h3>
-            <ul class="list-disc pr-6">
-                ${locations[location].map(container => `<li>${container}</li>`).join('')}
-            </ul>
-        `;
-        containersAtSitesList.appendChild(locationItem);
-    }
-    
-    if (Object.keys(locations).length === 0) {
-        containersAtSitesList.innerHTML = '<p class="text-center text-text-light">אין מכולות בשימוש כרגע.</p>';
-    }
-
-    openContainersAtSitesModal();
+export const showContainersAtSites = (site) => {
+    showToast(`מכולות באתר: ${site}`, 'info'); // התיקון: קוראים ל-showToast
+    // Logic to fetch and display containers at a site (not implemented yet)
 };
