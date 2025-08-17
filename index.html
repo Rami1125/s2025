@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת CRM לניהול שכירות מכולות</title>
+      <script>
+    // Redirect to mobile version if on a small screen
+    if (window.innerWidth <= 768) { // Adjust this breakpoint as needed (Tailwind's 'md' is 768px)
+        window.location.href = "index2.html"; // Replace with the actual path to your mobile page
+    }
+    </script>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- D3.js CDN for charts -->
@@ -14,13 +20,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
-    <script>
-    // Redirect to mobile version if on a small screen
-    if (window.innerWidth <= 768) { // Adjust this breakpoint as needed (Tailwind's 'md' is 768px)
-        window.location.href = "index2.html"; // Replace with the actual path to your mobile page
-    }
-</script>
-<body class="bg-gray-50 text-gray-800">
+  <body class="bg-gray-50 text-gray-800">
 
     <!-- Loader Spinner -->
     <div id="loader-overlay" class="loader-overlay hidden active">
