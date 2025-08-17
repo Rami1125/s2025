@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת CRM - לוח בקרה למנהל</title>
+    <title>מערכת CRM - לוח בקרה משודרג</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- D3.js CDN for charts -->
@@ -13,8 +13,7 @@
     <!-- Google Fonts for Inter and Heebo -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- Custom Styles - for general app theme and overrides -->
-    <link rel="stylesheet" href="style.css"> 
+    <!-- Custom Styles -->
     <style>
         /* Define color palette as CSS variables for easy theming */
         :root {
@@ -27,6 +26,9 @@
             --text-dark: #1F2937; /* Dark text */
             --text-medium: #4B5563; /* Medium text */
             --border-light: #E5E7EB; /* Light border */
+            --notification-error: #EF4444; /* Red for errors */
+            --notification-warning: #F59E0B; /* Orange for warnings */
+            --notification-info: #3B82F6; /* Blue for info */
 
             /* Dark Theme Palette */
             --dark-primary-brand: #A78BFA;
@@ -37,51 +39,73 @@
             --dark-text-light: #F8FAFC;
             --dark-text-medium: #D1D5DB;
             --dark-border-dark: #4B5563;
+            --dark-notification-error: #DC2626;
+            --dark-notification-warning: #D97706;
+            --dark-notification-info: #2563EB;
+
+            /* New Floating/Subtle Colors */
+            --floating-bg-start: #E0F2F7;   /* Very Light Blue */
+            --floating-bg-end: #FFFBEB;     /* Very Light Gold */
+            --floating-surface-opacity: 0.9; /* Slightly more opaque cards */
+            --floating-shadow-color: rgba(0, 0, 0, 0.15); /* Stronger, diffused shadow */
+            --floating-shadow-color-dark: rgba(0, 0, 0, 0.4);
+
+            /* New Notification Specific Colors */
+            --note-bg-light: #F0F9FF; /* Light blue for notes in light mode */
+            --note-text-light: #1F2937; /* Dark text for notes in light mode */
+            --note-border-light: #BFDBFE; /* Light border for notes in light mode */
+
+            --note-bg-dark: #2F3C4C; /* Darker blue for notes in dark mode */
+            --note-text-dark: #E0F2F7; /* Lighter text for notes in dark mode */
+            --note-border-dark: #4A5B6D; /* Darker border for notes in dark mode */
         }
 
         body {
-            font-family: 'Heebo', 'Inter', sans-serif; /* Prioritize Heebo for Hebrew, Inter as fallback */
-            background-color: var(--background-light);
+            font-family: 'Heebo', 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--floating-bg-start) 0%, var(--floating-bg-end) 100%);
             color: var(--text-dark);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, background 0.5s ease;
+            min-height: 100vh;
         }
         body.dark {
-            background-color: var(--dark-background-dark);
+            background: linear-gradient(135deg, var(--dark-background-dark) 0%, #303F50 100%);
             color: var(--dark-text-light);
         }
         .container-wrapper {
-            max-width: 1400px; /* Wider container for dashboard */
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
         .card {
-            background-color: var(--surface-light);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            background-color: rgba(255, 255, 255, var(--floating-surface-opacity));
+            border-radius: 16px;
+            box-shadow: 0 8px 25px var(--floating-shadow-color);
             padding: 1.5rem;
             transition: all 0.3s ease-in-out;
-            border: 1px solid var(--border-light);
+            border: 1px solid rgba(229, 231, 235, 0.6);
+            transform: translateZ(0);
+            perspective: 1000px;
         }
         body.dark .card {
-            background-color: var(--dark-surface-dark);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            border-color: var(--dark-border-dark);
+            background-color: rgba(55, 65, 81, var(--floating-surface-opacity));
+            box-shadow: 0 8px 25px var(--floating-shadow-color-dark);
+            border-color: rgba(75, 85, 99, 0.6);
         }
         .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            transform: translateY(-5px) translateZ(10px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
         }
         .btn-metric {
-            @apply flex flex-col items-center justify-center p-6 rounded-xl shadow-lg transition-transform transform hover:scale-105 active:scale-95 text-white font-bold text-center cursor-pointer;
-            background: linear-gradient(135deg, var(--primary-brand), var(--secondary-brand));
-            min-height: 120px;
+            @apply flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl transition-transform transform hover:scale-105 active:scale-95 text-white font-bold text-center cursor-pointer;
+            min-height: 130px;
             border: none;
             outline: none;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), /* Deeper shadow */
-                        inset 0 0 15px rgba(255, 255, 255, 0.2); /* Inner highlight */
             position: relative;
             overflow: hidden;
             z-index: 1;
+            background: linear-gradient(135deg, var(--primary-brand), var(--secondary-brand));
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+                        inset 0 0 20px rgba(255, 255, 255, 0.2);
         }
         .btn-metric::before {
             content: '';
@@ -90,8 +114,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.1);
-            filter: blur(10px);
+            background: rgba(255, 255, 255, 0.15);
+            filter: blur(15px);
             z-index: -1;
             transition: opacity 0.3s ease;
             opacity: 0;
@@ -102,159 +126,299 @@
         
         /* LED Effect for text */
         .btn-metric .metric-value, .btn-metric .metric-label {
-            color: #fff; /* Base white color */
+            color: #fff;
             text-shadow: 
-                0 0 5px #fff,  /* subtle glow */
-                0 0 10px #fff, /* stronger glow */
-                0 0 15px #fff, /* even stronger */
-                0 0 20px #fff; /* largest spread */
-            animation: glow 1.5s ease-in-out infinite alternate;
+                0 0 8px #fff,
+                0 0 16px #fff,
+                0 0 24px #fff,
+                0 0 32px #fff;
+            animation: glow 1.8s ease-in-out infinite alternate;
         }
         @keyframes glow {
             from {
                 text-shadow: 
-                    0 0 5px #fff,
-                    0 0 10px #fff,
-                    0 0 15px #fff;
+                    0 0 6px #fff,
+                    0 0 12px #fff,
+                    0 0 18px #fff;
             }
             to {
                 text-shadow: 
-                    0 0 10px #fff,
-                    0 0 20px #fff,
-                    0 0 30px #fff,
-                    0 0 40px #fff;
+                    0 0 12px #fff,
+                    0 0 24px #fff,
+                    0 0 36px #fff,
+                    0 0 48px #fff;
             }
         }
 
-        .btn-metric.bg-blue { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
-        .btn-metric.bg-green { background: linear-gradient(135deg, #10B981, #34D399); }
-        .btn-metric.bg-purple { background: linear-gradient(135deg, #8B5CF6, #A78BFA); }
-        .btn-metric.bg-red { background: linear-gradient(135deg, #EF4444, #F87171); }
-
         .btn-metric .metric-value {
-            font-size: 2.5rem; /* Large number */
+            font-size: 2.8rem;
             line-height: 1;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
         .btn-metric .metric-label {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             line-height: 1.3;
         }
 
-        /* Notification Board Styling - Updated */
+        /* Notification Board Styling - ENHANCED */
         #notification-board {
-            background: linear-gradient(145deg, #FEF2F2, #FEE2E2); /* Light red gradient background */
-            border-radius: 16px;
-            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border: 1px solid #FCA5A5; /* Lighter red border */
+            background: linear-gradient(145deg, rgba(254, 242, 242, 0.9), rgba(254, 226, 226, 0.9));
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.25);
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            border: 1px solid rgba(252, 165, 165, 0.7);
             position: relative;
         }
         body.dark #notification-board {
-            background: linear-gradient(145deg, #374151, #4B5563);
-            border-color: var(--dark-border-dark);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(145deg, rgba(55, 65, 81, 0.9), rgba(75, 85, 99, 0.9));
+            border-color: rgba(75, 85, 99, 0.7);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
         #notification-board h2 {
-            color: #B91C1C; /* Dark red for title */
+            color: #B91C1C;
         }
         body.dark #notification-board h2 {
-            color: #EF4444; /* Brighter red for title in dark mode */
+            color: #EF4444;
         }
 
         #notifications-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid for "cube" layout */
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted min-width for smaller cubes */
+            gap: 1.5rem;
         }
         .notification-item {
-            background-color: #FFFFFF; /* White background for each cube */
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            padding: 1rem 1.25rem;
+            /* Removed direct background-color for dynamic gradients */
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
             display: flex;
-            align-items: center;
-            border: 1px solid #E5E7EB;
+            flex-direction: column;
+            align-items: flex-start;
+            border: 1px solid transparent; /* Set a default transparent border */
             transition: all 0.3s ease;
-            cursor: pointer; /* Indicate it's clickable */
-            position: relative; /* For pin icon positioning */
-            color: var(--text-dark);
+            cursor: pointer;
+            position: relative;
+            color: var(--text-dark); /* Default text color, overridden by specific types */
+            transform: translateZ(0);
+            perspective: 1000px;
+            overflow: hidden; /* Ensure content stays within rounded corners */
+            text-align: right; /* Ensure text aligns to right in RTL */
         }
         body.dark .notification-item {
-            background-color: var(--dark-surface-dark);
-            border-color: var(--dark-border-dark);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             color: var(--dark-text-light);
         }
+        
+        /* Specific color gradients and borders for notification types */
+        .notification-item.error { 
+            background: linear-gradient(135deg, #EF4444, #FCA5A5); 
+            color: white; 
+            border-color: #DC2626; 
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+        .notification-item.warning { 
+            background: linear-gradient(135deg, #F59E0B, #FCD34D); 
+            color: white; 
+            border-color: #D97706; 
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+        }
+        .notification-item.info { 
+            background: linear-gradient(135deg, #3B82F6, #93C5FD); 
+            color: white; 
+            border-color: #2563EB; 
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        body.dark .notification-item.error { background: linear-gradient(135deg, #DC2626, #EF4444); border-color: #B91C1C; }
+        body.dark .notification-item.warning { background: linear-gradient(135deg, #D97706, #F59E0B); border-color: #B45309; }
+        body.dark .notification-item.info { background: linear-gradient(135deg, #2563EB, #3B82F6); border-color: #1D4ED8; }
+
 
         .notification-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transform: translateY(-5px) translateZ(10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
         .notification-item.handled {
-            opacity: 0.7; /* Make lighter */
+            opacity: 0.6;
             text-decoration: line-through;
-            background-color: #F3F4F6; /* Lighter background for handled */
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.7), rgba(229, 231, 235, 0.7)); /* Faint light gradient for handled */
             color: var(--text-medium);
+            border-color: rgba(209, 213, 219, 0.7);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         body.dark .notification-item.handled {
-            background-color: #4B5563; /* Darker, less prominent for handled in dark mode */
+            background: linear-gradient(135deg, rgba(31, 41, 55, 0.7), rgba(55, 65, 81, 0.7)); /* Faint dark gradient for handled */
             color: var(--dark-text-medium);
+            border-color: rgba(75, 85, 99, 0.7);
         }
-        .notification-item.handled .notification-icon {
-            color: var(--text-medium); /* Desaturate icon color */
+        .notification-item.handled .notification-icon,
+        .notification-item.handled .notification-header,
+        .notification-item.handled .notification-details,
+        .notification-item.handled .notification-last-note,
+        .notification-item.handled .dvid-blinking-text {
+            color: var(--text-medium); /* Desaturate all text when handled */
         }
-        body.dark .notification-item.handled .notification-icon {
+        body.dark .notification-item.handled .notification-icon,
+        body.dark .notification-item.handled .notification-header,
+        body.dark .notification-item.handled .notification-details,
+        body.dark .notification-item.handled .notification-last-note,
+        body.dark .notification-item.handled .dvid-blinking-text {
             color: var(--dark-text-medium);
         }
 
         .notification-item .pin-icon {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            font-size: 1rem;
-            color: #9CA3AF;
-            cursor: pointer;
-            transition: color 0.2s ease;
-        }
-        body.dark .notification-item .pin-icon {
-            color: #6B7280;
+            top: 0.75rem;
+            right: 0.75rem;
+            font-size: 1.1rem;
+            color: inherit;
+            text-shadow: 0 0 5px rgba(0,0,0,0.2);
+            z-index: 1; /* Ensure pin icon is above content */
         }
         .notification-item .pin-icon:hover {
-            color: #EF4444;
+            color: rgba(255, 255, 255, 0.9); /* White on hover for contrast */
+            transform: scale(1.1);
         }
         .notification-item.handled .pin-icon {
-            color: #10B981; /* Green when handled */
+            color: #10B981;
+            text-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
         }
+        
         .notification-icon {
-            font-size: 1.5rem; /* Larger icons */
-            margin-right: 0.75rem;
-            min-width: 1.5rem; /* Prevent text from pushing icon */
-            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            align-self: center;
+            color: white; /* Icons should be white against the colored background */
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
         }
-        .notification-message {
-            flex-grow: 1;
-            font-size: 0.95rem;
+        .notification-header {
+            font-size: 1.3rem; /* Larger title */
+            font-weight: 800; /* Extra bold */
+            color: white; /* Header text white on colored background */
+            margin-bottom: 0.5rem;
+            text-align: center;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.1); /* Subtle dark background for title */
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+            word-break: break-word; /* Prevent long words from overflowing */
+        }
+        .notification-details {
+            font-size: 1rem;
+            color: white; /* Details text white on colored background */
+            margin-bottom: 0.75rem;
             line-height: 1.4;
+            width: 100%;
+            text-align: right;
+            padding-right: 0.5rem; /* Padding for RTL */
+        }
+        .notification-details .days-overdue-value {
+            font-weight: 700; /* Bold the days value */
+            text-shadow: 0 0 3px rgba(255,255,255,0.5);
         }
 
-        /* Chart Styling */
+        .notification-last-note {
+            background-color: var(--note-bg-light); /* Different color for note */
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--note-text-light); /* Dark text on light background */
+            width: 100%;
+            border: 1px solid var(--note-border-light);
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05); /* Inner shadow for depth */
+        }
+        body.dark .notification-last-note {
+            background-color: var(--note-bg-dark);
+            color: var(--note-text-dark);
+            border-color: var(--note-border-dark);
+            box-shadow: inset 0 0 5px rgba(255,255,255,0.05);
+        }
+
+        /* Blinking Text for DVID */
+        @keyframes blink-black {
+            0%, 100% { color: black; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
+            50% { color: rgba(0, 0, 0, 0.4); text-shadow: none; }
+        }
+        .notification-item.error .dvid-blinking-text,
+        .notification-item.warning .dvid-blinking-text,
+        .notification-item.info .dvid-blinking-text {
+            color: black; /* Force black for these types */
+            animation: blink-black 1.5s step-end infinite;
+            font-weight: 900; /* Extra bold */
+            font-size: 1.1em; /* Slightly larger than surrounding text */
+            text-shadow: 0 0 5px rgba(0,0,0,0.3); /* Stronger shadow */
+        }
+        /* Ensure blinking text is visible on dark mode backgrounds too */
+        body.dark .notification-item.error .dvid-blinking-text,
+        body.dark .notification-item.warning .dvid-blinking-text,
+        body.dark .notification-item.info .dvid-blinking-text {
+            color: black; /* Still black in dark mode for contrast */
+            text-shadow: 0 0 5px rgba(255,255,255,0.5); /* White shadow on dark background */
+        }
+
+
+        /* WhatsApp button in notifications - Redesigned to match WhatsApp brand */
+        .whatsapp-icon-btn {
+            background-color: #25D366; /* WhatsApp green */
+            color: white;
+            border-radius: 50%;
+            width: 48px; /* Slightly larger button */
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem; /* Larger icon */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 3px solid rgba(255, 255, 255, 0.7); /* Thicker white border */
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            z-index: 10; /* Ensure it's on top */
+        }
+        .whatsapp-icon-btn:hover {
+            background-color: #1DA851;
+            transform: scale(1.08) rotate(5deg);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+        }
+        body.dark .whatsapp-icon-btn {
+             border: 3px solid rgba(0, 0, 0, 0.4);
+        }
+
+
+        /* Chart Styling - Subtly updated */
         .chart-container-crm {
-            background-color: var(--surface-light);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
+            background-color: rgba(255, 255, 255, var(--floating-surface-opacity));
+            border-radius: 16px;
+            box-shadow: 0 8px 25px var(--floating-shadow-color);
+            padding: 2rem;
             margin-bottom: 1.5rem;
-            border: 1px solid var(--border-light);
+            border: 1px solid rgba(229, 231, 235, 0.6);
             position: relative;
+            transform: translateZ(0);
+            perspective: 1000px;
         }
         body.dark .chart-container-crm {
-            background-color: var(--dark-surface-dark);
-            border-color: var(--dark-border-dark);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            background-color: rgba(55, 65, 81, var(--floating-surface-opacity));
+            border-color: rgba(75, 85, 99, 0.6);
+            box-shadow: 0 8px 25px var(--floating-shadow-color-dark);
+        }
+        .chart-container-crm:hover {
+            transform: translateY(-3px) translateZ(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
         }
         .chart-container-crm h3 {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             font-weight: 700;
             margin-bottom: 1rem;
             color: var(--text-dark);
@@ -264,7 +428,7 @@
         }
         .chart-svg-container {
             width: 100%;
-            height: 350px; /* Fixed height for charts */
+            height: 350px;
         }
         .chart-bar {
             fill: var(--primary-brand);
@@ -287,7 +451,7 @@
         }
         .chart-text, .axis-text, .legend-text {
             fill: var(--text-medium);
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
         body.dark .chart-text, body.dark .axis-text, body.dark .legend-text {
             fill: var(--dark-text-medium);
@@ -300,74 +464,53 @@
             stroke: var(--dark-border-dark);
         }
 
-        /* Table Styling (reused from style.css but with mobile adaptations) */
+        /* Table Styling */
         .table-container {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-            background-color: var(--surface-light);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
-            border: 1px solid var(--border-light);
+            background-color: rgba(255, 255, 255, var(--floating-surface-opacity));
+            border-radius: 16px;
+            box-shadow: 0 8px 25px var(--floating-shadow-color);
+            border: 1px solid rgba(229, 231, 235, 0.6);
+            transform: translateZ(0);
+            perspective: 1000px;
         }
         body.dark .table-container {
-            background-color: var(--dark-surface-dark);
-            border-color: var(--dark-border-dark);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            background-color: rgba(55, 65, 81, var(--floating-surface-opacity));
+            border-color: rgba(75, 85, 99, 0.6);
+            box-shadow: 0 8px 25px var(--floating-shadow-color-dark);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 600px; /* Ensure table is still readable horizontally on small screens */
+        .table-container:hover {
+            transform: translateY(-3px) translateZ(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
         }
         th, td {
-            padding: 0.8rem 1rem;
-            text-align: right;
-            border-bottom: 1px solid var(--border-light);
-            font-size: 1rem; /* Increased font size */
-            font-weight: 700; /* Bold text */
-            /* Subtle glow effect */
-            text-shadow: 0 0 1px rgba(0, 0, 0, 0.1); /* Subtle black shadow for light text/background */
-        }
-        body.dark th, body.dark td {
-            border-color: var(--dark-border-dark);
-            text-shadow: 0 0 1px rgba(255, 255, 255, 0.1); /* Subtle white shadow for dark text/background */
+            padding: 1rem 1.2rem;
+            font-size: 1.05rem;
         }
         th {
-            background-color: var(--background-light);
-            font-weight: 700; /* Ensure header is bold */
-            color: var(--text-dark);
-            cursor: pointer;
+            background-color: rgba(248, 250, 252, 0.7);
         }
         body.dark th {
-            background-color: var(--dark-background-dark);
-            color: var(--dark-text-light);
-        }
-        tr:last-child td {
-            border-bottom: none;
+            background-color: rgba(31, 41, 55, 0.7);
         }
         tr:hover {
-            background-color: var(--background-light);
+            background-color: rgba(248, 250, 252, 0.5);
         }
         body.dark tr:hover {
-            background-color: var(--dark-background-dark);
+            background-color: rgba(31, 41, 55, 0.5);
         }
-        .whatsapp-share-btn {
-            @apply inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md shadow hover:bg-green-600 transition-colors text-sm;
-        }
-
-        /* Modal specific styles */
+        
+        /* Modal specific styles - ENHANCED for full page on desktop */
         .modal-overlay {
-            position: fixed;
+            position: fixed; /* Ensure it stays fixed */
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.75); /* Darker overlay */
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 1000; /* High z-index */
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -378,17 +521,17 @@
         }
         .modal-content {
             background-color: var(--surface-light);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-            max-width: 600px;
-            width: 90%;
+            padding: 3rem;
+            border-radius: 20px;
+            max-width: 90vw;
+            width: 90%; /* Default width for content */
+            max-height: 90vh;
             position: relative;
             transform: translateY(-20px);
             opacity: 0;
             transition: transform 0.3s ease, opacity 0.3s ease;
-            max-height: 90vh; /* Limit modal height */
-            overflow-y: auto; /* Enable scrolling for modal content */
+            overflow-y: auto;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
         }
         .modal-overlay.active .modal-content {
             transform: translateY(0);
@@ -396,26 +539,12 @@
         }
         body.dark .modal-content {
             background-color: var(--dark-surface-dark);
-        }
-        .modal-close-btn {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--text-dark);
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        body.dark .modal-close-btn {
-            color: var(--dark-text-light);
-        }
-        .modal-close-btn:hover {
-            color: var(--primary-brand);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
         }
         .modal-full-width {
-            max-width: 90%; /* Wider for tables/charts */
+            max-width: 95vw;
+            width: 95%; /* Wider for tables/charts */
+            max-height: 95vh;
         }
         /* Mobile Drawer for modals */
         .modal-overlay.mobile-drawer .modal-content {
@@ -426,113 +555,120 @@
             height: 100%;
             max-width: 100%;
             border-radius: 0;
-            padding: 1.5rem;
+            padding: 2rem;
             transform: translateX(100%);
-            opacity: 1;
+            opacity: 1; /* Already visible if active */
             transition: transform 0.3s ease;
         }
         .modal-overlay.active.mobile-drawer .modal-content {
             transform: translateX(0);
         }
-        .container-pill {
-            @apply inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-200 cursor-pointer transition-colors hover:bg-blue-200 dark:hover:bg-blue-800;
-            margin-left: 0.25rem;
-            margin-bottom: 0.25rem;
-        }
 
-        /* WhatsApp Button Styling */
-        .whatsapp-btn-icon {
-            @apply text-green-500 hover:text-green-600 transition-colors cursor-pointer mr-2; /* Adjusted margin-right to mr-2 */
-            font-size: 1.5rem; /* Larger icon */
-        }
-
-        /* WhatsApp Modal specific styles */
+        /* WhatsApp Modal specific styles - ENHANCED */
         #whatsapp-modal .modal-content {
-            max-width: 500px;
+            background: linear-gradient(145deg, #E0F7FA, #E8F5E9);
+            border: 1px solid #B2EBF2;
+            box-shadow: 0 15px 40px rgba(0, 150, 136, 0.2);
+            color: #263238;
+            padding: 3rem;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 95%;
+        }
+        body.dark #whatsapp-modal .modal-content {
+            background: linear-gradient(145deg, #263238, #3E4A56);
+            border: 1px solid #4DB6AC;
+            color: #CFD8DC;
+            box-shadow: 0 15px 40px rgba(0, 150, 136, 0.3);
+        }
+        #whatsapp-modal .modal-close-btn {
+            color: #263238;
+        }
+        body.dark #whatsapp-modal .modal-close-btn {
+            color: #CFD8DC;
+        }
+        #whatsapp-modal .text-gray-700 {
+            color: #263238;
+        }
+        body.dark #whatsapp-modal .text-gray-700 {
+            color: #CFD8DC;
         }
         #whatsapp-message-textarea {
-            resize: vertical;
-            min-height: 120px;
-            @apply p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100;
+            min-height: 180px;
+            font-size: 1.05rem;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: inset 0 1px 5px rgba(0,0,0,0.1);
+            border-color: #B0BEC5;
         }
+        body.dark #whatsapp-message-textarea {
+            box-shadow: inset 0 1px 5px rgba(255,255,255,0.05);
+            border-color: #607D8B;
+        }
+
         #whatsapp-message-options {
-            @apply mb-4;
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            padding: 0.5rem;
-            background-color: var(--background-light);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(229, 231, 235, 0.7);
         }
         body.dark #whatsapp-message-options {
-            border-color: var(--dark-border-dark);
-            background-color: var(--dark-background-dark);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border-color: rgba(75, 85, 99, 0.7);
         }
+        .message-option-header {
+            padding: 1.25rem;
+            font-size: 1.2rem;
+            border-bottom-color: rgba(229, 231, 235, 0.7);
+        }
+        body.dark .message-option-header {
+            border-bottom-color: rgba(75, 85, 99, 0.7);
+        }
+        .message-option-list-container.expanded {
+            max-height: 400px;
+        }
+
         .message-option-item {
-            @apply cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm;
-            margin-bottom: 0.25rem;
+            padding: 0.9rem 1.2rem;
+            font-size: 0.95rem;
+            border-radius: 8px;
         }
         .message-option-item.selected {
-            @apply bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 font-semibold;
+            background-color: #BBDEFB;
+            color: #1976D2;
+            font-weight: 700;
         }
+        body.dark .message-option-item.selected {
+            background-color: #1565C0;
+            color: #BBDEFB;
+        }
+
         .typing-effect-container {
-            min-height: 100px; /* Ensure space for typing effect */
-            background-color: var(--background-light);
-            border: 1px dashed var(--border-light);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            color: var(--text-dark);
+            min-height: 150px;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px dashed rgba(156, 163, 175, 0.4);
+            background-color: rgba(248, 250, 252, 0.7);
+            box-shadow: inset 0 1px 5px rgba(0,0,0,0.05);
+            font-size: 1.05rem;
         }
         body.dark .typing-effect-container {
-            background-color: var(--dark-background-dark);
-            border-color: var(--dark-border-dark);
-            color: var(--dark-text-light);
+            background-color: rgba(31, 41, 55, 0.7);
+            border-color: rgba(107, 114, 128, 0.4);
+            box-shadow: inset 0 1px 5px rgba(255,255,255,0.02);
         }
         .typing-effect-cursor {
-            display: inline-block;
-            width: 8px;
-            height: 1.2em;
-            background-color: var(--primary-brand);
-            vertical-align: middle;
-            animation: blink 0.7s infinite;
-            margin-right: 2px;
-        }
-        @keyframes blink {
-            0% { opacity: 1; }
-            50% { opacity: 0; }
-            100% { opacity: 1; }
+            background-color: var(--accent-color);
         }
 
         /* Back to Top Button */
         #back-to-top-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
             background-color: var(--primary-brand);
-            color: white;
-            padding: 0.8rem 1.2rem;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            line-height: 1;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-            display: none; /* Hidden by default */
-            cursor: pointer;
-            transition: all 0.3s ease;
-            z-index: 999;
-            border: none;
-            outline: none;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
         }
         #back-to-top-btn:hover {
             background-color: var(--secondary-brand);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-        }
-        body.dark #back-to-top-btn {
-            background-color: var(--dark-primary-brand);
-        }
-        body.dark #back-to-top-btn:hover {
-            background-color: var(--dark-secondary-brand);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
 
     </style>
@@ -547,17 +683,14 @@
     <!-- Container for Alerts (Toasts) -->
     <div id="alert-container" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Modals (reused from index.html/index2.html for consistency, if needed for detailed views) -->
-    <!-- This CRM page primarily focuses on reports and dashboard, so most modals might be for details/history -->
-    <!-- The structure is assumed to follow the existing modal pattern for consistency -->
-    <!-- Order Details Modal -->
+    <!-- Modals -->
     <div id="order-details-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="details-modal-title">
         <div class="modal-content modal-full-width">
             <button class="modal-close-btn" onclick="closeOrderDetailsModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
             <h2 id="details-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">פרטי הזמנה</h2>
             <div class="modal-body">
                 <div id="current-order-card" class="order-card-detail">
-                    <!-- Current order details will be loaded here -->
+                    <!-- Current order details/customer history will be loaded here -->
                 </div>
             </div>
             <div class="flex justify-end mt-4">
@@ -566,7 +699,6 @@
         </div>
     </div>
 
-    <!-- Container History Modal (for container details from reports) -->
     <div id="container-history-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="container-history-modal-title">
         <div class="modal-content modal-full-width">
             <button class="modal-close-btn" onclick="closeContainerHistoryModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
@@ -583,7 +715,7 @@
                             <th>מספר מכולה עלתה</th>
                             <th>סטטוס הזמנה</th>
                             <th>תאריך סיום צפוי</th>
-                            <th>WhatsApp</th> <!-- New Column -->
+                            <th>WhatsApp</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -598,11 +730,15 @@
         </div>
     </div>
 
-    <!-- Top Moving Containers Modal -->
     <div id="top-moving-containers-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="top-moving-containers-title">
         <div class="modal-content modal-full-width">
             <button class="modal-close-btn" onclick="closeTopMovingContainersModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
             <h2 id="top-moving-containers-title" class="text-2xl font-bold mb-6 text-center text-gray-700">מכולות מובילות בתזוזה</h2>
+            <div class="flex justify-end gap-3 mb-4">
+                <button class="btn btn-secondary" onclick="printReport('top-moving-containers-table')">
+                    <i class="fas fa-print ml-2"></i> הדפס
+                </button>
+            </div>
             <div class="modal-body table-container">
                 <table id="top-moving-containers-table" class="min-w-full">
                     <thead>
@@ -624,11 +760,15 @@
         </div>
     </div>
 
-    <!-- Returning Customers Modal -->
     <div id="returning-customers-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="returning-customers-title">
         <div class="modal-content modal-full-width">
             <button class="modal-close-btn" onclick="closeReturningCustomersModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
             <h2 id="returning-customers-title" class="text-2xl font-bold mb-6 text-center text-gray-700">לקוחות חוזרים (בעלי הזמנות רבות)</h2>
+            <div class="flex justify-end gap-3 mb-4">
+                <button class="btn btn-secondary" onclick="printReport('returning-customers-table')">
+                    <i class="fas fa-print ml-2"></i> הדפס
+                </button>
+            </div>
             <div class="modal-body table-container">
                 <table id="returning-customers-table" class="min-w-full">
                     <thead>
@@ -638,7 +778,7 @@
                             <th>כמות הזמנות</th>
                             <th>מכולות פעילות</th>
                             <th>היסטוריה חריגה</th>
-                            <th>WhatsApp</th> <!-- New Column -->
+                            <th>WhatsApp</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -653,7 +793,6 @@
         </div>
     </div>
 
-    <!-- WhatsApp Message Modal -->
     <div id="whatsapp-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="whatsapp-modal-title">
         <div class="modal-content">
             <button class="modal-close-btn" onclick="closeWhatsAppModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
@@ -666,9 +805,15 @@
             </div>
 
             <div class="mb-4">
-                <label for="whatsapp-message-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">בחר הודעה מובנית:</label>
-                <div id="whatsapp-message-options">
-                    <!-- Message options will be populated here by JS -->
+                <div class="message-option-header" onclick="toggleMessageOptions()">
+                    <label class="font-semibold text-lg cursor-pointer">בחר הודעה מובנית:</label>
+                    <i class="fas fa-chevron-down transform transition-transform duration-200"></i>
+                </div>
+                <div id="whatsapp-message-options" class="message-option-list-container">
+                    <input type="text" id="message-filter-input" class="w-full p-2 border-b border-gray-200 dark:border-gray-600 focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100" placeholder="חפש הודעה..." onkeyup="filterMessageOptions()">
+                    <div id="message-options-list" class="py-2">
+                        <!-- Message options will be populated here by JS -->
+                    </div>
                 </div>
             </div>
 
@@ -704,7 +849,7 @@
                 <span id="current-date-crm" class="mr-2 text-purple-600 font-semibold"></span> |
                 <span id="current-time-crm" class="ml-2 text-blue-600 font-semibold animate-pulse"></span>
             </div>
-            <!-- Dark/Light Mode Toggle (re-used from style.css) -->
+            <!-- Dark/Light Mode Toggle -->
             <button id="theme-toggle-crm" class="mt-4 px-4 py-2 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 transition-colors flex items-center gap-2" aria-label="החלף מצב כהה/בהיר">
                 <i class="fas fa-sun" id="sun-icon-crm"></i><i class="fas fa-moon hidden" id="moon-icon-crm"></i>
                 <span>מצב בהיר</span>
@@ -719,13 +864,28 @@
             <div id="notifications-list" class="space-y-3">
                 <!-- Notifications will be loaded here by JavaScript -->
             </div>
-            <!-- Moved outside notifications-list to prevent being cleared by innerHTML = '' -->
             <p id="no-notifications-msg" class="text-center text-gray-500 dark:text-gray-400 mt-4 hidden">אין התראות חדשות. כל הכבוד! 🎉</p>
         </section>
         <hr class="my-8 border-gray-200 dark:border-gray-700">
+        
+        <!-- Order Status Filter -->
+        <div class="flex justify-center mb-6">
+            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4 flex items-center gap-4">
+                <label for="order-status-filter" class="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-filter ml-2"></i> סנן לפי סטטוס הזמנה:
+                </label>
+                <select id="order-status-filter" onchange="applyOrderStatusFilter()" 
+                        class="px-4 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="all">כל ההזמנות</option>
+                    <option value="open">פתוח</option>
+                    <option value="closed">סגור</option>
+                    <option value="overdue">חורג</option>
+                </select>
+            </div>
+        </div>
 
         <!-- Report Buttons -->
-        <section id="report-buttons" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <section id="report-buttons" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <button class="btn-metric bg-blue" onclick="showReportTable('orders-per-customer-table')">
                 <span class="metric-value" id="total-orders-count">0</span>
                 <span class="metric-label">סה"כ הזמנות</span>
@@ -737,10 +897,6 @@
             <button class="btn-metric bg-purple" onclick="showReportTable('customers-multiple-containers-table')">
                 <span class="metric-value" id="customers-multiple-count">0</span>
                 <span class="metric-label">לקוחות עם מכולות מרובות</span>
-            </button>
-            <button class="btn-metric bg-red" onclick="showReportTable('overdue-summary-table')">
-                <span class="metric-value" id="current-overdue-count">0</span>
-                <span class="metric-label">הזמנות חורגות כרגע</span>
             </button>
         </section>
 
@@ -778,11 +934,6 @@
                 <div class="chart-svg-container" id="svg-monthly-orders"></div>
                 <p id="no-data-monthly-orders" class="text-center text-gray-500 dark:text-gray-400 hidden">אין נתונים להצגה.</p>
             </div>
-            <div id="chart-overdue-trend" class="chart-container-crm">
-                <h3>טרנד הזמנות חורגות (חודשי)</h3>
-                <div class="chart-svg-container" id="svg-overdue-trend"></div>
-                <p id="no-data-overdue-trend" class="text-center text-gray-500 dark:text-gray-400 hidden">אין נתונים להצגה.</p>
-            </div>
         </section>
         <hr class="my-8 border-gray-200 dark:border-gray-700">
 
@@ -804,7 +955,7 @@
                     <button class="btn btn-secondary" onclick="exportTableToExcel('orders-per-customer-table-data', 'orders_per_customer')">
                         <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
                     </button>
-                    <button class="btn btn-secondary" onclick="printReport('orders-per-customer-table-data')">
+                    <button class="btn btn-secondary" onclick="printReport('orders-per-customer-table')">
                         <i class="fas fa-print ml-2"></i> הדפס
                     </button>
                 </div>
@@ -816,7 +967,7 @@
                                 <th>כתובת</th>
                                 <th>כמות הזמנות</th>
                                 <th>כמות מכולות פעילות</th>
-                                <th>WhatsApp</th> <!-- New Column -->
+                                <th>WhatsApp</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -839,7 +990,7 @@
                     <button class="btn btn-secondary" onclick="exportTableToExcel('action-type-counts-table-data', 'action_type_counts')">
                         <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
                     </button>
-                    <button class="btn btn-secondary" onclick="printReport('action-type-counts-table-data')">
+                    <button class="btn btn-secondary" onclick="printReport('action-type-counts-table')">
                         <i class="fas fa-print ml-2"></i> הדפס
                     </button>
                 </div>
@@ -871,7 +1022,7 @@
                     <button class="btn btn-secondary" onclick="exportTableToExcel('customers-multiple-containers-table-data', 'customers_multiple_containers')">
                         <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
                     </button>
-                    <button class="btn btn-secondary" onclick="printReport('customers-multiple-containers-table-data')">
+                    <button class="btn btn-secondary" onclick="printReport('customers-multiple-containers-table')">
                         <i class="fas fa-print ml-2"></i> הדפס
                     </button>
                 </div>
@@ -883,7 +1034,7 @@
                                 <th>כתובת</th>
                                 <th>כמות מכולות פעילות</th>
                                 <th>מספרי מכולות</th>
-                                <th>WhatsApp</th> <!-- New Column -->
+                                <th>WhatsApp</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -906,7 +1057,7 @@
                     <button class="btn btn-secondary" onclick="exportTableToExcel('overdue-summary-table-data', 'overdue_orders_summary')">
                         <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
                     </button>
-                    <button class="btn btn-secondary" onclick="printReport('overdue-summary-table-data')">
+                    <button class="btn btn-secondary" onclick="printReport('overdue-summary-table')">
                         <i class="fas fa-print ml-2"></i> הדפס
                     </button>
                 </div>
@@ -921,7 +1072,7 @@
                                 <th>ימים שעברו</th>
                                 <th>מכולות קשורות</th>
                                 <th>הערות</th>
-                                <th>WhatsApp</th> <!-- New Column -->
+                                <th>WhatsApp</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -950,8 +1101,11 @@
         // Define Google Apps Script URL (replace with your actual deployment URL)
         const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec'; 
 
-        let allOrders = []; // Raw data of all orders
+        let allOrders = []; // Raw data of all orders (unfiltered)
+        let filteredOrders = []; // Data filtered by selected status
         let notifications = []; // Store active notifications
+        let currentOrderFilter = 'all'; // Default filter: 'all', 'open', 'closed', 'overdue'
+
         const WHATSAPP_PHONE_NUMBER = '972508860896'; // WhatsApp number for main shares, not for individual customers
 
         // Utility Functions
@@ -1083,35 +1237,53 @@
 
         /**
          * Loads all orders from the sheet and updates all UI components.
+         * This function now loads all data and then applies the filter.
          */
         async function loadAllData() {
             const response = await fetchData('list', { status: 'all' });
             if (response.success) {
-                allOrders = response.data;
-                processDataForDashboard();
-                generateAndRenderNotifications();
-                updateReportButtons();
-                drawCharts();
-                // Initially hide all report tables
-                document.querySelectorAll('.report-table-section').forEach(section => section.classList.add('hidden'));
+                allOrders = response.data; // Keep all orders in `allOrders`
+                applyOrderStatusFilter(); // Apply initial filter and render
             }
         }
 
         /**
-         * Processes data to populate dashboard metrics.
+         * Applies the selected order status filter and updates all UI elements.
+         */
+        function applyOrderStatusFilter() {
+            currentOrderFilter = document.getElementById('order-status-filter').value;
+            console.log(`Applying filter: ${currentOrderFilter}`);
+            
+            if (currentOrderFilter === 'all') {
+                filteredOrders = [...allOrders];
+            } else if (currentOrderFilter === 'open') {
+                // 'פתוח' and 'ממתין/לא תקין' are considered open
+                filteredOrders = allOrders.filter(o => o['סטטוס'] === 'פתוח' || o['סטטוס'] === 'ממתין/לא תקין');
+            } else if (currentOrderFilter === 'closed') {
+                filteredOrders = allOrders.filter(o => o['סטטוס'] === 'סגור');
+            } else if (currentOrderFilter === 'overdue') {
+                filteredOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+            }
+
+            processDataForDashboard();
+            updateReportButtons();
+            drawCharts();
+            generateAndRenderNotifications(); // Re-render notifications based on new filter
+            // Hide all report tables initially after filter change, user can click to reveal
+            document.querySelectorAll('.report-table-section').forEach(section => section.classList.add('hidden'));
+        }
+
+        /**
+         * Processes data to populate dashboard metrics based on filtered orders.
          */
         function processDataForDashboard() {
-            const activeOrders = allOrders.filter(o => o['סטטוס'] !== 'סגור');
-            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
-
-            document.getElementById('total-orders-count').textContent = allOrders.length;
-            document.getElementById('current-overdue-count').textContent = overdueOrders.length;
-
-            const topContainer = getTopMovingContainer();
+            document.getElementById('total-orders-count').textContent = filteredOrders.length;
+            
+            const topContainer = getTopMovingContainer(filteredOrders); // Pass filtered orders
             document.getElementById('top-moving-container-number').textContent = topContainer.container || 'אין';
             document.getElementById('top-moving-container-count').textContent = topContainer.count;
 
-            document.getElementById('returning-customers-count').textContent = getReturningCustomers().length;
+            document.getElementById('returning-customers-count').textContent = getReturningCustomers(filteredOrders).length; // Pass filtered orders
         }
 
         /**
@@ -1155,19 +1327,27 @@
         }
 
         // --- Notifications Logic ---
-
         /**
-         * Generates and renders notifications based on current data.
+         * Generates and renders notifications based on current data and filter.
          */
         function generateAndRenderNotifications() {
             notifications = []; // Clear existing notifications
-            const activeOrders = allOrders.filter(o => o['סטטוס'] !== 'סגור');
             
-            // Check for potential container mismatches (e.g., container taken but not returned after a long time)
-            const containerStatus = {}; // { containerNum: { lastAction: 'taken'|'returned', order: {}, timestamp: Date } }
+            let ordersForNotifications = [];
+            if (currentOrderFilter === 'all') {
+                ordersForNotifications = allOrders; 
+            } else if (currentOrderFilter === 'overdue') {
+                ordersForNotifications = allOrders.filter(o => o['סטטוס'] === 'חורג' || o['סטטוס'] === 'ממתין/לא תקין');
+            } else if (currentOrderFilter === 'open') {
+                ordersForNotifications = allOrders.filter(o => o['סטטוס'] === 'פתוח' || o['סטטוס'] === 'ממתין/לא תקין');
+            } else if (currentOrderFilter === 'closed') {
+                ordersForNotifications = []; 
+            }
 
-            // Sort orders chronologically to build accurate container history
-            const sortedOrders = [...allOrders].sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה']));
+            const activeOrdersForNotif = ordersForNotifications.filter(o => o['סטטוס'] !== 'סגור');
+            
+            const containerStatus = {}; 
+            const sortedOrders = [...ordersForNotifications].sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה']));
 
             sortedOrders.forEach(order => {
                 const orderDate = new Date(order['תאריך הזמנה']);
@@ -1190,64 +1370,44 @@
                 });
             });
 
-            // Iterate through the final container statuses to find mismatches
             for (const containerNum in containerStatus) {
                 const status = containerStatus[containerNum];
                 if (status.action === 'taken' && status.order['סטטוס'] !== 'סגור') {
-                    // Container was taken and the order is still open.
-                    // If it's very old, it might be a mismatch. Let's define "very old" as > 120 days.
                     const daysPassed = status.order['ימים שעברו'];
                     if (daysPassed && parseInt(daysPassed) > 120) {
                         notifications.push({
                             id: `container-mismatch-${containerNum}-${status.order.sheetRow}`,
-                            message: `התראה: מכולה מספר ${containerNum} ירדה אצל לקוח ${status.order['שם לקוח']} בתעודה ${status.order['תעודה']} לפני ${daysPassed} ימים וטרם הוחזרה/נסגרה!`,
                             type: 'error',
                             isHandled: false,
-                            orderId: status.order.sheetRow,
-                            customerName: status.order['שם לקוח'],
-                            customerPhone: status.order['טלפון לקוח'], // Assuming this field exists
-                            containers: containerNum, // Explicitly pass containerNum
-                            docId: status.order['תעודה'], // Pass Document ID
-                            expectedEndDate: status.order['תאריך סיום צפוי'] // Pass Expected End Date
+                            order: status.order
                         });
                     }
                 }
             }
             
-            // Check for orders marked as "ממתין/לא תקין" without recent notes
-            activeOrders.filter(o => o['סטטוס'] === 'ממתין/לא תקין').forEach(order => {
+            activeOrdersForNotif.filter(o => o['סטטוס'] === 'ממתין/לא תקין').forEach(order => {
                 const lastNoteUpdate = order['תאריך וזמן עדכון הערה'] ? new Date(order['תאריך וזמן עדכון הערה']) : new Date(order['תאריך הזמנה']);
                 const daysSinceLastUpdate = Math.floor((new Date() - lastNoteUpdate) / (1000 * 60 * 60 * 24));
-                if (daysSinceLastUpdate > 30) { // If no update in the last 30 days
+                if (daysSinceLastUpdate > 30) {
                     notifications.push({
                         id: `pending-no-update-${order.sheetRow}`,
-                        message: `הזמנה ${order['תעודה']} של לקוח ${order['שם לקוח']} מסומנת "בטיפול" ולא עודכנה ${daysSinceLastUpdate} ימים. דורש בדיקה!`,
                         type: 'warning',
                         isHandled: false,
-                        orderId: order.sheetRow,
-                        customerName: order['שם לקוח'],
-                        customerPhone: order['טלפון לקוח'], // Assuming this field exists
-                        docId: order['תעודה'], // Pass Document ID
-                        expectedEndDate: order['תאריך סיום צפוי'] // Pass Expected End Date
+                        order: order
                     });
                 }
             });
 
-            // Add general overdue orders that need attention (if not already covered by direct overdue notifications)
-            activeOrders.filter(o => o['סטטוס'] === 'חורג').forEach(order => {
-                notifications.push({
-                    id: `overdue-order-${order.sheetRow}`,
-                    message: `הזמנה חורגת: ${order['תעודה']} של לקוח ${order['שם לקוח']} חורגת ב-${order['ימים שעברו']} ימים.`,
-                    type: 'warning',
-                    isHandled: false,
-                    orderId: order.sheetRow,
-                    customerName: order['שם לקוח'],
-                    customerPhone: order['טלפון לקוח'], // Assuming this field exists
-                    daysOverdue: order['ימים שעברו'],
-                    docId: order['תעודה'], // Pass Document ID
-                    expectedEndDate: order['תאריך סיום צפוי'] // Pass Expected End Date
+            if (currentOrderFilter === 'all' || currentOrderFilter === 'overdue') {
+                ordersForNotifications.filter(o => o['סטטוס'] === 'חורג').forEach(order => { 
+                    notifications.push({
+                        id: `overdue-order-${order.sheetRow}`,
+                        type: 'warning',
+                        isHandled: false,
+                        order: order
+                    });
                 });
-            });
+            }
 
             renderNotifications();
         }
@@ -1259,33 +1419,79 @@
             const notificationsListDiv = document.getElementById('notifications-list');
             const noNotificationsMsg = document.getElementById('no-notifications-msg'); 
 
-            // Clear all notifications first
             notificationsListDiv.innerHTML = ''; 
 
             if (notifications.length === 0) {
-                noNotificationsMsg.classList.remove('hidden'); // Show "no notifications" message
+                noNotificationsMsg.classList.remove('hidden'); 
             } else {
-                noNotificationsMsg.classList.add('hidden'); // Hide "no notifications" message
+                noNotificationsMsg.classList.add('hidden'); 
                 notifications.forEach(notif => {
                     const notifItem = document.createElement('div');
                     notifItem.id = `notif-${notif.id}`;
                     notifItem.className = `notification-item ${notif.type} ${notif.isHandled ? 'handled' : ''}`;
                     notifItem.setAttribute('role', 'alert');
+
+                    const lastNote = getLastLogEntry(notif.order['הערות'] || 'אין הערות קודמות.');
+                    const daysOverdueDisplay = notif.order['ימים שעברו'] !== undefined ? 
+                        `<span class="days-overdue-value">${notif.order['ימים שעברו']}</span> ימים` : 'N/A';
+
                     notifItem.innerHTML = `
-                        <i class="fas ${getNotificationIcon(notif.type)} notification-icon" aria-hidden="true"></i>
-                        <span class="notification-message">${notif.message}</span>
+                        <i class="fas ${getNotificationIcon(notif.type)} notification-icon" aria-hidden="true" title="${getNotificationEmoji(notif.type)}"></i>
+                        <h3 class="notification-header">
+                            <span class="header-text">${getNotificationEmoji(notif.type)} ${notif.order['שם לקוח'] || 'לקוח לא ידוע'} - <span class="dvid-blinking-text">${notif.order['תעודה'] || 'אין תעודה'}</span></span>
+                        </h3>
+                        <p class="notification-details">
+                            <i class="fas fa-calendar-alt ml-1"></i> ${daysOverdueDisplay}
+                        </p>
+                        <div class="notification-last-note">
+                            <strong>הערה אחרונה:</strong> ${lastNote}
+                        </div>
+                        <button class="whatsapp-icon-btn" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModalFromNotification('${notif.id}')">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
                         <i class="fas fa-thumbtack pin-icon" onclick="event.stopPropagation(); markNotificationAsHandled('${notif.id}')" aria-label="סמן כטופל"></i>
-                        <i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModalFromNotification('${notif.id}')"></i>
                     `;
-                    // Double-click to toggle handled status
-                    notifItem.addEventListener('dblclick', (e) => {
-                        e.stopPropagation(); // Prevent modal opening if double-clicked
-                        markNotificationAsHandled(notif.id);
+                    
+                    notifItem.addEventListener('click', () => {
+                        const customerName = notif.order['שם לקוח'];
+                        const customerAddress = notif.order['כתובת'];
+                        if (customerName && customerAddress) {
+                            const tempCustomerData = {
+                                customerName: customerName,
+                                address: customerAddress,
+                                orderCount: allOrders.filter(o => o['שם לקוח'] === customerName && o['כתובת'] === customerAddress).length,
+                                overdueOrders: allOrders.filter(o => o['שם לקוח'] === customerName && o['כתובת'] === customerAddress && o['סטטוס'] === 'חורג')
+                            };
+                            showCustomerAnomalyHistory(tempCustomerData);
+                        } else {
+                            showAlert('חסר מידע על הלקוח להצגת היסטוריה מפורטת.', 'warning');
+                        }
                     });
+
                     notificationsListDiv.appendChild(notifItem);
                 });
             }
         }
+
+        /**
+         * Extracts the last log entry from a potentially multi-line notes string.
+         * @param {string} notesString - The full notes string.
+         * @returns {string} The last log entry or the original string if no log format found.
+         */
+        function getLastLogEntry(notesString) {
+            if (!notesString) return 'אין הערות.';
+            const lines = notesString.split('\n').filter(line => line.trim() !== '');
+            if (lines.length > 0) {
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    if (lines[i].trim().startsWith('[') && lines[i].trim().includes(']')) {
+                        return lines[i].trim();
+                    }
+                }
+                return lines[lines.length - 1].trim();
+            }
+            return 'אין הערות.';
+        }
+
 
         /**
          * Opens WhatsApp modal directly from a notification item.
@@ -1293,9 +1499,20 @@
          */
         function openWhatsAppModalFromNotification(notificationId) {
             const notification = notifications.find(n => n.id === notificationId);
-            if (notification && notification.customerPhone) {
-                const suggestedMessageId = getSuggestedMessageIdFromNotification(notification);
-                openWhatsAppModal(notification.customerPhone, suggestedMessageId, notification.orderId, notification.customerName, notification.daysOverdue, notification.containers, notification.docId, notification.expectedEndDate);
+            if (notification && notification.order) {
+                const order = notification.order;
+                const suggestedMessageId = getSuggestedMessageIdForOrder(order);
+                openWhatsAppModal(
+                    order['טלפון לקוח'], 
+                    suggestedMessageId, 
+                    order.sheetRow, 
+                    order['שם לקוח'], 
+                    order['ימים שעברו'], 
+                    order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || '',
+                    order['תעודה'], 
+                    formatDate(order['תאריך סיום צפוי']), 
+                    order['כתובת']
+                );
             } else {
                 showAlert('לא ניתן לשלוח הודעה: חסר מספר טלפון או פרטי הזמנה בהתראה.', 'warning');
             }
@@ -1303,22 +1520,17 @@
 
         /**
          * Gets the suggested message ID based on notification type and data.
-         * @param {Object} notification - The notification object.
-         * @returns {string} The ID of the suggested message.
+         * @param {string} type - 'error', 'warning', 'info'.
+         * @returns {string} Emoji character.
          */
-        function getSuggestedMessageIdFromNotification(notification) {
-            if (notification.type === 'error' && notification.id.startsWith('container-mismatch')) {
-                return 'container_mismatch';
-            } else if (notification.type === 'warning' && notification.id.startsWith('pending-no-update')) {
-                return 'pending_order_reminder';
-            } else if (notification.type === 'warning' && notification.id.startsWith('overdue-order')) {
-                if (notification.daysOverdue <= 7) return 'overdue_7_days';
-                if (notification.daysOverdue <= 30) return 'overdue_30_days';
-                return 'overdue_long';
+        function getNotificationEmoji(type) {
+            switch (type) {
+                case 'error': return '🚨';
+                case 'warning': return '⚠️';
+                case 'info': return 'ℹ️';
+                default: return '🔔';
             }
-            return 'general_inquiry'; // Fallback changed to general inquiry as it's more appropriate
         }
-
 
         /**
          * Returns the appropriate Font Awesome icon class for a notification type.
@@ -1341,9 +1553,8 @@
         function markNotificationAsHandled(notificationId) {
             const notification = notifications.find(n => n.id === notificationId);
             if (notification) {
-                // Toggle status
                 notification.isHandled = !notification.isHandled;
-                renderNotifications(); // Re-render to apply changes
+                renderNotifications(); 
                 showAlert(`ההתראה סומנה כ${notification.isHandled ? 'טופלה' : 'לא טופלה'}.`, 'success', 3000);
             }
         }
@@ -1352,18 +1563,16 @@
 
         /**
          * Updates the values on the report metric buttons.
+         * Now based on `filteredOrders`.
          */
         function updateReportButtons() {
-            document.getElementById('total-orders-count').textContent = allOrders.length;
+            document.getElementById('total-orders-count').textContent = filteredOrders.length;
             
-            const actionTypes = new Set(allOrders.map(order => order['סוג פעולה']).filter(Boolean));
+            const actionTypes = new Set(filteredOrders.map(order => order['סוג פעולה']).filter(Boolean));
             document.getElementById('unique-action-types-count').textContent = actionTypes.size;
 
-            const customersWithMultipleContainers = calculateCustomersWithMultipleContainers().length;
-            document.getElementById('customers-multiple-count').textContent = customersWithMultipleContainers;
-
-            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
-            document.getElementById('current-overdue-count').textContent = overdueOrders.length;
+            const customersWithMultipleContainersCount = calculateCustomersWithMultipleContainers(filteredOrders).length;
+            document.getElementById('customers-multiple-count').textContent = customersWithMultipleContainersCount;
         }
 
         /**
@@ -1377,26 +1586,23 @@
             const targetSection = document.getElementById(tableId);
             targetSection.classList.remove('hidden');
 
-            // Render specific table data
             if (tableId === 'orders-per-customer-table') {
-                renderOrdersPerCustomerTable();
+                renderOrdersPerCustomerTable(filteredOrders);
             } else if (tableId === 'action-type-counts-table') {
-                renderActionTypeCountsTable();
+                renderActionTypeCountsTable(filteredOrders);
             } else if (tableId === 'customers-multiple-containers-table') {
-                renderCustomersWithMultipleContainersTable();
+                renderCustomersWithMultipleContainersTable(filteredOrders);
             } else if (tableId === 'overdue-summary-table') {
-                renderOverdueSummaryTable();
+                renderOverdueSummaryTable(allOrders.filter(o => o['סטטוס'] === 'חורג')); 
             }
 
-            // Smooth scroll to the table
             setTimeout(() => {
                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100); // Small delay to allow element to become visible
+            }, 100); 
         }
 
         /**
          * Helper function to get the current primary brand color dynamically based on the active theme.
-         * This solves the `SyntaxError: Unexpected token 'var'` for D3 chart colors.
          * @returns {string} The computed color string.
          */
         function getCurrentChartFillColor() {
@@ -1409,24 +1615,24 @@
         // --- Charts Logic ---
 
         /**
-         * Draws all charts for the dashboard.
+         * Draws all charts for the dashboard based on `filteredOrders`.
          */
         function drawCharts() {
-            drawOrdersPerCustomerChart();
-            drawActionTypeDistributionChart();
-            drawMonthlyOrdersChart();
-            drawOverdueTrendChart();
+            drawOrdersPerCustomerChart(filteredOrders);
+            drawActionTypeDistributionChart(filteredOrders);
+            drawMonthlyOrdersChart(filteredOrders);
         }
 
         /**
          * Draws the "Orders Per Customer" bar chart.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the chart.
          */
-        function drawOrdersPerCustomerChart() {
+        function drawOrdersPerCustomerChart(dataToUse) {
             const chartDiv = d3.select("#svg-orders-per-customer");
             chartDiv.select("svg").remove();
 
             const customerOrderCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const customer = order['שם לקוח'];
                 if (customer) {
                     customerOrderCounts[customer] = (customerOrderCounts[customer] || 0) + 1;
@@ -1436,7 +1642,7 @@
             const data = Object.entries(customerOrderCounts)
                 .map(([customer, count]) => ({ customer, count }))
                 .sort((a, b) => b.count - a.count)
-                .slice(0, 10); // Show top 10 customers
+                .slice(0, 10); 
 
             const noDataMsg = document.getElementById('no-data-orders-per-customer');
             if (data.length === 0) {
@@ -1487,8 +1693,8 @@
                 .attr("class", "bar chart-bar")
                 .attr("x", d => x(d.customer))
                 .attr("width", x.bandwidth())
-                .attr("y", height) // Start from bottom for animation
-                .attr("height", 0) // Start with zero height for animation
+                .attr("y", height)
+                .attr("height", 0)
                 .transition()
                 .duration(800)
                 .delay((d, i) => i * 50)
@@ -1507,13 +1713,14 @@
 
         /**
          * Draws the "Action Type Distribution" pie chart.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the chart.
          */
-        function drawActionTypeDistributionChart() {
+        function drawActionTypeDistributionChart(dataToUse) {
             const chartDiv = d3.select("#svg-action-type-distribution");
             chartDiv.select("svg").remove();
 
             const actionTypeCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const actionType = order['סוג פעולה'];
                 if (actionType) {
                     actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
@@ -1532,7 +1739,7 @@
 
             const bounds = chartDiv.node().getBoundingClientRect();
             const outerRadius = Math.min(bounds.width, bounds.height) / 2 - 40;
-            const innerRadius = outerRadius * 0.5; // Donut chart
+            const innerRadius = outerRadius * 0.5;
 
             const svg = chartDiv.append("svg")
                 .attr("width", bounds.width)
@@ -1542,7 +1749,7 @@
 
             const color = d3.scaleOrdinal()
                 .domain(data.map(d => d.type))
-                .range(d3.schemeCategory10); // D3's built-in color scheme
+                .range(d3.schemeCategory10);
 
             const pie = d3.pie()
                 .value(d => d.count)
@@ -1609,13 +1816,14 @@
 
         /**
          * Draws the "Monthly Orders" line chart.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the chart.
          */
-        function drawMonthlyOrdersChart() {
+        function drawMonthlyOrdersChart(dataToUse) {
             const chartDiv = d3.select("#svg-monthly-orders");
             chartDiv.select("svg").remove();
 
             const monthlyCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const orderDate = new Date(order['תאריך הזמנה']);
                 if (!isNaN(orderDate.getTime())) {
                     const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
@@ -1635,7 +1843,7 @@
                 noDataMsg.classList.add('hidden');
             }
 
-            const margin = { top: 20, right: 30, bottom: 80, left: 60 }; // Increased bottom margin
+            const margin = { top: 20, right: 30, bottom: 80, left: 60 };
             const bounds = chartDiv.node().getBoundingClientRect();
             const width = bounds.width - margin.left - margin.right;
             const height = bounds.height - margin.top - margin.bottom;
@@ -1654,7 +1862,6 @@
                 .range([height, 0])
                 .domain([0, d3.max(data, d => d.count) * 1.1]);
 
-            // X-axis
             svg.append("g")
                 .attr("transform", `translate(0,${height})`)
                 .call(d3.axisBottom(x).ticks(d3.timeMonth.every(1)).tickFormat(d3.timeFormat("%b %Y")))
@@ -1664,14 +1871,12 @@
                 .style("font-size", "0.85em")
                 .attr("class", "axis-text");
 
-            // Y-axis
             svg.append("g")
                 .call(d3.axisLeft(y).ticks(Math.max(3, d3.max(data, d => d.count))))
                 .selectAll("text")
                 .style("font-size", "0.85em")
                 .attr("class", "axis-text");
 
-            // Line path
             const line = d3.line()
                 .x(d => x(d.date))
                 .y(d => y(d.count));
@@ -1679,11 +1884,10 @@
             svg.append("path")
                 .datum(data)
                 .attr("fill", "none")
-                .attr("stroke", getCurrentChartFillColor()) // Fixed: Use JS function to get color
+                .attr("stroke", getCurrentChartFillColor())
                 .attr("stroke-width", 2)
                 .attr("d", line);
 
-            // Add circles for data points
             svg.selectAll(".dot")
                 .data(data)
                 .enter().append("circle")
@@ -1691,116 +1895,27 @@
                 .attr("cx", d => x(d.date))
                 .attr("cy", d => y(d.count))
                 .attr("r", 4)
-                .attr("fill", getCurrentChartFillColor()); // Fixed: Use JS function to get color
+                .attr("fill", getCurrentChartFillColor());
         }
-
-        /**
-         * Draws the "Overdue Trend" bar chart.
-         */
-        function drawOverdueTrendChart() {
-            const chartDiv = d3.select("#svg-overdue-trend");
-            chartDiv.select("svg").remove();
-
-            const monthlyOverdueCounts = {};
-            allOrders.forEach(order => {
-                if (order['סטטוס'] === 'חורג') {
-                    const orderDate = new Date(order['תאריך הזמנה']);
-                    if (!isNaN(orderDate.getTime())) {
-                        const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
-                        monthlyOverdueCounts[monthKey] = (monthlyOverdueCounts[monthKey] || 0) + 1;
-                    }
-                }
-            });
-
-            const data = Object.entries(monthlyOverdueCounts)
-                .map(([month, count]) => ({ month: month, date: new Date(month + '-01'), count: count }))
-                .sort((a, b) => a.date - b.date);
-
-            const noDataMsg = document.getElementById('no-data-overdue-trend');
-            if (data.length === 0) {
-                noDataMsg.classList.remove('hidden');
-                return;
-            } else {
-                noDataMsg.classList.add('hidden');
-            }
-
-            const margin = { top: 20, right: 30, bottom: 80, left: 60 };
-            const bounds = chartDiv.node().getBoundingClientRect();
-            const width = bounds.width - margin.left - margin.right;
-            const height = bounds.height - margin.top - margin.bottom;
-
-            const svg = chartDiv.append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
-
-            const x = d3.scaleBand()
-                .range([0, width])
-                .domain(data.map(d => d.month))
-                .padding(0.2);
-
-            const y = d3.scaleLinear()
-                .range([height, 0])
-                .domain([0, d3.max(data, d => d.count) * 1.1]);
-
-            svg.append("g")
-                .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(x))
-                .selectAll("text")
-                .attr("transform", "translate(-10,0)rotate(-45)")
-                .style("text-anchor", "end")
-                .style("font-size", "0.85em")
-                .attr("class", "axis-text");
-
-            svg.append("g")
-                .call(d3.axisLeft(y).ticks(Math.max(3, d3.max(data, d => d.count))))
-                .selectAll("text")
-                .style("font-size", "0.85em")
-                .attr("class", "axis-text");
-
-            svg.selectAll(".bar")
-                .data(data)
-                .enter().append("rect")
-                .attr("class", "bar chart-bar")
-                .attr("x", d => x(d.month))
-                .attr("width", x.bandwidth())
-                .attr("y", height) // Start from bottom for animation
-                .attr("height", 0) // Start with zero height for animation
-                .transition()
-                .duration(800)
-                .delay((d, i) => i * 50)
-                .attr("y", d => y(d.count))
-                .attr("height", d => height - y(d.count));
-
-            svg.selectAll(".text")
-                .data(data)
-                .enter().append("text")
-                .attr("class", "chart-text")
-                .attr("x", d => x(d.month) + x.bandwidth() / 2)
-                .attr("y", d => y(d.count) - 5)
-                .attr("text-anchor", "middle")
-                .text(d => d.count);
-        }
-
 
         // --- Report Table Data Calculation & Rendering ---
 
         /**
-         * Calculates and renders the "Orders Per Customer" table.
+         * Calculates and renders the "Orders Per Customer" table based on `dataToUse`.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table.
          */
-        function renderOrdersPerCustomerTable() {
+        function renderOrdersPerCustomerTable(dataToUse) {
             const tableBody = document.querySelector('#orders-per-customer-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-orders-per-customer-table');
             noDataMsg.classList.add('hidden');
 
-            const customerData = {}; // { 'customerName|address': { ordersCount: N, activeContainers: Set, phone: string, lastOrderDate: Date, sheetRow: number } }
+            const customerData = {}; 
 
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const customerName = order['שם לקוח'] || 'לא ידוע';
                 const address = order['כתובת'] || 'לא ידוע';
-                const phone = order['טלפון לקוח'] || ''; // Assuming phone number exists
+                const phone = order['טלפון לקוח'] || ''; 
                 const key = `${customerName}|${address}`;
 
                 if (!customerData[key]) {
@@ -1810,8 +1925,8 @@
                         ordersCount: 0,
                         activeContainers: new Set(),
                         phone: phone,
-                        lastOrderDate: new Date(0), // Track latest order for "new customer" check
-                        firstOrderDate: new Date() // Track first order for "new customer" check
+                        lastOrderDate: new Date(0), 
+                        firstOrderDate: new Date() 
                     };
                 }
                 customerData[key].ordersCount++;
@@ -1832,7 +1947,7 @@
                     }
                      if (order['סוג פעולה'] === 'העלאה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה עלתה'])) {
                         const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
-                        containersBrought.forEach(c => customerData[key].activeContainers.delete(c)); // Remove if returned
+                        containersBrought.forEach(c => customerData[key].activeContainers.delete(c)); 
                     }
                 }
             });
@@ -1857,10 +1972,10 @@
                     }
                     const whatsappCell = row.insertCell();
                     if (data.phone) {
-                        // Pass a dummy sheetRow for general customer message, or find a relevant one.
-                        // For simplicity, for customer summary, we suggest a general message.
-                        const suggestedMsgId = data.ordersCount === 1 && (new Date() - data.firstOrderDate) / (1000 * 60 * 60 * 24) < 30 ? 'new_customer_welcome' : 'general_inquiry'; // Changed fallback
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${data.phone}', '${suggestedMsgId}', null, '${data.customerName}')"></i>`;
+                        const suggestedMsgId = data.ordersCount === 1 && (new Date() - data.firstOrderDate) / (1000 * 60 * 60 * 24) < 30 ? 'new_customer_welcome' : 'general_inquiry'; 
+                        whatsappCell.innerHTML = `<button class="whatsapp-icon-btn whatsapp-in-table-btn" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${data.phone}', '${suggestedMsgId}', null, '${data.customerName}', null, null, null, null, '${data.address}')">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -1869,16 +1984,17 @@
         }
 
         /**
-         * Calculates and renders the "Action Type Counts" table.
+         * Calculates and renders the "Action Type Counts" table based on `dataToUse`.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table.
          */
-        function renderActionTypeCountsTable() {
+        function renderActionTypeCountsTable(dataToUse) {
             const tableBody = document.querySelector('#action-type-counts-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-action-type-table');
             noDataMsg.classList.add('hidden');
 
             const actionTypeCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const actionType = order['סוג פעולה'] || 'לא ידוע';
                 actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
             });
@@ -1897,15 +2013,16 @@
         }
 
         /**
-         * Calculates and renders the "Customers with Multiple Containers" table.
+         * Calculates and renders the "Customers with Multiple Containers" table based on `dataToUse`.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table.
          */
-        function renderCustomersWithMultipleContainersTable() {
+        function renderCustomersWithMultipleContainersTable(dataToUse) {
             const tableBody = document.querySelector('#customers-multiple-containers-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-customers-multiple-containers-table');
             noDataMsg.classList.add('hidden');
 
-            const customersWithMultiple = calculateCustomersWithMultipleContainers();
+            const customersWithMultiple = calculateCustomersWithMultipleContainers(dataToUse);
 
             if (customersWithMultiple.length === 0) {
                 noDataMsg.classList.remove('hidden');
@@ -1920,10 +2037,11 @@
                             `<span class="container-pill" onclick="event.stopPropagation(); openContainerHistoryModal('${c}')">${c}</span>`
                         ).join(' ');
                     const whatsappCell = row.insertCell();
-                    // For multiple containers, try to find a phone number for any of their active orders
                     const customerOrder = allOrders.find(o => o['שם לקוח'] === data.customerName && o['כתובת'] === data.address && o['טלפון לקוח']);
                     if (customerOrder && customerOrder['טלפון לקוח']) {
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customerOrder['טלפון לקוח']}', 'multi_container_reminder', null, '${data.customerName}', null, data.containers.join(', '), customerOrder['תעודה'] || '', formatDate(customerOrder['תאריך סיום צפוי']) || '')"></i>`;
+                        whatsappCell.innerHTML = `<button class="whatsapp-icon-btn whatsapp-in-table-btn" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customerOrder['טלפון לקוח']}', 'multi_container_reminder', null, '${data.customerName}', null, data.containers.join(', '), customerOrder['תעודה'] || '', formatDate(customerOrder['תאריך סיום צפוי']) || '', '${data.address}')">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -1933,12 +2051,13 @@
 
         /**
          * Helper function to calculate customers with multiple active containers.
+         * @param {Array<Object>} ordersToAnalyze - The array of orders to analyze.
          * @returns {Array<Object>} List of customers with more than one active container.
          */
-        function calculateCustomersWithMultipleContainers() {
-            const customerActiveContainers = {}; // { 'customerName|address': Set<containerNum> }
+        function calculateCustomersWithMultipleContainers(ordersToAnalyze) {
+            const customerActiveContainers = {}; 
 
-            allOrders.filter(o => o['סטטוס'] !== 'סגור').forEach(order => {
+            ordersToAnalyze.filter(o => o['סטטוס'] !== 'סגור').forEach(order => {
                 const customerName = order['שם לקוח'] || 'לא ידוע';
                 const address = order['כתובת'] || 'לא ידוע';
                 const key = `${customerName}|${address}`;
@@ -1947,8 +2066,8 @@
                     customerActiveContainers[key] = {
                         customerName: customerName,
                         address: address,
-                        containers: new Set(),
-                        latestOrderDate: new Date(0) // Track latest order date for accurate active container check
+                        containers: new Set(), 
+                        latestOrderDate: new Date(0) 
                     };
                 }
 
@@ -1957,18 +2076,14 @@
                     customerActiveContainers[key].latestOrderDate = orderDate;
                 }
 
-                // If a container was taken, add it to the set for this customer/address
                 if (order['סוג פעולה'] === 'הורדה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה ירדה'])) {
                     const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                     containersTaken.forEach(c => customerActiveContainers[key].containers.add(c));
                 }
 
-                // If a container was brought back, remove it from the set for this customer/address IF it was taken earlier.
-                // This is a simplified logic. A full container management system would track each container's actual location.
                 if (order['סוג פעולה'] === 'העלאה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה עלתה'])) {
                     const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                     containersBrought.forEach(c => {
-                        // Only remove if it was actually "on site" for this customer
                         if (customerActiveContainers[key].containers.has(c)) {
                             customerActiveContainers[key].containers.delete(c);
                         }
@@ -1976,7 +2091,6 @@
                 }
             });
 
-            // Filter for customers with more than one unique active container
             const result = Object.values(customerActiveContainers)
                 .filter(data => data.containers.size > 1)
                 .map(data => ({
@@ -1985,21 +2099,22 @@
                     containerCount: data.containers.size,
                     containers: Array.from(data.containers)
                 }))
-                .sort((a, b) => b.containerCount - a.containerCount); // Sort by number of containers
+                .sort((a, b) => b.containerCount - a.containerCount); 
 
             return result;
         }
 
         /**
-         * Renders the "Overdue Summary" table.
+         * Renders the "Overdue Summary" table based on `dataToUse`.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table (expected to be already filtered for overdue).
          */
-        function renderOverdueSummaryTable() {
+        function renderOverdueSummaryTable(dataToUse) {
             const tableBody = document.querySelector('#overdue-summary-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-overdue-summary-table');
             noDataMsg.classList.add('hidden');
 
-            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+            const overdueOrders = dataToUse; 
             overdueOrders.sort((a, b) => (parseInt(b['ימים שעברו']) || 0) - (parseInt(a['ימים שעברו']) || 0));
 
             if (overdueOrders.length === 0) {
@@ -2031,7 +2146,9 @@
                     const whatsappCell = row.insertCell();
                     if (order['טלפון לקוח']) {
                         const suggestedMsgId = getSuggestedMessageIdForOrder(order);
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${containersText}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}')"></i>`;
+                        whatsappCell.innerHTML = `<button class="whatsapp-icon-btn whatsapp-in-table-btn" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${containersText}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}', '${order['כתובת'] || ''}')">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -2041,13 +2158,13 @@
 
         /**
          * Calculates the top moving container.
-         * A "movement" is defined as any order where the container is taken or brought.
+         * @param {Array<Object>} ordersToAnalyze - The array of orders to use for analysis.
          * @returns {Object} { container: string, count: number }
          */
-        function getTopMovingContainer() {
-            const containerMovementCounts = {}; // { containerNum: count }
+        function getTopMovingContainer(ordersToAnalyze) {
+            const containerMovementCounts = {}; 
 
-            allOrders.forEach(order => {
+            ordersToAnalyze.forEach(order => {
                 const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                 const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
 
@@ -2079,7 +2196,7 @@
             noDataMsg.classList.add('hidden');
 
             const containerMovementCounts = {};
-            allOrders.forEach(order => {
+            filteredOrders.forEach(order => {
                 const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                 const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
 
@@ -2127,14 +2244,14 @@
         }
 
         /**
-         * Calculates and returns a list of returning customers.
-         * A returning customer is defined as someone with more than 1 order.
+         * Calculates and returns a list of returning customers based on `ordersToAnalyze`.
+         * @param {Array<Object>} ordersToAnalyze - The array of orders to use for analysis.
          * @returns {Array<Object>} List of returning customers with their data.
          */
-        function getReturningCustomers() {
-            const customerOrderData = {}; // { 'customerName|address': { customerName, address, orderCount, activeContainers: Set, hasOverdueHistory: boolean, phone: string } }
+        function getReturningCustomers(ordersToAnalyze) {
+            const customerOrderData = {}; 
 
-            allOrders.forEach(order => {
+            ordersToAnalyze.forEach(order => {
                 const customerName = order['שם לקוח'] || 'לא ידוע';
                 const address = order['כתובת'] || 'לא ידוע';
                 const phone = order['טלפון לקוח'] || '';
@@ -2145,15 +2262,19 @@
                         customerName: customerName,
                         address: address,
                         orderCount: 0,
-                        activeContainers: new Set(),
-                        overdueOrders: [], // Store full overdue orders for this customer
+                        containers: new Set(), // Corrected: changed from activeContainers to containers
+                        overdueOrders: [], 
                         phone: phone,
-                        firstOrderDate: new Date() // For new customer logic
+                        lastOrderDate: new Date(0), 
+                        firstOrderDate: new Date() 
                     };
                 }
                 customerOrderData[key].orderCount++;
 
                 const currentOrderDate = new Date(order['תאריך הזמנה']);
+                if (currentOrderDate > customerOrderData[key].lastOrderDate) {
+                    customerOrderData[key].lastOrderDate = currentOrderDate;
+                }
                 if (currentOrderDate < customerOrderData[key].firstOrderDate) {
                     customerOrderData[key].firstOrderDate = currentOrderDate;
                 }
@@ -2161,19 +2282,23 @@
                 if (order['סטטוס'] !== 'סגור') {
                     if (order['סוג פעולה'] === 'הורדה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה ירדה'])) {
                         const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
-                        containersTaken.forEach(c => customerOrderData[key].activeContainers.add(c));
+                        containersTaken.forEach(c => customerOrderData[key].containers.add(c));
                     }
                      if (order['סוג פעולה'] === 'העלאה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה עלתה'])) {
                         const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
-                        containersBrought.forEach(c => customerOrderData[key].activeContainers.delete(c)); // Remove if returned
+                        containersBrought.forEach(c => {
+                            if (customerOrderData[key].containers.has(c)) {
+                                customerOrderData[key].containers.delete(c);
+                            }
+                        });
                     }
                 }
-                if (order['סטטוס'] === 'חורג') {
-                    customerOrderData[key].overdueOrders.push(order);
+                const fullOrder = allOrders.find(o => o.sheetRow === order.sheetRow); 
+                if (fullOrder && fullOrder['סטטוס'] === 'חורג') {
+                    customerOrderData[key].overdueOrders.push(fullOrder);
                 }
             });
 
-            // Filter for customers with more than one order
             const returningCustomers = Object.values(customerOrderData)
                 .filter(data => data.orderCount > 1)
                 .sort((a, b) => b.orderCount - a.orderCount);
@@ -2191,20 +2316,20 @@
             tableBody.innerHTML = '';
             noDataMsg.classList.add('hidden');
 
-            const returningCustomers = getReturningCustomers();
+            const returningCustomers = getReturningCustomers(filteredOrders); 
 
             if (returningCustomers.length === 0) {
                 noDataMsg.classList.remove('hidden');
             } else {
                 returningCustomers.forEach(customer => {
                     const row = tableBody.insertRow();
-                    row.style.cursor = 'pointer'; // Make row clickable
+                    row.style.cursor = 'pointer'; 
                     row.insertCell().textContent = customer.customerName;
                     row.insertCell().textContent = customer.address;
                     row.insertCell().textContent = customer.orderCount;
                     const containersCell = row.insertCell();
-                    if (customer.activeContainers.size > 0) {
-                        containersCell.innerHTML = Array.from(customer.activeContainers).map(c => 
+                    if (customer.containers.size > 0) { // Corrected: use .containers
+                        containersCell.innerHTML = Array.from(customer.containers).map(c => 
                             `<span class="container-pill" onclick="event.stopPropagation(); openContainerHistoryModal('${c}')">${c}</span>`
                         ).join(' ');
                     } else {
@@ -2218,15 +2343,14 @@
                     }
                     const whatsappCell = row.insertCell();
                     if (customer.phone) {
-                        const suggestedMsgId = 'general_inquiry'; // Changed fallback
-                        // For returning customers, we don't have a specific orderSheetRow to log against easily here.
-                        // So, passing null for orderSheetRow.
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customer.phone}', '${suggestedMsgId}', null, '${customer.customerName}', null, customer.containers.join(', ') || '', null, null)"></i>`;
+                        const suggestedMsgId = 'general_inquiry'; 
+                        whatsappCell.innerHTML = `<button class="whatsapp-icon-btn whatsapp-in-table-btn" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customer.phone}', '${suggestedMsgId}', null, '${customer.customerName}', null, customer.containers.join(', ') || '', null, null, '${customer.address}')">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
 
-                    // Add click listener to the row to show detailed history/anomalies
                     row.addEventListener('click', () => {
                         showCustomerAnomalyHistory(customer);
                     });
@@ -2281,7 +2405,6 @@
                 </p>`;
             }
 
-            // You can add more detailed history here if needed, e.g., all past orders
             htmlContent += `
                 <h4 class="text-lg font-bold mt-6 mb-3 text-gray-700 dark:text-gray-200">
                     כל ההזמנות של הלקוח:
@@ -2296,7 +2419,7 @@
                                 <th>סטטוס</th>
                                 <th>מכולה ירדה</th>
                                 <th>מכולה עלתה</th>
-                                <th>WhatsApp</th> <!-- New Column -->
+                                <th>WhatsApp</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2311,7 +2434,9 @@
                                         <td>${order['מספר מכולה ירדה'] || ''}</td>
                                         <td>${order['מספר מכולה עלתה'] || ''}</td>
                                         <td>
-                                            ${order['טלפון לקוח'] ? `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${getSuggestedMessageIdForOrder(order)}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}')"></i>` : 'אין טלפון'}
+                                            ${order['טלפון לקוח'] ? `<button class="whatsapp-icon-btn whatsapp-in-table-btn" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${getSuggestedMessageIdForOrder(order)}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}', '${order['כתובת'] || ''}')">
+                                                    <i class="fab fa-whatsapp"></i>
+                                                </button>` : 'אין טלפון'}
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -2331,6 +2456,9 @@
             modal.classList.add('active');
         }
 
+        function closeOrderDetailsModal() {
+            document.getElementById('order-details-modal').classList.remove('active');
+        }
 
         // --- Export, Print, Share Logic ---
 
@@ -2347,23 +2475,20 @@
             }
             const rows = Array.from(table.querySelectorAll('tr'));
 
-            if (rows.length <= 1) { // Only header row
+            if (rows.length <= 1) { 
                 showAlert('אין נתונים לייצוא בטבלה זו.', 'warning');
                 return;
             }
 
             const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // UTF-8 BOM for Hebrew
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
 
-            // Add headers
             csvContent += headers.join(',') + '\n';
 
-            // Add data rows
             for (let i = 1; i < rows.length; i++) {
                 const rowCells = Array.from(rows[i].querySelectorAll('td'));
                 const rowData = rowCells.map(cell => {
                     let value = cell.textContent.trim();
-                    // Escape double quotes and enclose if value contains comma
                     value = value.replace(/"/g, '""');
                     if (value.includes(',')) {
                         value = `"${value}"`;
@@ -2384,34 +2509,175 @@
         }
 
         /**
-         * Prints the content of a specific report table.
-         * @param {string} tableId - The ID of the table HTML element.
+         * Helper function to get structured data for printing for each report type.
+         * @param {string} reportType - The identifier for the type of report (e.g., 'orders-per-customer-table').
+         * @returns {Object} An object containing headers (Array<string>), rows (Array<Array<string>>), and title (string).
          */
-        function printReport(tableId) {
-            const tableContainer = document.getElementById(tableId);
-            if (!tableContainer) {
-                showAlert('טבלה להדפסה לא נמצאה.', 'error');
+        function getReportDataForPrinting(reportType) {
+            let headers = [];
+            let rows = [];
+            let title = '';
+            let dataToProcess = filteredOrders; 
+
+            if (reportType === 'orders-per-customer-table') {
+                title = 'דוח: כמות הזמנות לכל לקוח';
+                headers = ['שם לקוח', 'כתובת', 'כמות הזמנות', 'כמות מכולות פעילות'];
+                const customerData = {}; 
+                dataToProcess.forEach(order => { 
+                    const customerName = order['שם לקוח'] || 'לא ידוע';
+                    const address = order['כתובת'] || 'לא ידוע';
+                    const key = `${customerName}|${address}`;
+                    if (!customerData[key]) {
+                        customerData[key] = { customerName: customerName, address: address, ordersCount: 0, activeContainers: new Set() };
+                    }
+                    customerData[key].ordersCount++;
+                    if (order['סטטוס'] !== 'סגור') {
+                        if (order['סוג פעולה'] === 'הורדה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה ירדה'])) {
+                            const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                            containersTaken.forEach(c => customerData[key].activeContainers.add(c));
+                        }
+                        if (order['סוג פעולה'] === 'העלאה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה עלתה'])) {
+                            const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                            containersBrought.forEach(c => customerData[key].activeContainers.delete(c));
+                        }
+                    }
+                });
+                const sortedCustomers = Object.values(customerData).sort((a, b) => b.ordersCount - a.ordersCount);
+                rows = sortedCustomers.map(data => [
+                    data.customerName,
+                    data.address,
+                    data.ordersCount,
+                    Array.from(data.activeContainers).join(', ') || 'אין'
+                ]);
+            } else if (reportType === 'action-type-counts-table') {
+                title = 'דוח: כמות סוגי פעולות';
+                headers = ['סוג פעולה', 'כמות'];
+                const actionTypeCounts = {};
+                dataToProcess.forEach(order => { 
+                    const actionType = order['סוג פעולה'] || 'לא ידוע';
+                    actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
+                });
+                const sortedActionTypes = Object.entries(actionTypeCounts).sort((a, b) => b[1] - a[1]);
+                rows = sortedActionTypes; 
+            } else if (reportType === 'customers-multiple-containers-table') {
+                title = 'דוח: לקוחות עם יותר ממכולה אחת';
+                headers = ['שם לקוח', 'כתובת', 'כמות מכולות פעילות', 'מספרי מכולות'];
+                const customersWithMultiple = calculateCustomersWithMultipleContainers(dataToProcess); 
+                rows = customersWithMultiple.map(data => [
+                    data.customerName,
+                    data.address,
+                    data.containerCount,
+                    data.containers.join(', ')
+                ]);
+            } else if (reportType === 'overdue-summary-table') {
+                title = 'דוח: סיכום הזמנות חורגות';
+                headers = ['תעודה', 'שם לקוח', 'כתובת', 'סוג פעולה', 'ימים שעברו', 'מכולות קשורות', 'הערות'];
+                const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג'); 
+                overdueOrders.sort((a, b) => (parseInt(b['ימים שעברו']) || 0) - (parseInt(a['ימים שעברו']) || 0));
+                rows = overdueOrders.map(order => {
+                    let containersText = '';
+                    if (order['סוג פעולה'] === 'החלפה') {
+                        const taken = String(order['מספר מכולה ירדה'] || '');
+                        const brought = String(order['מספר מכולה עלתה'] || '');
+                        if (taken && brought) containersText = `ירדה: ${taken}, עלתה: ${brought}`;
+                        else if (taken) containersText = `ירדה: ${taken}`;
+                        else if (brought) containersText = `עלתה: ${brought}`;
+                    } else if (order['סוג פעולה'] === 'הורדה') {
+                        containersText = String(order['מספר מכולה ירדה'] || '');
+                    } else if (order['סוג פעולה'] === 'העלאה') {
+                        containersText = String(order['מספר מכולה עלתה'] || '');
+                    } else {
+                        containersText = String(order['מספרי מכולות'] || '');
+                    }
+                    return [
+                        order['תעודה'] || '',
+                        order['שם לקוח'] || '',
+                        order['כתובת'] || '',
+                        order['סוג פעולה'] || '',
+                        order['ימים שעברו'] !== undefined ? order['ימים שעברו'] : '',
+                        containersText,
+                        order['הערות'] || ''
+                    ];
+                });
+            } else if (reportType === 'top-moving-containers-table') {
+                title = 'מכולות מובילות בתזוזה';
+                headers = ['מכולה', 'מספר תזוזות'];
+                const containerMovementCounts = {};
+                dataToProcess.forEach(order => { 
+                    const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    containersTaken.forEach(c => { containerMovementCounts[c] = (containerMovementCounts[c] || 0) + 1; });
+                    containersBrought.forEach(c => { containerMovementCounts[c] = (containerMovementCounts[c] || 0) + 1; });
+                });
+                const sortedContainers = Object.entries(containerMovementCounts)
+                    .map(([container, count]) => ({ container, count }))
+                    .sort((a, b) => b.count - a.count);
+                rows = sortedContainers.map(d => [d.container, d.count]);
+            } else if (reportType === 'returning-customers-table') {
+                title = 'לקוחות חוזרים (בעלי הזמנות רבות)';
+                headers = ['שם לקוח', 'כתובת', 'כמות הזמנות', 'מכולות פעילות', 'היסטוריה חריגה'];
+                const returningCustomers = getReturningCustomers(dataToProcess); 
+                rows = returningCustomers.map(customer => [
+                    customer.customerName,
+                    customer.address,
+                    customer.orderCount,
+                    Array.from(customer.containers).join(', ') || 'אין', // Corrected: use .containers
+                    customer.overdueOrders && customer.overdueOrders.length > 0 ? `חורג (${customer.overdueOrders.length})` : 'תקין'
+                ]);
+            }
+
+            return { headers, rows, title };
+        }
+
+        /**
+         * Prints the content of a specific report table using a generated HTML structure.
+         * @param {string} reportType - The identifier for the type of report to print.
+         */
+        function printReport(reportType) {
+            const { headers, rows, title } = getReportDataForPrinting(reportType);
+
+            if (rows.length === 0) {
+                showAlert('אין נתונים להדפסה בדוח זה.', 'warning');
                 return;
             }
 
+            let tableHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            ${headers.map(h => `<th style="border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #f2f2f2;">${h}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(row => `
+                            <tr>
+                                ${row.map(cell => `<td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${cell}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
             const printWindow = window.open('', '', 'height=600,width=800');
             printWindow.document.write('<html><head><title>הדפסת דוח</title>');
-            // Copy relevant styles for printing
-            printWindow.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">');
             printWindow.document.write('<style>');
             printWindow.document.write(`
-                body { font-family: 'Heebo', 'Inter', sans-serif; direction: rtl; text-align: right; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-                th { background-color: #f2f2f2; }
-                .container-pill { display: inline-block; background-color: #e0e7ff; padding: 2px 8px; border-radius: 9999px; font-size: 0.8em; margin-left: 5px; white-space: nowrap; }
-                h1, h2, h3 { text-align: center; margin-bottom: 10px; }
+                body { font-family: 'Heebo', 'Inter', sans-serif; direction: rtl; text-align: right; margin: 20px; }
+                h1 { text-align: center; margin-bottom: 20px; color: #1f2937; }
+                @media print {
+                    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+                    table { page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+                }
             `);
             printWindow.document.write('</style></head><body>');
-            printWindow.document.write(`<h1 style="color: ${document.body.classList.contains('dark') ? '#fff' : '#1f2937'};">דוח מערכת CRM - ${document.querySelector(`#${tableId}`).previousElementSibling.textContent.replace('דוח:', '').trim()}</h1>`); // Get report title
-            printWindow.document.write(tableContainer.outerHTML); // Include the entire table container
+            printWindow.document.write(`<h1>${title}</h1>`);
+            printWindow.document.write(tableHtml); 
+            printWindow.document.write('</body></html>');
             printWindow.document.close();
-            printWindow.print();
+            printWindow.print(); 
             showAlert('הדוח נשלח להדפסה.', 'success', 3000);
         }
 
@@ -2437,11 +2703,10 @@
 
             const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
             
-            // Generate table rows as text
             for (let i = 1; i < rows.length; i++) {
                 const rowCells = Array.from(rows[i].querySelectorAll('td'));
                 const rowData = rowCells.map(cell => cell.textContent.trim());
-                message += `${headers[0]}: ${rowData[0]}, ${headers[1]}: ${rowData[1]}`; // Example: Customer Name: X, Address: Y
+                message += `${headers[0]}: ${rowData[0]}, ${headers[1]}: ${rowData[1]}`;
                 if (rowData[2]) message += `, ${headers[2]}: ${rowData[2]}`;
                 if (rowData[3]) message += `, ${headers[3]}: ${rowData[3]}`;
                 message += '\n';
@@ -2453,7 +2718,6 @@
         }
 
         // --- Container History Modal (reused/adapted from script.js) ---
-        // This is necessary because some tables in this CRM dashboard link to container history.
         function openContainerHistoryModal(containerNum) {
             const modal = document.getElementById('container-history-modal');
             const tableBody = document.querySelector('#container-history-table tbody');
@@ -2462,7 +2726,7 @@
             tableBody.innerHTML = '';
             noHistoryMsg.classList.add('hidden');
 
-            const containerHistory = allOrders.filter(order =>
+            const containerHistory = allOrders.filter(order => 
                 (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
                 (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
                 (String(order['מספרי מכולות'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim())
@@ -2492,7 +2756,9 @@
                     const whatsappCell = row.insertCell();
                     if (order['טלפון לקוח']) {
                         const suggestedMsgId = getSuggestedMessageIdForOrder(order);
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}')"></i>`;
+                        whatsappCell.innerHTML = `<button class="whatsapp-icon-btn whatsapp-in-table-btn" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}', '${order['כתובת'] || ''}')">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -2510,7 +2776,6 @@
             document.getElementById('container-history-modal').classList.remove('active');
         }
 
-        // Placeholder for Order Details Modal (if needed in this context, copied from previous script)
         function showOrderDetails(orderData) {
             const modal = document.getElementById('order-details-modal');
             const orderCard = document.getElementById('current-order-card');
@@ -2565,28 +2830,57 @@
         // --- WhatsApp Messaging Logic ---
 
         const whatsappMessages = [
-            { id: 'new_customer_welcome', text: 'שלום [שם לקוח],\nתודה שבחרת להתחיל שכירות מכולה אצלנו! לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\nמספר ווטסאפ להזמנות: 972508860896\nטלפון מחלקת הזמנות: 097602010.', category: 'new_customer', placeholders: ['שם לקוח'] },
-            { id: 'approaching_due_7_days', text: 'שלום [שם לקוח],\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([מספר מכולה]) מסתיימת בעוד 7 ימים. זה הזמן לנקוט פעולה!\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף?', category: 'reminder', placeholders: ['שם לקוח', 'מספר מכולה'] },
-            { id: 'approaching_due_3_days', text: 'שלום [שם לקוח],\nתקופת שכירות המכולה ([מספר מכולה]) מסתיימת ממש בקרוב, בעוד 3 ימים. אנא טפל בנושא כדי למנוע חריגות.\nאנו לרשותך לכל עזרה.', category: 'reminder', placeholders: ['שם לקוח', 'מספר מכולה'] },
-            { id: 'overdue_7_days', text: 'שלום [שם לקוח],\nברצוננו להודיע לך על חריגה בימי שכירות של המכולה ([מספר מכולה]) ב-[ימים שעברו] ימים. נא ליצור קשר עם מחלקת הזמנות 097602010 או להשיב להודעה זו מה תרצה שנבצע (החלפה/הוצאה).', category: 'overdue', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו'] },
-            { id: 'overdue_30_days', text: 'התראה חמורה, [שם לקוח]:\nהמכולה ([מספר מכולה]) שבשימושך חורגת ב-[ימים שעברו] ימים! יש לטפל בנושא בדחיפות כדי למנוע חיובים נוספים וסיבוכים משפטיים.\nצור קשר מיידית: 097602010.', category: 'overdue', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו'] },
-            { id: 'overdue_long', text: 'חשבונך, [שם לקוח], נמצא בחריגה משמעותית של [ימים שעברו] ימים עבור מכולה ([מספר מכולה]).\nאנו נאלצים לנקוט בצעדים לגבייה. אנא צור קשר דחוף: 097602010.', category: 'overdue', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו'] },
-            { id: 'general_inquiry', text: 'שלום [שם לקוח],\nאיך אנחנו יכולים לעזור לך היום? אם יש לך שאלות, בקשות או תזכורות, אל תהסס לפנות אלינו.', category: 'general', placeholders: ['שם לקוח'] },
-            { id: 'payment_reminder', text: 'שלום [שם לקוח],\nתזכורת ידידותית לגבי תשלום חשבונית מספר [תעודה]. אנו מודים לך על תשומת הלב המהירה.', category: 'payment', placeholders: ['שם לקוח', 'תעודה'] },
-            { id: 'service_feedback', text: 'שלום [שם לקוח],\nאנו מקווים ששירותינו עונים על ציפיותיך. נשמח לקבל משוב על החוויה שלך עם מכולה מספר [מספר מכולה] כדי שנוכל להשתפר.', category: 'feedback', placeholders: ['שם לקוח', 'מספר מכולה'] },
-            { id: 'holiday_greetings', text: 'חג שמח, [שם לקוח]!\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה ובריאות.', category: 'seasonal', placeholders: ['שם לקוח'] },
-            { id: 'special_offer', text: 'שלום [שם לקוח],\nיש לנו חדשות מרגשות! מבצע מיוחד למכולות חדשות/נוספות עבורך. לפרטים נוספים, השב להודעה זו או התקשר: 097602010.', category: 'marketing', placeholders: ['שם לקוח'] },
-            { id: 'follow_up_issue', text: 'שלום [שם לקוח],\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה [תעודה]. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו.', category: 'support', placeholders: ['שם לקוח', 'תעודה'] },
-            { id: 'document_reminder', text: 'שלום [שם לקוח],\nתזכורת לשליחת המסמכים החסרים עבור הזמנה [תעודה]. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול.', category: 'reminder', placeholders: ['שם לקוח', 'תעודה'] },
-            { id: 'service_confirmation', text: 'שלום [שם לקוח],\nהשירות שהוזמן (תעודה [תעודה]) אושר ויתבצע ב-[תאריך סיום צפוי]. תודה שבחרת בנו!', category: 'confirmation', placeholders: ['שם לקוח', 'תעודה', 'תאריך סיום צפוי'] },
-            { id: 'service_delay', text: 'שלום [שם לקוח],\nעקב נסיבות בלתי צפויות, ייתכן שיהיה עיכוב קל בטיפול בהזמנה [תעודה]. אנו מתנצלים על אי הנוחות ונפעל לפתור זאת במהירות.', category: 'info', placeholders: ['שם לקוח', 'תעודה'] },
-            { id: 'location_update_request', text: 'שלום [שם לקוח],\nכדי שנוכל לתאם את השירות בצורה הטובה ביותר, אנא וודא שמיקום המכולה ([מספר מכולה]) מעודכן ומדויק.', category: 'reminder', placeholders: ['שם לקוח', 'מספר מכולה'] },
-            { id: 'happy_birthday', text: 'יום הולדת שמח, [שם לקוח]! 🎉\nצוות [שם החברה] מאחל לך יום מלא בשמחה, בריאות והגשמה.', category: 'seasonal', placeholders: ['שם לקוח'] },
-            { id: 'review_invitation', text: 'שלום [שם לקוח],\nנהנית מהשירות שלנו? נשמח אם תוכל להקדיש רגע ולכתוב לנו ביקורת קצרה כאן: [לינק לביקורת]. תודה!', category: 'feedback', placeholders: ['שם לקוח', 'לינק לביקורת'] },
-            { id: 'tech_support_contact', text: 'שלום [שם לקוח],\nלכל בעיה טכנית או תפעולית עם המכולה ([מספר מכולה]), מחלקת התמיכה שלנו זמינה עבורך.\nצור קשר: 097602010.', category: 'support', placeholders: ['שם לקוח', 'מספר מכולה'] },
-            { id: 'general_thanks', text: 'תודה רבה לך, [שם לקוח], על שיתוף הפעולה והאמון ב[שם החברה]!', category: 'general', placeholders: ['שם לקוח'] },
-            { id: 'multi_container_reminder', text: 'שלום [שם לקוח],\nשמנו לב שברשותך מספר מכולות פעילות. אנו כאן כדי לוודא שכל הצרכים שלך מסופקים. האם יש משהו שנוכל לעזור בו בנוגע למכולות שלך?', category: 'general', placeholders: ['שם לקוח'] }
+            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! 🥳 לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **972508860896**\n☎️ טלפון מחלקת הזמנות: **097602010**', category: 'כללי', placeholders: ['שם לקוח'], emoji: '👋' },
+            { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** 🗓️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
+            { id: 'approaching_due_3_days', text: 'שלום **[שם לקוח]**,\n\nתקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת ממש בקרוב, בעוד **3 ימים** ⚠️. אנא טפל בנושא כדי למנוע חריגות.\n\nאנו לרשותך לכל עזרה! 🙏', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏳' },
+            { id: 'overdue_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להודיע לך על חריגה בימי שכירות של המכולה ([**מספר מכולה**]) ב-**[ימים שעברו] ימים** 🚨. נא ליצור קשר עם מחלקת הזמנות **097602010** או להשיב להודעה זו מה תרצה שנבצע (החלפה/הוצאה).', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו'], emoji: '❗️' },
+            { id: 'overdue_30_days', text: '**התראה חמורה, [שם לקוח]:**\n\nהמכולה ([**מספר מכולה**]) שבשימושך חורגת ב-**[ימים שעברו] ימים**! יש לטפל בנושא בדחיפות כדי למנוע חיובים נוספים וסיבוכים משפטיים. ⚖️\n\n**צור קשר מיידית: 097602010.**', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו'], emoji: '🔴' },
+            { id: 'overdue_long', text: '**לכבוד: [שם לקוח]**\n\n**הנדון: חוב בגין שכירות מכולה חורגת**\n\nאנו פונים אליך בהתייחס לחשבונך, הנמצא בחריגה משמעותית של [**ימים שעברו**] ימים עבור מכולה ([**מספר מכולה**]).\n\nבהיעדר הסדרה מיידית, אנו נאלצים לנקוט בצעדים משפטיים לגבייה. אנו קוראים לך ליצור קשר דחוף להסדר: **097602010**.', category: 'משפטי', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו'], emoji: '📜' },
+            { id: 'general_inquiry', text: 'שלום **[שם לקוח]**,\n\nאיך אנחנו יכולים לעזור לך היום? 🤔 אם יש לך שאלות, בקשות או תזכורות, אל תהסס לפנות אלינו. אנחנו כאן בשבילך! ✨', category: 'כללי', placeholders: ['שם לקוח'], emoji: '💬' },
+            { id: 'payment_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת ידידותית לגבי תשלום חשבונית מספר **[תעודה]** 💰. אנו מודים לך על תשומת הלב המהירה ועל המשך שיתוף הפעולה.', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '💲' },
+            { id: 'service_feedback', text: 'שלום **[שם לקוח]**,\n\nאנו מקווים ששירותינו עונים על ציפיותיך. נשמח לקבל משוב על החוויה שלך עם מכולה מספר **[מספר מכולה]** כדי שנוכל להשתפר ולהעניק לך שירות טוב יותר. ⭐', category: 'משוב', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '📝' },
+            { id: 'holiday_greetings', text: 'חג שמח, **[שם לקוח]**! 🎉\n\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה, בריאות והמון שמחה! 🥳', category: 'עונתי', placeholders: ['שם לקוח'], emoji: '🎁' },
+            { id: 'special_offer', text: 'שלום **[שם לקוח]**,\n\nיש לנו חדשות מרגשות! 🎁 מבצע מיוחד למכולות חדשות/נוספות עבורך. אל תחמיץ! לפרטים נוספים, השב להודעה זו או התקשר: **097602010**.', category: 'שיווק', placeholders: ['שם לקוח'], emoji: '✨' },
+            { id: 'follow_up_issue', text: 'שלום **[שם לקוח]**,\n\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה **[תעודה]** 🛠️. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו כדי שנוכל להמשיך לטפל.', category: 'תמיכה', placeholders: ['שם לקוח', 'תעודה'], emoji: '✅' },
+            { id: 'document_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת לשליחת המסמכים החסרים עבור הזמנה **[תעודה]** 📄. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול בהזמנה.\n\nתודה על שיתוף הפעולה!', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '📌' },
+            { id: 'service_confirmation', text: 'שלום **[שם לקוח]**,\n\nהשירות שהוזמן (תעודה **[תעודה]**) אושר ויתבצע ב-**[תאריך סיום צפוי]** ✅. תודה שבחרת בנו ושיהיה יום נפלא!', category: 'אישור', placeholders: ['שם לקוח', 'תעודה', 'תאריך סיום צפוי'], emoji: '👍' },
+            { id: 'service_delay', text: 'שלום **[שם לקוח]**,\n\nעקב נסיבות בלתי צפויות, ייתכן שיהיה עיכוב קל בטיפול בהזמנה **[תעודה]** ⏱️. אנו מתנצלים על אי הנוחות ונפעל לפתור זאת במהירות האפשרית.\n\nנודיע לך על כל עדכון! 🔜', category: 'מידע', placeholders: ['שם לקוח', 'תעודה'], emoji: '🚧' },
+            { id: 'location_update_request', text: 'שלום **[שם לקוח]**,\n\nכדי שנוכל לתאם את השירות בצורה הטובה ביותר, אנא וודא שמיקום המכולה ([**מספר מכולה**]) מעודכן ומדויק 📍. זה חשוב להגעה יעילה!', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '🗺️' },
+            { id: 'happy_birthday', text: 'יום הולדת שמח, **[שם לקוח]**! 🎉🎂\n\nצוות [שם החברה] מאחל לך יום מלא בשמחה, בריאות, הגשמה והרבה רגעים מתוקים! 🥳', category: 'עונתי', placeholders: ['שם לקוח'], emoji: '🎈' },
+            { id: 'review_invitation', text: 'שלום **[שם לקוח]**,\n\nנהנית מהשירות שלנו? ✨ נשמח אם תוכל להקדיש רגע ולכתוב לנו ביקורת קצרה כאן: [**לינק לביקורת**]. תודה מראש על עזרתך להשתפר! 🙏', category: 'משוב', placeholders: ['שם לקוח', 'לינק לביקורת'], emoji: '🌟' },
+            { id: 'tech_support_contact', text: 'שלום **[שם לקוח]**,\n\nלכל בעיה טכנית או תפעולית עם המכולה ([**מספר מכולה**]), מחלקת התמיכה שלנו זמינה עבורך 🧑‍🔧.\n\n**צור קשר: 097602010.**', category: 'תמיכה', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '🔧' },
+            { id: 'general_thanks', text: 'תודה רבה לך, **[שם לקוח]**, על שיתוף הפעולה והאמון ב[שם החברה]! 🙏\n\nאנו מעריכים את בחירתך בנו ומקווים להמשיך לשרת אותך נאמנה. 💖', category: 'כללי', placeholders: ['שם לקוח'], emoji: '😊' },
+            { id: 'multi_container_reminder', text: 'שלום **[שם לקוח]**,\n\nשמנו לב שברשותך **מספר מכולות פעילות** 🏗️. אנו כאן כדי לוודא שכל הצרכים שלך מסופקים.\n\nהאם יש משהו שנוכל לעזור בו בנוגע למכולות שלך? אל תהסס לפנות! 🤝', category: 'תזכורות', placeholders: ['שם לקוח'], emoji: '📦' }
         ];
+
+        // Simulated city guidelines data (in a real app, this would come from a database)
+        const cityGuidelines = {
+            'הרצליה': {
+                id: 'herzliya_permit',
+                text: 'הנחיה חשובה לתושבי הרצליה:\nכדי להציב מכולת פסולת בניין ברחוב בהרצליה, יש להגיש בקשה מראש לאגף הפיקוח העירוני. הבקשה כרוכה בתשלום אגרה ונדרש אישור בכתב. מומלץ לוודא את כל הפרטים באתר העירייה או בטלפון.\n\nקישור למידע: https://www.herzliya.muni.il/pages/%D7%90%D7%92%D7%A8%D7%95%D7%AA%20%D7%95%D7%94%D7%99%D7%AA%D7%A8%D7%99%D7%9D',
+                link: 'https://www.herzliya.muni.il/pages/%D7%90%D7%92%D7%A8%D7%95%D7%AA%20%D7%95%D7%94%D7%99%D7%AA%D7%A8%D7%99%D7%9D',
+                category: 'היתרים עירוניים',
+                placeholders: [],
+                emoji: '📝'
+            },
+            'רעננה': {
+                id: 'raanana_permit',
+                text: 'הנחיה חשובה לתושבי רעננה:\nברעננה, חל איסור מוחלט להשאיר מכולות פסולת בניין במקום ציבורי (ברחוב) בסופי שבוע ובחגים. יש לדאוג להזמין פינוי לפני כניסת השבת/חג. קנסות יינתנו למפרים. אנא הקפד על הנחיות אלו.\n\nמידע נוסף: https://www.raanana.muni.il/pages/%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9F',
+                link: 'https://www.raanana.muni.il/pages/%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9F',
+                category: 'היתרים עירוניים',
+                placeholders: [],
+                emoji: '🚫'
+            },
+            'תל אביב': {
+                id: 'telaviv_permit',
+                text: 'הנחיה חשובה לתושבי תל אביב:\nבתל אביב, הצבת מכולות פסולת ברחוב מחייבת קבלת היתר מהעירייה. יש להגיש בקשה מקוונת ולצרף את כל המסמכים הנדרשים. שימו לב להנחיות המדויקות לגבי סימון המכולה ומשך ההצבה.\n\nלמידע והגשת בקשה: https://www.tel-aviv.muni.il/Bussiness/Construction/Pages/WasteContainers.aspx',
+                link: 'https://www.tel-aviv.muni.il/Bussiness/Construction/Pages/WasteContainers.aspx',
+                category: 'היתרים עירוניים',
+                placeholders: [],
+                emoji: '🏛️'
+            }
+        };
+
 
         let typingInterval;
         let currentMessageFullText = '';
@@ -2605,14 +2899,13 @@
 
             if (message) {
                 currentMessageFullText = message.text;
-                // Replace placeholders
                 for (const key in placeholders) {
                     currentMessageFullText = currentMessageFullText.replace(new RegExp(`\\[${key}\\]`, 'g'), placeholders[key]);
                 }
                 
                 typingIndex = 0;
                 typingDisplay.textContent = '';
-                textarea.value = ''; // Clear textarea initially
+                textarea.value = ''; 
 
                 typingInterval = setInterval(() => {
                     if (typingIndex < currentMessageFullText.length) {
@@ -2620,12 +2913,45 @@
                         typingIndex++;
                     } else {
                         clearInterval(typingInterval);
-                        textarea.value = currentMessageFullText; // Put full text in textarea for editing
-                        typingDisplay.textContent = ''; // Clear typing display
+                        textarea.value = currentMessageFullText; 
+                        typingDisplay.textContent = ''; 
                     }
-                }, 30); // Typing speed in ms
+                }, 30); 
             }
         }
+
+        /**
+         * Extracts city name from a given address string.
+         * @param {string} address - The full address string.
+         * @returns {string|null} The extracted city name or null if not found.
+         */
+        function getCityFromAddress(address) {
+            if (!address) return null;
+            const parts = address.split(',').map(s => s.trim());
+            const israeliCities = [
+                "תל אביב", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "באר שבע",
+                "נתניה", "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "הרצליה",
+                "כפר סבא", "חדרה", "בית שמש", "מודיעין-מכבים-רעות", "לוד", "רמלה", "רעננה",
+                "נהריה", "קריית גת", "אילת", "עכו", "צפת", "טבריה", "נצרת", "אום אל-פאחם",
+                "בני ציון", "אבן יהודה", "אור יהודה", "אור עקיבא", "אריאל", "אשקלון", "באקה אל-גרבייה",
+                "גבעתיים", "דימונה", "הוד השרון", "זכרון יעקב", "יבנה", "יהוד-מונוסון", "יוקנעם עילית",
+                "כוכב יאיר", "כפר יונה", "כפר קאסם", "כרמיאל", "מגדל העמק", "מכבים", "מעלה אדומים",
+                "מצפה רמון", "נהריה", "נס ציונה", "נשר", "עפולה", "ערד", "פרדס חנה-כרכור",
+                "קריית אונו", "קריית ביאליק", "קריית ים", "קריית מוצקין", "קריית שמונה",
+                "שוהם", "שדרות", "רמת השרון"
+            ].sort((a,b) => b.length - a.length); 
+
+            for (const city of israeliCities) {
+                if (address.includes(city)) {
+                    return city;
+                }
+            }
+            if (parts.length > 0) {
+                return parts[parts.length - 1];
+            }
+            return null;
+        }
+
 
         /**
          * Populates message options and opens the WhatsApp modal.
@@ -2637,34 +2963,51 @@
          * @param {string} containerNum - Container number for relevant messages.
          * @param {string|null} docId - Document ID (תעודה) for messages.
          * @param {string|null} expectedEndDate - Expected end date for messages.
+         * @param {string|null} customerAddress - Customer's full address to derive city for guidelines.
          * @param {string|null} reviewLink - Link for review requests.
          */
-        function openWhatsAppModal(phoneNumber, suggestedMessageId = 'general_inquiry', orderSheetRow = null, customerName = 'לקוח יקר', daysOverdue = 0, containerNum = '', docId = '', expectedEndDate = '', reviewLink = 'https://example.com/review') {
+        function openWhatsAppModal(phoneNumber, suggestedMessageId = 'general_inquiry', orderSheetRow = null, customerName = 'לקוח יקר', daysOverdue = 0, containerNum = '', docId = '', expectedEndDate = '', customerAddress = '', reviewLink = 'https://example.com/review') {
             const modal = document.getElementById('whatsapp-modal');
             const phoneInput = document.getElementById('whatsapp-phone-input');
-            const messageOptionsDiv = document.getElementById('whatsapp-message-options');
+            const messageOptionsListDiv = document.getElementById('message-options-list');
             const currentOrderSheetRowInput = document.getElementById('whatsapp-current-order-sheet-row');
             
-            // Ensure phoneNumber is treated as a string to prevent TypeError
             const phoneString = String(phoneNumber);
-            phoneInput.value = phoneString.startsWith('972') ? phoneString : `972${phoneString.substring(1)}`; // Format to Israeli international without '+'
+            phoneInput.value = phoneString.startsWith('972') ? phoneString : `972${phoneString.substring(1)}`; 
             currentOrderSheetRowInput.value = orderSheetRow !== null ? orderSheetRow : '';
 
-            messageOptionsDiv.innerHTML = ''; // Clear previous options
-            whatsappMessages.forEach(msg => {
+            const customerCity = getCityFromAddress(customerAddress);
+            let dynamicMessages = [];
+            if (customerCity && cityGuidelines[customerCity]) {
+                const guideline = cityGuidelines[customerCity];
+                dynamicMessages.push({
+                    id: `city_guideline_${customerCity}`,
+                    text: `**הנחיית עיריית ${customerCity}:**\n${guideline.text}\n\nלמידע וטפסים נוספים: ${guideline.link}`,
+                    category: 'היתרים עירוניים',
+                    placeholders: [],
+                    emoji: guideline.emoji 
+                });
+            }
+
+            const allAvailableMessages = [...whatsappMessages];
+            if (dynamicMessages.length > 0) {
+                allAvailableMessages.unshift(...dynamicMessages);
+            }
+
+            messageOptionsListDiv.innerHTML = ''; 
+            allAvailableMessages.forEach(msg => {
                 const optionDiv = document.createElement('div');
                 optionDiv.className = `message-option-item`;
                 if (msg.id === suggestedMessageId) {
                     optionDiv.classList.add('selected');
                 }
-                // Display a truncated version of the message for the option list
-                const displayMsg = msg.text.replace(/\[.*?\]/g, '...').substring(0, 70) + '...';
-                optionDiv.textContent = displayMsg;
+                const displayEmoji = msg.category === 'משפטי' ? '' : (msg.emoji || '');
+                const displayMsg = `**${displayEmoji} ${msg.category}:** ${msg.text.replace(/\[.*?\]/g, '...').substring(0, 60)}...`;
+                optionDiv.innerHTML = displayMsg; 
+
                 optionDiv.onclick = () => {
-                    // Remove selected from others
                     document.querySelectorAll('.message-option-item').forEach(item => item.classList.remove('selected'));
                     optionDiv.classList.add('selected');
-                    // Prepare placeholders for the selected message
                     const placeholders = {
                         'שם לקוח': customerName,
                         'ימים שעברו': daysOverdue,
@@ -2675,17 +3018,21 @@
                     };
                     selectAndTypeMessage(msg.id, placeholders);
                 };
-                messageOptionsDiv.appendChild(optionDiv);
+                messageOptionsListDiv.appendChild(optionDiv);
             });
 
-            // Trigger click on suggested message to load it
-            const defaultSelectedOption = messageOptionsDiv.querySelector(`.message-option-item.selected`);
+            const defaultSelectedOption = messageOptionsListDiv.querySelector(`.message-option-item.selected`);
             if (defaultSelectedOption) {
                 defaultSelectedOption.click();
-            } else if (whatsappMessages.length > 0) {
-                // If suggested not found, or no suggestion, select the first one
-                messageOptionsDiv.querySelector('.message-option-item').click();
+            } else if (allAvailableMessages.length > 0) {
+                messageOptionsListDiv.querySelector('.message-option-item').click();
             }
+
+            const messageOptionsContainer = document.getElementById('whatsapp-message-options');
+            messageOptionsContainer.classList.add('expanded');
+            messageOptionsContainer.style.maxHeight = messageOptionsContainer.scrollHeight + "px";
+            document.querySelector('.message-option-header').classList.remove('collapsed');
+
 
             if (isMobile()) {
                 modal.classList.add('mobile-drawer');
@@ -2697,8 +3044,48 @@
 
         function closeWhatsAppModal() {
             document.getElementById('whatsapp-modal').classList.remove('active');
-            clearInterval(typingInterval); // Stop typing effect
+            clearInterval(typingInterval); 
         }
+
+        /**
+         * Toggles the visibility of the message options accordion.
+         */
+        function toggleMessageOptions() {
+            const container = document.getElementById('whatsapp-message-options');
+            const header = document.querySelector('.message-option-header');
+            if (container.classList.contains('expanded')) {
+                container.classList.remove('expanded');
+                container.style.maxHeight = null;
+                header.classList.add('collapsed');
+            } else {
+                container.classList.add('expanded');
+                container.style.maxHeight = container.scrollHeight + "px";
+                header.classList.remove('collapsed');
+            }
+        }
+
+        /**
+         * Filters the message options based on user input.
+         */
+        function filterMessageOptions() {
+            const input = document.getElementById('message-filter-input');
+            const filter = input.value.toLowerCase();
+            const messageItems = document.querySelectorAll('#message-options-list .message-option-item');
+
+            messageItems.forEach(item => {
+                const text = item.textContent || item.innerText;
+                if (text.toLowerCase().indexOf(filter) > -1) {
+                    item.style.display = "";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+            const container = document.getElementById('whatsapp-message-options');
+            if (container.classList.contains('expanded')) {
+                container.style.maxHeight = container.scrollHeight + "px";
+            }
+        }
+
 
         /**
          * Sends the WhatsApp message to the entered number.
@@ -2708,7 +3095,7 @@
             const messageTextarea = document.getElementById('whatsapp-message-textarea');
             const orderSheetRow = document.getElementById('whatsapp-current-order-sheet-row').value;
 
-            const phoneNumber = phoneInput.value.trim().replace(/\D/g, ''); // Clean phone number (digits only)
+            const phoneNumber = phoneInput.value.trim().replace(/\D/g, ''); 
             const message = messageTextarea.value.trim();
 
             if (!phoneNumber) {
@@ -2725,7 +3112,6 @@
             showAlert('ההודעה נשלחה ל-WhatsApp (נפתח חלון חדש).', 'success', 5000);
             closeWhatsAppModal();
 
-            // Log message history to notes if an order is associated
             if (orderSheetRow) {
                 logWhatsAppMessage(parseInt(orderSheetRow), message);
             }
@@ -2733,8 +3119,6 @@
 
         /**
          * Logs the sent WhatsApp message to the order's notes in the backend.
-         * This function assumes you have a Google Apps Script function named `updateOrderNote`
-         * that takes `sheetRow` and `note` as parameters.
          * @param {number} sheetRow - The row number of the order in the Google Sheet.
          * @param {string} message - The message text that was sent.
          */
@@ -2742,15 +3126,12 @@
             const timestamp = new Date().toLocaleString('he-IL', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             const noteToLog = `[נשלח וואטסאפ: ${timestamp}] ${message}`;
 
-            // Find the order in `allOrders` and update its 'הערות' locally
             const orderIndex = allOrders.findIndex(order => order.sheetRow === sheetRow);
             if (orderIndex !== -1) {
                 const currentNotes = allOrders[orderIndex]['הערות'] || '';
                 allOrders[orderIndex]['הערות'] = currentNotes ? `${currentNotes}\n${noteToLog}` : noteToLog;
-                // Re-render relevant tables if needed to show updated notes (though notes column is not always visible)
             }
 
-            // Send to backend
             const response = await fetchData('updateOrderNote', { sheetRow: sheetRow, note: noteToLog });
             if (response.success) {
                 console.log('WhatsApp message logged to backend successfully.');
@@ -2774,10 +3155,9 @@
             if (order['סטטוס'] === 'חורג') {
                 if (daysOverdue <= 7) return 'overdue_7_days';
                 if (daysOverdue <= 30) return 'overdue_30_days';
-                return 'overdue_long';
+                return 'overdue_long'; 
             }
             
-            // Check for approaching due date for active (non-overdue, non-closed) orders
             if (order['סטטוס'] === 'פתוח' && order['תאריך סיום צפוי']) {
                 const expectedEndDate = new Date(order['תאריך סיום צפוי']);
                 const daysUntilDue = Math.floor((expectedEndDate - today) / (1000 * 60 * 60 * 24));
@@ -2785,16 +3165,18 @@
                 if (daysUntilDue <= 7 && daysUntilDue > 3) return 'approaching_due_7_days';
             }
 
-            // New customer check (first order, relatively new)
-            // This is a rough heuristic. A more robust solution would track customer creation.
             if (daysSinceOrder <= 30 && order['מספר מכולה ירדה'] && order['סוג פעולה'] === 'הורדה') {
                 const customerOrders = allOrders.filter(o => o['שם לקוח'] === order['שם לקוח'] && o['כתובת'] === order['כתובת']);
-                if (customerOrders.length === 1) { // Only one order for this customer
+                if (customerOrders.length === 1) { 
                     return 'new_customer_welcome';
                 }
             }
+            
+            const customerCity = getCityFromAddress(order['כתובת']);
+            if (customerCity && cityGuidelines[customerCity]) {
+                return `city_guideline_${customerCity}`; 
+            }
 
-            // Default fallback
             return 'general_inquiry';
         }
 
@@ -2815,18 +3197,17 @@
         backToTopBtn.addEventListener('click', topFunction);
 
         function topFunction() {
-            window.scrollTo({ top: 0, behavior: 'smooth' }); // Smooth scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' }); 
         }
 
 
         // Initial Load and Event Listeners
         window.onload = () => {
-            initializeThemeCrm(); // Initialize theme for this page
-            loadAllData();
+            initializeThemeCrm(); 
+            loadAllData(); 
             updateDateTimeCrm();
             setInterval(updateDateTimeCrm, 1000);
             
-            // Re-draw charts on resize to make them responsive
             window.addEventListener('resize', () => {
                 drawCharts();
             });
