@@ -1205,7 +1205,10 @@
                             isHandled: false,
                             orderId: status.order.sheetRow,
                             customerName: status.order['שם לקוח'],
-                            customerPhone: status.order['טלפון לקוח'] // Assuming this field exists
+                            customerPhone: status.order['טלפון לקוח'], // Assuming this field exists
+                            containers: containerNum, // Explicitly pass containerNum
+                            docId: status.order['תעודה'], // Pass Document ID
+                            expectedEndDate: status.order['תאריך סיום צפוי'] // Pass Expected End Date
                         });
                     }
                 }
@@ -1223,7 +1226,9 @@
                         isHandled: false,
                         orderId: order.sheetRow,
                         customerName: order['שם לקוח'],
-                        customerPhone: order['טלפון לקוח'] // Assuming this field exists
+                        customerPhone: order['טלפון לקוח'], // Assuming this field exists
+                        docId: order['תעודה'], // Pass Document ID
+                        expectedEndDate: order['תאריך סיום צפוי'] // Pass Expected End Date
                     });
                 }
             });
@@ -1238,7 +1243,9 @@
                     orderId: order.sheetRow,
                     customerName: order['שם לקוח'],
                     customerPhone: order['טלפון לקוח'], // Assuming this field exists
-                    daysOverdue: order['ימים שעברו']
+                    daysOverdue: order['ימים שעברו'],
+                    docId: order['תעודה'], // Pass Document ID
+                    expectedEndDate: order['תאריך סיום צפוי'] // Pass Expected End Date
                 });
             });
 
@@ -1288,7 +1295,7 @@
             const notification = notifications.find(n => n.id === notificationId);
             if (notification && notification.customerPhone) {
                 const suggestedMessageId = getSuggestedMessageIdFromNotification(notification);
-                openWhatsAppModal(notification.customerPhone, suggestedMessageId, notification.orderId, notification.customerName, notification.daysOverdue, notification.containers);
+                openWhatsAppModal(notification.customerPhone, suggestedMessageId, notification.orderId, notification.customerName, notification.daysOverdue, notification.containers, notification.docId, notification.expectedEndDate);
             } else {
                 showAlert('לא ניתן לשלוח הודעה: חסר מספר טלפון או פרטי הזמנה בהתראה.', 'warning');
             }
@@ -1309,7 +1316,7 @@
                 if (notification.daysOverdue <= 30) return 'overdue_30_days';
                 return 'overdue_long';
             }
-            return 'general_greeting'; // Fallback
+            return 'general_inquiry'; // Fallback changed to general inquiry as it's more appropriate
         }
 
 
@@ -1852,7 +1859,7 @@
                     if (data.phone) {
                         // Pass a dummy sheetRow for general customer message, or find a relevant one.
                         // For simplicity, for customer summary, we suggest a general message.
-                        const suggestedMsgId = data.ordersCount === 1 && (new Date() - data.firstOrderDate) / (1000 * 60 * 60 * 24) < 30 ? 'new_customer_welcome' : 'general_greeting';
+                        const suggestedMsgId = data.ordersCount === 1 && (new Date() - data.firstOrderDate) / (1000 * 60 * 60 * 24) < 30 ? 'new_customer_welcome' : 'general_inquiry'; // Changed fallback
                         whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${data.phone}', '${suggestedMsgId}', null, '${data.customerName}')"></i>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
@@ -1916,7 +1923,7 @@
                     // For multiple containers, try to find a phone number for any of their active orders
                     const customerOrder = allOrders.find(o => o['שם לקוח'] === data.customerName && o['כתובת'] === data.address && o['טלפון לקוח']);
                     if (customerOrder && customerOrder['טלפון לקוח']) {
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customerOrder['טלפון לקוח']}', 'multi_container_reminder', null, '${data.customerName}')"></i>`;
+                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customerOrder['טלפון לקוח']}', 'multi_container_reminder', null, '${data.customerName}', null, data.containers.join(', '), customerOrder['תעודה'] || '', formatDate(customerOrder['תאריך סיום צפוי']) || '')"></i>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -2024,7 +2031,7 @@
                     const whatsappCell = row.insertCell();
                     if (order['טלפון לקוח']) {
                         const suggestedMsgId = getSuggestedMessageIdForOrder(order);
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${containersText}')"></i>`;
+                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${containersText}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}')"></i>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -2211,8 +2218,10 @@
                     }
                     const whatsappCell = row.insertCell();
                     if (customer.phone) {
-                        const suggestedMsgId = 'general_greeting'; // For returning customers, start with general
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customer.phone}', '${suggestedMsgId}', null, '${customer.customerName}')"></i>`;
+                        const suggestedMsgId = 'general_inquiry'; // Changed fallback
+                        // For returning customers, we don't have a specific orderSheetRow to log against easily here.
+                        // So, passing null for orderSheetRow.
+                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${customer.phone}', '${suggestedMsgId}', null, '${customer.customerName}', null, customer.containers.join(', ') || '', null, null)"></i>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -2302,7 +2311,7 @@
                                         <td>${order['מספר מכולה ירדה'] || ''}</td>
                                         <td>${order['מספר מכולה עלתה'] || ''}</td>
                                         <td>
-                                            ${order['טלפון לקוח'] ? `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${getSuggestedMessageIdForOrder(order)}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}')"></i>` : 'אין טלפון'}
+                                            ${order['טלפון לקוח'] ? `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${getSuggestedMessageIdForOrder(order)}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}')"></i>` : 'אין טלפון'}
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -2483,7 +2492,7 @@
                     const whatsappCell = row.insertCell();
                     if (order['טלפון לקוח']) {
                         const suggestedMsgId = getSuggestedMessageIdForOrder(order);
-                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}')"></i>`;
+                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}')"></i>`;
                     } else {
                         whatsappCell.textContent = 'אין טלפון';
                     }
@@ -2630,7 +2639,7 @@
          * @param {string|null} expectedEndDate - Expected end date for messages.
          * @param {string|null} reviewLink - Link for review requests.
          */
-        function openWhatsAppModal(phoneNumber, suggestedMessageId = 'general_greeting', orderSheetRow = null, customerName = 'לקוח יקר', daysOverdue = 0, containerNum = '', docId = '', expectedEndDate = '', reviewLink = 'https://example.com/review') {
+        function openWhatsAppModal(phoneNumber, suggestedMessageId = 'general_inquiry', orderSheetRow = null, customerName = 'לקוח יקר', daysOverdue = 0, containerNum = '', docId = '', expectedEndDate = '', reviewLink = 'https://example.com/review') {
             const modal = document.getElementById('whatsapp-modal');
             const phoneInput = document.getElementById('whatsapp-phone-input');
             const messageOptionsDiv = document.getElementById('whatsapp-message-options');
@@ -2815,11 +2824,4 @@
             updateDateTimeCrm();
             setInterval(updateDateTimeCrm, 1000);
             
-            // Re-draw charts on resize to make them responsive
-            window.addEventListener('resize', () => {
-                drawCharts();
-            });
-        };
-    </script>
-</body>
-</html>
+            // Re-draw charts on resize to make them respons
