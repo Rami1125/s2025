@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת CRM - לוח בקרה למנהל</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js CDN for charts -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Custom Styles - for general app theme and overrides -->
+    <link rel="stylesheet" href="style.css"> 
+    <style>
+        /* Custom styles specific to this CRM Manager Dashboard */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-dark);
+        }
+        body.dark {
+            background-color: var(--dark-background-dark);
+            color: var(--dark-text-light);
+        }
+        .container-wrapper {
+            max-width: 1400px; /* Wider container for dashboard */
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.3s ease-in-out;
+            border: 1px solid var(--border-light);
+        }
+        body.dark .card {
+            background-color: var(--dark-surface-dark);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border-color: var(--dark-border-dark);
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+        .btn-metric {
+            @apply flex flex-col items-center justify-center p-6 rounded-xl shadow-lg transition-transform transform hover:scale-105 active:scale-95 text-white font-bold text-center cursor-pointer;
+            background: linear-gradient(135deg, var(--primary-brand), var(--secondary-brand));
+            min-height: 120px;
+            border: none;
+            outline: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .btn-metric.bg-blue { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+        .btn-metric.bg-green { background: linear-gradient(135deg, #10B981, #34D399); }
+        .btn-metric.bg-purple { background: linear-gradient(135deg, #8B5CF6, #A78BFA); }
+        .btn-metric.bg-red { background: linear-gradient(135deg, #EF4444, #F87171); }
+
+        .btn-metric .metric-value {
+            font-size: 2.5rem; /* Large number */
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .btn-metric .metric-label {
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+
+        /* Notification Board Styling */
+        #notification-board {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-light);
+        }
+        body.dark #notification-board {
+            background-color: var(--dark-surface-dark);
+            border-color: var(--dark-border-dark);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .notification-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-dark);
+        }
+        body.dark .notification-item {
+            color: var(--dark-text-light);
+            border-color: var(--dark-border-dark);
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .notification-item.handled {
+            opacity: 0.6;
+            text-decoration: line-through;
+            color: var(--text-medium);
+        }
+        body.dark .notification-item.handled {
+            color: var(--dark-text-medium);
+        }
+        .notification-icon {
+            font-size: 1.2rem;
+            margin-right: 0.75rem;
+            color: var(--accent-color);
+        }
+        .notification-item.error .notification-icon { color: #EF4444; }
+        .notification-item.warning .notification-icon { color: #F59E0B; }
+        .notification-item.info .notification-icon { color: #3B82F6; }
+        .notification-message {
+            flex-grow: 1;
+            font-size: 0.95rem;
+        }
+        .notification-actions {
+            margin-left: 1rem;
+        }
+        .notification-handle-btn {
+            @apply bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-semibold hover:bg-gray-300 transition-colors;
+        }
+        body.dark .notification-handle-btn {
+            @apply bg-gray-700 text-gray-200 hover:bg-gray-600;
+        }
+
+        /* Chart Styling */
+        .chart-container-crm {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-light);
+            position: relative;
+        }
+        body.dark .chart-container-crm {
+            background-color: var(--dark-surface-dark);
+            border-color: var(--dark-border-dark);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .chart-container-crm h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+        body.dark .chart-container-crm h3 {
+            color: var(--dark-text-light);
+        }
+        .chart-svg-container {
+            width: 100%;
+            height: 350px; /* Fixed height for charts */
+        }
+        .chart-bar {
+            fill: var(--primary-brand);
+            transition: fill 0.3s ease;
+        }
+        body.dark .chart-bar {
+            fill: var(--dark-primary-brand);
+        }
+        .chart-bar:hover {
+            fill: var(--secondary-brand);
+        }
+        body.dark .chart-bar:hover {
+            fill: var(--dark-secondary-brand);
+        }
+        .pie-slice path {
+            transition: opacity 0.3s ease;
+        }
+        .pie-slice:hover path {
+            opacity: 0.8;
+        }
+        .chart-text, .axis-text {
+            fill: var(--text-medium);
+            font-size: 0.85rem;
+        }
+        body.dark .chart-text, body.dark .axis-text {
+            fill: var(--dark-text-medium);
+        }
+        .axis path, .axis line {
+            stroke: var(--border-light);
+            stroke-width: 1px;
+        }
+        body.dark .axis path, body.dark .axis line {
+            stroke: var(--dark-border-dark);
+        }
+
+        /* Table Styling (reused from style.css but with mobile adaptations) */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+        }
+        body.dark .table-container {
+            background-color: var(--dark-surface-dark);
+            border-color: var(--dark-border-dark);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px; /* Ensure table is still readable horizontally on small screens */
+        }
+        th, td {
+            padding: 0.8rem 1rem;
+            text-align: right;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.9rem;
+        }
+        body.dark th, body.dark td {
+            border-color: var(--dark-border-dark);
+        }
+        th {
+            background-color: var(--background-light);
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+        body.dark th {
+            background-color: var(--dark-background-dark);
+            color: var(--dark-text-light);
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background-color: var(--background-light);
+        }
+        body.dark tr:hover {
+            background-color: var(--dark-background-dark);
+        }
+        .whatsapp-share-btn {
+            @apply inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md shadow hover:bg-green-600 transition-colors text-sm;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Loader Spinner -->
+    <div id="loader-overlay" class="loader-overlay hidden active">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Container for Alerts (Toasts) -->
+    <div id="alert-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Modals (reused from index.html/index2.html for consistency, if needed for detailed views) -->
+    <!-- This CRM page primarily focuses on reports and dashboard, so most modals might be for details/history -->
+    <!-- The structure is assumed to follow the existing modal pattern for consistency -->
+    <!-- Order Details Modal -->
+    <div id="order-details-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="details-modal-title">
+        <div class="modal-content modal-full-width">
+            <button class="modal-close-btn" onclick="closeOrderDetailsModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="details-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">פרטי הזמנה</h2>
+            <div class="modal-body">
+                <div id="current-order-card" class="order-card-detail">
+                    <!-- Current order details will be loaded here -->
+                </div>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="btn btn-secondary" onclick="closeOrderDetailsModal()" aria-label="סגור">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container History Modal (for container details from reports) -->
+    <div id="container-history-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="container-history-modal-title">
+        <div class="modal-content modal-full-width">
+            <button class="modal-close-btn" onclick="closeContainerHistoryModal()" aria-label="סגור חלון"><i class="fas fa-times"></i></button>
+            <h2 id="container-history-modal-title" class="text-2xl font-bold mb-6 text-center text-gray-700">היסטוריית מכולה: <span id="history-container-number"></span></h2>
+            <div class="modal-body table-container">
+                <table id="container-history-table" class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th>תאריך הזמנה</th>
+                            <th>תעודה</th>
+                            <th>שם לקוח</th>
+                            <th>סוג פעולה</th>
+                            <th>מספר מכולה ירדה</th>
+                            <th>מספר מכולה עלתה</th>
+                            <th>סטטוס הזמנה</th>
+                            <th>תאריך סיום צפוי</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+                <p id="no-container-history" class="text-center text-gray-500 mt-4 hidden">אין היסטוריית שינויים עבור מכולה זו.</p>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="btn btn-secondary" onclick="closeContainerHistoryModal()" aria-label="סגור">סגור</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main CRM Dashboard Structure -->
+    <div class="min-h-screen flex flex-col container-wrapper">
+        <header class="mb-8 text-center flex flex-col items-center justify-center">
+            <div class="flex items-center justify-center mb-4">
+                <img src="https://placehold.co/80x80/6D28D9/FFFFFF?text=CRM" alt="Company Logo" class="h-20 w-20 rounded-full shadow-lg border-2 border-purple-350 mr-4" aria-label="לוגו החברה">
+                <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100 m-0">לוח בקרה למנהל CRM</h1>
+            </div>
+            <p class="text-lg text-gray-600 dark:text-gray-300 mb-2">תובנות עמוקות וניהול חכם של המערכת</p>
+            <div class="text-sm text-gray-500 dark:text-gray-400 font-mono tracking-wide">
+                <span id="current-date-crm" class="mr-2 text-purple-600 font-semibold"></span> |
+                <span id="current-time-crm" class="ml-2 text-blue-600 font-semibold animate-pulse"></span>
+            </div>
+            <!-- Dark/Light Mode Toggle (re-used from style.css) -->
+            <button id="theme-toggle-crm" class="mt-4 px-4 py-2 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 transition-colors flex items-center gap-2" aria-label="החלף מצב כהה/בהיר">
+                <i class="fas fa-sun" id="sun-icon-crm"></i><i class="fas fa-moon hidden" id="moon-icon-crm"></i>
+                <span>מצב בהיר</span>
+            </button>
+        </header>
+
+        <!-- Notification Board -->
+        <section id="notification-board" class="mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 text-center">
+                <i class="fas fa-bullhorn text-red-500 ml-2"></i> לוח מודעות והתראות קריטיות
+            </h2>
+            <div id="notifications-list" class="space-y-3">
+                <!-- Notifications will be loaded here by JavaScript -->
+                <p id="no-notifications-msg" class="text-center text-gray-500 dark:text-gray-400">אין התראות חדשות. כל הכבוד! 🎉</p>
+            </div>
+        </section>
+        <hr class="my-8 border-gray-200 dark:border-gray-700">
+
+        <!-- Report Buttons -->
+        <section id="report-buttons" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <button class="btn-metric bg-blue" onclick="showReportTable('orders-per-customer-table')">
+                <span class="metric-value" id="total-orders-count">0</span>
+                <span class="metric-label">סה"כ הזמנות</span>
+            </button>
+            <button class="btn-metric bg-green" onclick="showReportTable('action-type-counts-table')">
+                <span class="metric-value" id="unique-action-types-count">0</span>
+                <span class="metric-label">סוגי פעולות ייחודיים</span>
+            </button>
+            <button class="btn-metric bg-purple" onclick="showReportTable('customers-multiple-containers-table')">
+                <span class="metric-value" id="customers-multiple-count">0</span>
+                <span class="metric-label">לקוחות עם מכולות מרובות</span>
+            </button>
+            <button class="btn-metric bg-red" onclick="showReportTable('overdue-summary-table')">
+                <span class="metric-value" id="current-overdue-count">0</span>
+                <span class="metric-label">הזמנות חורגות כרגע</span>
+            </button>
+        </section>
+        <hr class="my-8 border-gray-200 dark:border-gray-700">
+
+        <!-- Charts Section -->
+        <section id="charts-section" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div id="chart-orders-per-customer" class="chart-container-crm">
+                <h3>כמות הזמנות לכל לקוח (הכי פעילים)</h3>
+                <div class="chart-svg-container" id="svg-orders-per-customer"></div>
+                <p id="no-data-orders-per-customer" class="text-center text-gray-500 dark:text-gray-400 hidden">אין נתונים להצגה.</p>
+            </div>
+            <div id="chart-action-type-distribution" class="chart-container-crm">
+                <h3>חלוקת סוגי פעולות</h3>
+                <div class="chart-svg-container" id="svg-action-type-distribution"></div>
+                <p id="no-data-action-type" class="text-center text-gray-500 dark:text-gray-400 hidden">אין נתונים להצגה.</p>
+            </div>
+        </section>
+        <hr class="my-8 border-gray-200 dark:border-gray-700">
+
+        <!-- Reports & Tables Section -->
+        <section id="reports-tables-section" class="space-y-8">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
+                <i class="fas fa-file-invoice-dollar text-green-500 ml-2"></i> דוחות מפורטים
+            </h2>
+
+            <!-- Orders Per Customer Table -->
+            <div id="orders-per-customer-table" class="report-table-section card p-6 hidden">
+                <h3 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-users-cog ml-2"></i> דוח: כמות הזמנות לכל לקוח
+                </h3>
+                <div class="flex justify-end gap-3 mb-4">
+                    <button class="whatsapp-share-btn" onclick="shareReportToWhatsApp('orders-per-customer-table')">
+                        <i class="fab fa-whatsapp ml-2"></i> שתף לווצאפ
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportTableToExcel('orders-per-customer-table-data', 'orders_per_customer')">
+                        <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
+                    </button>
+                    <button class="btn btn-secondary" onclick="printReport('orders-per-customer-table-data')">
+                        <i class="fas fa-print ml-2"></i> הדפס
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="orders-per-customer-table-data" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>שם לקוח</th>
+                                <th>כתובת</th>
+                                <th>כמות הזמנות</th>
+                                <th>כמות מכולות פעילות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <p id="no-data-orders-per-customer-table" class="text-center text-gray-500 dark:text-gray-400 mt-4 hidden">אין נתונים להצגה.</p>
+            </div>
+
+            <!-- Action Type Counts Table -->
+            <div id="action-type-counts-table" class="report-table-section card p-6 hidden">
+                <h3 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-cogs ml-2"></i> דוח: כמות סוגי פעולות
+                </h3>
+                <div class="flex justify-end gap-3 mb-4">
+                    <button class="whatsapp-share-btn" onclick="shareReportToWhatsApp('action-type-counts-table')">
+                        <i class="fab fa-whatsapp ml-2"></i> שתף לווצאפ
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportTableToExcel('action-type-counts-table-data', 'action_type_counts')">
+                        <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
+                    </button>
+                    <button class="btn btn-secondary" onclick="printReport('action-type-counts-table-data')">
+                        <i class="fas fa-print ml-2"></i> הדפס
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="action-type-counts-table-data" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>סוג פעולה</th>
+                                <th>כמות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                 <p id="no-data-action-type-table" class="text-center text-gray-500 dark:text-gray-400 mt-4 hidden">אין נתונים להצגה.</p>
+            </div>
+
+            <!-- Customers with Multiple Containers Table -->
+            <div id="customers-multiple-containers-table" class="report-table-section card p-6 hidden">
+                <h3 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-cubes ml-2"></i> דוח: לקוחות עם יותר ממכולה אחת
+                </h3>
+                <div class="flex justify-end gap-3 mb-4">
+                    <button class="whatsapp-share-btn" onclick="shareReportToWhatsApp('customers-multiple-containers-table')">
+                        <i class="fab fa-whatsapp ml-2"></i> שתף לווצאפ
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportTableToExcel('customers-multiple-containers-table-data', 'customers_multiple_containers')">
+                        <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
+                    </button>
+                    <button class="btn btn-secondary" onclick="printReport('customers-multiple-containers-table-data')">
+                        <i class="fas fa-print ml-2"></i> הדפס
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="customers-multiple-containers-table-data" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>שם לקוח</th>
+                                <th>כתובת</th>
+                                <th>כמות מכולות פעילות</th>
+                                <th>מספרי מכולות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <p id="no-data-customers-multiple-containers-table" class="text-center text-gray-500 dark:text-gray-400 mt-4 hidden">אין נתונים להצגה.</p>
+            </div>
+
+             <!-- Overdue Summary Table (Detailed view for the button) -->
+            <div id="overdue-summary-table" class="report-table-section card p-6 hidden">
+                <h3 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-calendar-times ml-2"></i> דוח: סיכום הזמנות חורגות
+                </h3>
+                <div class="flex justify-end gap-3 mb-4">
+                    <button class="whatsapp-share-btn" onclick="shareReportToWhatsApp('overdue-summary-table')">
+                        <i class="fab fa-whatsapp ml-2"></i> שתף לווצאפ
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportTableToExcel('overdue-summary-table-data', 'overdue_orders_summary')">
+                        <i class="fas fa-file-excel ml-2"></i> יצא לאקסל
+                    </button>
+                    <button class="btn btn-secondary" onclick="printReport('overdue-summary-table-data')">
+                        <i class="fas fa-print ml-2"></i> הדפס
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="overdue-summary-table-data" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>תעודה</th>
+                                <th>שם לקוח</th>
+                                <th>כתובת</th>
+                                <th>סוג פעולה</th>
+                                <th>ימים שעברו</th>
+                                <th>מכולות קשורות</th>
+                                <th>הערות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <p id="no-data-overdue-summary-table" class="text-center text-gray-500 dark:text-gray-400 mt-4 hidden">אין נתונים להצגה.</p>
+            </div>
+
+
+        </section>
+
+        <footer class="mt-12 text-center text-gray-500 dark:text-gray-400 text-sm">
+            <p>&copy; 2025 מערכת CRM למכולות. כל הזכויות שמורות.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Define Google Apps Script URL (replace with your actual deployment URL)
+        const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec'; 
+
+        let allOrders = []; // Raw data of all orders
+        let notifications = []; // Store active notifications
+        const WHATSAPP_PHONE_NUMBER = '972508860896'; // WhatsApp number for sharing
+
+        // Utility Functions
+        function showLoader() { document.getElementById('loader-overlay').classList.add('active'); }
+        function hideLoader() { document.getElementById('loader-overlay').classList.remove('active'); }
+
+        /**
+         * Determines if the current device is mobile based on screen width.
+         * @returns {boolean} True if mobile, false if desktop.
+         */
+        function isMobile() {
+            return window.innerWidth <= 768; // Tailwind's 'md' breakpoint
+        }
+
+        /**
+         * Toggles between Dark Mode and Light Mode for this specific page.
+         */
+        function toggleThemeCrm() {
+            const isDarkMode = document.body.classList.toggle('dark');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            updateThemeToggleButtonCrm(isDarkMode);
+        }
+
+        /**
+         * Updates the theme toggle button icon and text for this page.
+         * @param {boolean} isDarkMode - True if dark mode is active, false otherwise.
+         */
+        function updateThemeToggleButtonCrm(isDarkMode) {
+            const themeToggle = document.getElementById('theme-toggle-crm');
+            const sunIcon = document.getElementById('sun-icon-crm');
+            const moonIcon = document.getElementById('moon-icon-crm');
+
+            if (isDarkMode) {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+                themeToggle.querySelector('span').textContent = 'מצב כהה';
+                themeToggle.setAttribute('aria-label', 'החלף למצב בהיר');
+            } else {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+                themeToggle.querySelector('span').textContent = 'מצב בהיר';
+                themeToggle.setAttribute('aria-label', 'החלף למצב כהה');
+            }
+        }
+
+        /**
+         * Initializes the theme based on system preferences or local storage for this page.
+         */
+        function initializeThemeCrm() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
+                document.body.classList.add('dark');
+                updateThemeToggleButtonCrm(true);
+            } else {
+                document.body.classList.remove('dark');
+                updateThemeToggleButtonCrm(false);
+            }
+
+            document.getElementById('theme-toggle-crm').addEventListener('click', toggleThemeCrm);
+        }
+
+        /**
+         * Displays a toast notification.
+         * @param {string} message - The message to display.
+         * @param {'success'|'error'|'warning'|'info'} type - Type of notification.
+         * @param {number} duration - Duration in milliseconds (default 5000).
+         */
+        function showAlert(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('alert-container');
+            const alertItem = document.createElement('div');
+            alertItem.className = `alert-item alert-${type} flex items-center gap-2`;
+            alertItem.setAttribute('role', 'alert');
+            alertItem.innerHTML = `
+                ${type === 'success' ? '<i class="fas fa-check-circle text-green-600" aria-hidden="true"></i>' : ''}
+                ${type === 'error' ? '<i class="fas fa-times-circle text-red-600" aria-hidden="true"></i>' : ''}
+                ${type === 'warning' ? '<i class="fas fa-exclamation-triangle text-orange-600" aria-hidden="true"></i>' : ''}
+                ${type === 'info' ? '<i class="fas fa-info-circle text-blue-600" aria-hidden="true"></i>' : ''}
+                <p class="text-sm font-medium text-gray-800 flex-grow">${message}</p>
+                <button class="close-alert-btn" onclick="this.closest('.alert-item').remove()" aria-label="סגור התראה"><i class="fas fa-times" aria-hidden="true"></i></button>
+            `;
+            container.appendChild(alertItem);
+
+            setTimeout(() => {
+                alertItem.style.opacity = '0';
+                alertItem.style.transform = 'translateX(-100%)';
+                setTimeout(() => alertItem.remove(), 300);
+            }, duration);
+        }
+
+        /**
+         * Sends a Fetch request to Google Apps Script with retry logic.
+         * @param {string} action The action to perform in the script.
+         * @param {Object} params Additional parameters for the request.
+         * @param {number} retries Current retry attempt (default 0).
+         * @returns {Promise<Object>} Response object from the server.
+         */
+        async function fetchData(action, params = {}, retries = 0) {
+            showLoader();
+            const urlParams = new URLSearchParams({ action, ...params });
+            const url = `${SCRIPT_WEB_APP_URL}?${urlParams.toString()}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                hideLoader();
+                if (!data.success) {
+                    if (data.message && data.message.includes('Service invoked too many times')) {
+                        const delay = Math.pow(2, retries) * 1000;
+                        console.warn(`API rate limit hit. Retrying in ${delay / 1000} seconds... (attempt ${retries + 1})`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        if (retries < 5) {
+                            return fetchData(action, params, retries + 1);
+                        } else {
+                            showAlert('הגענו למגבלת הקריאות לשרת. אנא נסה שוב מאוחר יותר.', 'error');
+                        }
+                    } else {
+                        showAlert(data.message || 'שגיאה בביצוע הפעולה.', 'error');
+                    }
+                }
+                return data;
+            } catch (error) {
+                hideLoader();
+                console.error('Fetch error:', error);
+                showAlert('שגיאה בתקשורת עם השרת: ' + error.message, 'error');
+                return { success: false, message: 'שגיאה בתקשורת עם השרת: ' + error.message };
+            }
+        }
+
+        /**
+         * Loads all orders from the sheet and updates all UI components.
+         */
+        async function loadAllData() {
+            const response = await fetchData('list', { status: 'all' });
+            if (response.success) {
+                allOrders = response.data;
+                processDataForDashboard();
+                generateAndRenderNotifications();
+                updateReportButtons();
+                drawCharts();
+                // Initially hide all report tables
+                document.querySelectorAll('.report-table-section').forEach(section => section.classList.add('hidden'));
+            }
+        }
+
+        /**
+         * Processes data to populate dashboard metrics.
+         */
+        function processDataForDashboard() {
+            const activeOrders = allOrders.filter(o => o['סטטוס'] !== 'סגור');
+            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+
+            document.getElementById('total-orders-count').textContent = allOrders.length;
+            document.getElementById('current-overdue-count').textContent = overdueOrders.length;
+        }
+
+        /**
+         * Formats date for display.
+         * @param {Date|string} dateInput Date or date string.
+         * @returns {string} Date in DD/MM/YYYY format.
+         */
+        function formatDate(dateInput) {
+            if (!dateInput) return '';
+            const date = new Date(dateInput);
+            if (isNaN(date.getTime())) return dateInput;
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        /**
+         * Formats a date and time string for display.
+         * @param {string} dateTimeString - Date and time in YYYY-MM-DDTHH:mm format.
+         * @returns {string} Formatted date and time.
+         */
+        function formatDateTime(dateTimeString) {
+            if (!dateTimeString) return '';
+            const date = new Date(dateTimeString);
+            if (isNaN(date.getTime())) return dateTimeString;
+            const options = { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return date.toLocaleString('he-IL', options);
+        }
+
+        /**
+         * Updates current date and time in the header.
+         */
+        function updateDateTimeCrm() {
+            const now = new Date();
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+
+            document.getElementById('current-date-crm').textContent = now.toLocaleDateString('he-IL', dateOptions);
+            document.getElementById('current-time-crm').textContent = now.toLocaleTimeString('he-IL', timeOptions);
+        }
+
+        // --- Notifications Logic ---
+
+        /**
+         * Generates and renders notifications based on current data.
+         */
+        function generateAndRenderNotifications() {
+            notifications = []; // Clear existing notifications
+            const activeOrders = allOrders.filter(o => o['סטטוס'] !== 'סגור');
+            
+            // Check for potential container mismatches (e.g., container taken but not returned after a long time)
+            const containerStatus = {}; // { containerNum: { lastAction: 'taken'|'returned', order: {}, timestamp: Date } }
+
+            // Sort orders chronologically to build accurate container history
+            const sortedOrders = [...allOrders].sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה']));
+
+            sortedOrders.forEach(order => {
+                const orderDate = new Date(order['תאריך הזמנה']);
+
+                const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+
+                containersTaken.forEach(containerNum => {
+                    const current = containerStatus[containerNum] || { action: null, order: null, date: new Date(0) };
+                    if (orderDate >= current.date) {
+                         containerStatus[containerNum] = { action: 'taken', order: order, date: orderDate };
+                    }
+                });
+
+                containersBrought.forEach(containerNum => {
+                    const current = containerStatus[containerNum] || { action: null, order: null, date: new Date(0) };
+                    if (orderDate >= current.date) {
+                        containerStatus[containerNum] = { action: 'returned', order: order, date: orderDate };
+                    }
+                });
+            });
+
+            // Iterate through the final container statuses to find mismatches
+            for (const containerNum in containerStatus) {
+                const status = containerStatus[containerNum];
+                if (status.action === 'taken' && status.order['סטטוס'] !== 'סגור') {
+                    // Container was taken and the order is still open.
+                    // If it's very old, it might be a mismatch. Let's define "very old" as > 120 days.
+                    const daysPassed = status.order['ימים שעברו'];
+                    if (daysPassed && parseInt(daysPassed) > 120) {
+                        notifications.push({
+                            id: `container-mismatch-${containerNum}-${status.order.sheetRow}`,
+                            message: `התראה: מכולה מספר ${containerNum} ירדה אצל לקוח ${status.order['שם לקוח']} בתעודה ${status.order['תעודה']} לפני ${daysPassed} ימים וטרם הוחזרה/נסגרה!`,
+                            type: 'error',
+                            isHandled: false
+                        });
+                    }
+                }
+            }
+            
+            // Check for orders marked as "ממתין/לא תקין" without recent notes
+            activeOrders.filter(o => o['סטטוס'] === 'ממתין/לא תקין').forEach(order => {
+                const lastNoteUpdate = order['תאריך וזמן עדכון הערה'] ? new Date(order['תאריך וזמן עדכון הערה']) : new Date(order['תאריך הזמנה']);
+                const daysSinceLastUpdate = Math.floor((new Date() - lastNoteUpdate) / (1000 * 60 * 60 * 24));
+                if (daysSinceLastUpdate > 30) { // If no update in the last 30 days
+                    notifications.push({
+                        id: `pending-no-update-${order.sheetRow}`,
+                        message: `הזמנה ${order['תעודה']} של לקוח ${order['שם לקוח']} מסומנת "בטיפול" ולא עודכנה ${daysSinceLastUpdate} ימים. דורש בדיקה!`,
+                        type: 'warning',
+                        isHandled: false
+                    });
+                }
+            });
+
+            // Add general overdue orders that need attention (if not already covered by direct overdue notifications)
+            activeOrders.filter(o => o['סטטוס'] === 'חורג').forEach(order => {
+                notifications.push({
+                    id: `overdue-order-${order.sheetRow}`,
+                    message: `הזמנה חורגת: ${order['תעודה']} של לקוח ${order['שם לקוח']} חורגת ב-${order['ימים שעברו']} ימים.`,
+                    type: 'warning',
+                    isHandled: false
+                });
+            });
+
+            renderNotifications();
+        }
+
+        /**
+         * Renders the current list of notifications in the UI.
+         */
+        function renderNotifications() {
+            const notificationsListDiv = document.getElementById('notifications-list');
+            notificationsListDiv.innerHTML = '';
+            if (notifications.length === 0) {
+                document.getElementById('no-notifications-msg').classList.remove('hidden');
+            } else {
+                document.getElementById('no-notifications-msg').classList.add('hidden');
+                notifications.forEach(notif => {
+                    const notifItem = document.createElement('div');
+                    notifItem.id = `notif-${notif.id}`;
+                    notifItem.className = `notification-item ${notif.type} ${notif.isHandled ? 'handled' : ''}`;
+                    notifItem.setAttribute('role', 'alert');
+                    notifItem.innerHTML = `
+                        <i class="fas ${getNotificationIcon(notif.type)} notification-icon" aria-hidden="true"></i>
+                        <span class="notification-message">${notif.message}</span>
+                        <div class="notification-actions">
+                            ${!notif.isHandled ? `<button class="notification-handle-btn" onclick="markNotificationAsHandled('${notif.id}')" aria-label="סמן כטופל">סמן כטופל</button>` : ''}
+                        </div>
+                    `;
+                    notificationsListDiv.appendChild(notifItem);
+                });
+            }
+        }
+
+        /**
+         * Returns the appropriate Font Awesome icon class for a notification type.
+         * @param {string} type - 'error', 'warning', 'info'.
+         * @returns {string} Icon class.
+         */
+        function getNotificationIcon(type) {
+            switch (type) {
+                case 'error': return 'fa-exclamation-circle';
+                case 'warning': return 'fa-exclamation-triangle';
+                case 'info': return 'fa-info-circle';
+                default: return 'fa-bell';
+            }
+        }
+
+        /**
+         * Marks a notification as handled, visually updating it.
+         * @param {string} notificationId - The ID of the notification to mark.
+         */
+        function markNotificationAsHandled(notificationId) {
+            const notification = notifications.find(n => n.id === notificationId);
+            if (notification) {
+                notification.isHandled = true;
+                renderNotifications(); // Re-render to apply changes
+                showAlert('ההתראה סומנה כטופלה.', 'success', 3000);
+            }
+        }
+
+        // --- Report Buttons Logic ---
+
+        /**
+         * Updates the values on the report metric buttons.
+         */
+        function updateReportButtons() {
+            document.getElementById('total-orders-count').textContent = allOrders.length;
+            
+            const actionTypes = new Set(allOrders.map(order => order['סוג פעולה']).filter(Boolean));
+            document.getElementById('unique-action-types-count').textContent = actionTypes.size;
+
+            const customersWithMultipleContainers = calculateCustomersWithMultipleContainers().length;
+            document.getElementById('customers-multiple-count').textContent = customersWithMultipleContainers;
+
+            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+            document.getElementById('current-overdue-count').textContent = overdueOrders.length;
+        }
+
+        /**
+         * Shows the selected report table and hides others.
+         * @param {string} tableId - The ID of the report table section to show.
+         */
+        function showReportTable(tableId) {
+            document.querySelectorAll('.report-table-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(tableId).classList.remove('hidden');
+
+            // Render specific table data
+            if (tableId === 'orders-per-customer-table') {
+                renderOrdersPerCustomerTable();
+            } else if (tableId === 'action-type-counts-table') {
+                renderActionTypeCountsTable();
+            } else if (tableId === 'customers-multiple-containers-table') {
+                renderCustomersWithMultipleContainersTable();
+            } else if (tableId === 'overdue-summary-table') {
+                renderOverdueSummaryTable();
+            }
+        }
+
+
+        // --- Charts Logic ---
+
+        /**
+         * Draws all charts for the dashboard.
+         */
+        function drawCharts() {
+            drawOrdersPerCustomerChart();
+            drawActionTypeDistributionChart();
+        }
+
+        /**
+         * Draws the "Orders Per Customer" bar chart.
+         */
+        function drawOrdersPerCustomerChart() {
+            const chartDiv = d3.select("#svg-orders-per-customer");
+            chartDiv.select("svg").remove();
+
+            const customerOrderCounts = {};
+            allOrders.forEach(order => {
+                const customer = order['שם לקוח'];
+                if (customer) {
+                    customerOrderCounts[customer] = (customerOrderCounts[customer] || 0) + 1;
+                }
+            });
+
+            const data = Object.entries(customerOrderCounts)
+                .map(([customer, count]) => ({ customer, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10); // Show top 10 customers
+
+            const noDataMsg = document.getElementById('no-data-orders-per-customer');
+            if (data.length === 0) {
+                noDataMsg.classList.remove('hidden');
+                return;
+            } else {
+                noDataMsg.classList.add('hidden');
+            }
+
+            const margin = { top: 20, right: 30, bottom: 80, left: 60 };
+            const bounds = chartDiv.node().getBoundingClientRect();
+            const width = bounds.width - margin.left - margin.right;
+            const height = bounds.height - margin.top - margin.bottom;
+
+            const svg = chartDiv.append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .range([0, width])
+                .domain(data.map(d => d.customer))
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .range([height, 0])
+                .domain([0, d3.max(data, d => d.count) * 1.1]);
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "translate(-10,0)rotate(-45)")
+                .style("text-anchor", "end")
+                .style("font-size", "0.85em")
+                .attr("class", "axis-text");
+
+            svg.append("g")
+                .call(d3.axisLeft(y).ticks(Math.max(3, d3.max(data, d => d.count))))
+                .selectAll("text")
+                .style("font-size", "0.85em")
+                .attr("class", "axis-text");
+
+            svg.selectAll(".bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("class", "bar chart-bar")
+                .attr("x", d => x(d.customer))
+                .attr("width", x.bandwidth())
+                .attr("y", height) // Start from bottom for animation
+                .attr("height", 0) // Start with zero height for animation
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 50)
+                .attr("y", d => y(d.count))
+                .attr("height", d => height - y(d.count));
+
+            svg.selectAll(".text")
+                .data(data)
+                .enter().append("text")
+                .attr("class", "chart-text")
+                .attr("x", d => x(d.customer) + x.bandwidth() / 2)
+                .attr("y", d => y(d.count) - 5)
+                .attr("text-anchor", "middle")
+                .text(d => d.count);
+        }
+
+        /**
+         * Draws the "Action Type Distribution" pie chart.
+         */
+        function drawActionTypeDistributionChart() {
+            const chartDiv = d3.select("#svg-action-type-distribution");
+            chartDiv.select("svg").remove();
+
+            const actionTypeCounts = {};
+            allOrders.forEach(order => {
+                const actionType = order['סוג פעולה'];
+                if (actionType) {
+                    actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
+                }
+            });
+
+            const data = Object.entries(actionTypeCounts).map(([type, count]) => ({ type, count }));
+
+            const noDataMsg = document.getElementById('no-data-action-type');
+            if (data.length === 0) {
+                noDataMsg.classList.remove('hidden');
+                return;
+            } else {
+                noDataMsg.classList.add('hidden');
+            }
+
+            const bounds = chartDiv.node().getBoundingClientRect();
+            const outerRadius = Math.min(bounds.width, bounds.height) / 2 - 40;
+            const innerRadius = outerRadius * 0.5; // Donut chart
+
+            const svg = chartDiv.append("svg")
+                .attr("width", bounds.width)
+                .attr("height", bounds.height)
+                .append("g")
+                .attr("transform", `translate(${bounds.width / 2},${bounds.height / 2})`);
+
+            const color = d3.scaleOrdinal()
+                .domain(data.map(d => d.type))
+                .range(d3.schemeCategory10); // D3's built-in color scheme
+
+            const pie = d3.pie()
+                .value(d => d.count)
+                .sort(null);
+
+            const arc = d3.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(outerRadius);
+            
+            const outerArc = d3.arc()
+                .innerRadius(outerRadius * 0.9)
+                .outerRadius(outerRadius * 0.9);
+
+            const arcs = svg.selectAll("arc")
+                .data(pie(data))
+                .enter()
+                .append("g")
+                .attr("class", "arc pie-slice");
+
+            arcs.append("path")
+                .attr("d", arc)
+                .attr("fill", d => color(d.data.type))
+                .each(function(d) { this._current = d; })
+                .transition()
+                .duration(750)
+                .attrTween("d", function(d) {
+                    const i = d3.interpolate(d.startAngle + 0.1, d.endAngle);
+                    return function(t) {
+                        d.endAngle = i(t);
+                        return arc(d);
+                    };
+                });
+
+            arcs.append("text")
+                .attr("transform", d => {
+                    const centroid = outerArc.centroid(d);
+                    return `translate(${centroid[0]},${centroid[1]})`;
+                })
+                .attr("dy", ".35em")
+                .attr("class", "pie-label chart-text")
+                .text(d => `${d.data.type} (${((d.data.count / d3.sum(data, d => d.count)) * 100).toFixed(1)}%)`);
+
+            const legend = svg.selectAll(".legend")
+                .data(color.domain())
+                .enter().append("g")
+                .attr("class", "legend")
+                .attr("transform", (d, i) => `translate(${outerRadius + 20},${-outerRadius + i * 25})`);
+
+            legend.append("rect")
+                .attr("x", 0)
+                .attr("width", 18)
+                .attr("height", 18)
+                .attr("rx", 4)
+                .attr("ry", 4)
+                .style("fill", color);
+
+            legend.append("text")
+                .attr("x", 24)
+                .attr("y", 9)
+                .attr("dy", ".35em")
+                .attr("class", "legend-text chart-text")
+                .text(d => d);
+        }
+
+        // --- Report Table Data Calculation & Rendering ---
+
+        /**
+         * Calculates and renders the "Orders Per Customer" table.
+         */
+        function renderOrdersPerCustomerTable() {
+            const tableBody = document.querySelector('#orders-per-customer-table-data tbody');
+            tableBody.innerHTML = '';
+            const noDataMsg = document.getElementById('no-data-orders-per-customer-table');
+            noDataMsg.classList.add('hidden');
+
+            const customerData = {}; // { 'customerName|address': { ordersCount: N, activeContainers: Set } }
+
+            allOrders.forEach(order => {
+                const customerName = order['שם לקוח'] || 'לא ידוע';
+                const address = order['כתובת'] || 'לא ידוע';
+                const key = `${customerName}|${address}`;
+
+                if (!customerData[key]) {
+                    customerData[key] = {
+                        customerName: customerName,
+                        address: address,
+                        ordersCount: 0,
+                        activeContainers: new Set()
+                    };
+                }
+                customerData[key].ordersCount++;
+
+                if (order['סטטוס'] !== 'סגור') {
+                    if (order['סוג פעולה'] === 'הורדה' || order['סוג פעולה'] === 'החלפה') {
+                        const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                        containersTaken.forEach(c => customerData[key].activeContainers.add(c));
+                    }
+                }
+            });
+
+            const sortedCustomers = Object.values(customerData).sort((a, b) => b.ordersCount - a.ordersCount);
+
+            if (sortedCustomers.length === 0) {
+                noDataMsg.classList.remove('hidden');
+            } else {
+                sortedCustomers.forEach(data => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = data.customerName;
+                    row.insertCell().textContent = data.address;
+                    row.insertCell().textContent = data.ordersCount;
+                    const containersCell = row.insertCell();
+                    if (data.activeContainers.size > 0) {
+                        containersCell.innerHTML = Array.from(data.activeContainers).map(c => 
+                            `<span class="container-pill" onclick="event.stopPropagation(); openContainerHistoryModal('${c}')">${c}</span>`
+                        ).join(' ');
+                    } else {
+                        containersCell.textContent = 'אין';
+                    }
+                });
+            }
+        }
+
+        /**
+         * Calculates and renders the "Action Type Counts" table.
+         */
+        function renderActionTypeCountsTable() {
+            const tableBody = document.querySelector('#action-type-counts-table-data tbody');
+            tableBody.innerHTML = '';
+            const noDataMsg = document.getElementById('no-data-action-type-table');
+            noDataMsg.classList.add('hidden');
+
+            const actionTypeCounts = {};
+            allOrders.forEach(order => {
+                const actionType = order['סוג פעולה'] || 'לא ידוע';
+                actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
+            });
+
+            const sortedActionTypes = Object.entries(actionTypeCounts).sort((a, b) => b[1] - a[1]);
+
+            if (sortedActionTypes.length === 0) {
+                noDataMsg.classList.remove('hidden');
+            } else {
+                sortedActionTypes.forEach(([type, count]) => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = type;
+                    row.insertCell().textContent = count;
+                });
+            }
+        }
+
+        /**
+         * Calculates and renders the "Customers with Multiple Containers" table.
+         */
+        function renderCustomersWithMultipleContainersTable() {
+            const tableBody = document.querySelector('#customers-multiple-containers-table-data tbody');
+            tableBody.innerHTML = '';
+            const noDataMsg = document.getElementById('no-data-customers-multiple-containers-table');
+            noDataMsg.classList.add('hidden');
+
+            const customersWithMultiple = calculateCustomersWithMultipleContainers();
+
+            if (customersWithMultiple.length === 0) {
+                noDataMsg.classList.remove('hidden');
+            } else {
+                customersWithMultiple.forEach(data => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = data.customerName;
+                    row.insertCell().textContent = data.address;
+                    row.insertCell().textContent = data.containerCount;
+                    const containersCell = row.insertCell();
+                     containersCell.innerHTML = Array.from(data.containers).map(c => 
+                            `<span class="container-pill" onclick="event.stopPropagation(); openContainerHistoryModal('${c}')">${c}</span>`
+                        ).join(' ');
+                });
+            }
+        }
+
+        /**
+         * Helper function to calculate customers with multiple active containers.
+         * @returns {Array<Object>} List of customers with more than one active container.
+         */
+        function calculateCustomersWithMultipleContainers() {
+            const customerActiveContainers = {}; // { 'customerName|address': Set<containerNum> }
+
+            allOrders.filter(o => o['סטטוס'] !== 'סגור').forEach(order => {
+                const customerName = order['שם לקוח'] || 'לא ידוע';
+                const address = order['כתובת'] || 'לא ידוע';
+                const key = `${customerName}|${address}`;
+
+                if (!customerActiveContainers[key]) {
+                    customerActiveContainers[key] = {
+                        customerName: customerName,
+                        address: address,
+                        containers: new Set(),
+                        latestOrderDate: new Date(0) // Track latest order date for accurate active container check
+                    };
+                }
+
+                const orderDate = new Date(order['תאריך הזמנה']);
+                if (orderDate > customerActiveContainers[key].latestOrderDate) {
+                    customerActiveContainers[key].latestOrderDate = orderDate;
+                }
+
+                // If a container was taken, add it to the set for this customer/address
+                if (order['סוג פעולה'] === 'הורדה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה ירדה'])) {
+                    const containers = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    containers.forEach(c => customerActiveContainers[key].containers.add(c));
+                }
+
+                // If a container was brought back, remove it from the set for this customer/address IF it was taken earlier.
+                // This is a simplified logic. A full container management system would track each container's actual location.
+                if (order['סוג פעולה'] === 'העלאה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה עלתה'])) {
+                    const containers = (String(order['מספר מכולa עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    containers.forEach(c => {
+                        // Only remove if it was actually "on site" for this customer
+                        if (customerActiveContainers[key].containers.has(c)) {
+                            customerActiveContainers[key].containers.delete(c);
+                        }
+                    });
+                }
+            });
+
+            // Filter for customers with more than one unique active container
+            const result = Object.values(customerActiveContainers)
+                .filter(data => data.containers.size > 1)
+                .map(data => ({
+                    customerName: data.customerName,
+                    address: data.address,
+                    containerCount: data.containers.size,
+                    containers: Array.from(data.containers)
+                }))
+                .sort((a, b) => b.containerCount - a.containerCount); // Sort by number of containers
+
+            return result;
+        }
+
+        /**
+         * Renders the "Overdue Summary" table.
+         */
+        function renderOverdueSummaryTable() {
+            const tableBody = document.querySelector('#overdue-summary-table-data tbody');
+            tableBody.innerHTML = '';
+            const noDataMsg = document.getElementById('no-data-overdue-summary-table');
+            noDataMsg.classList.add('hidden');
+
+            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+            overdueOrders.sort((a, b) => (parseInt(b['ימים שעברו']) || 0) - (parseInt(a['ימים שעברו']) || 0));
+
+            if (overdueOrders.length === 0) {
+                noDataMsg.classList.remove('hidden');
+            } else {
+                overdueOrders.forEach(order => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = order['תעודה'] || '';
+                    row.insertCell().textContent = order['שם לקוח'] || '';
+                    row.insertCell().textContent = order['כתובת'] || '';
+                    row.insertCell().textContent = order['סוג פעולה'] || '';
+                    row.insertCell().textContent = order['ימים שעברו'] !== undefined ? order['ימים שעברו'] : '';
+                    let containersText = '';
+                    if (order['סוג פעולה'] === 'החלפה') {
+                        const taken = String(order['מספר מכולה ירדה'] || '');
+                        const brought = String(order['מספר מכולה עלתה'] || '');
+                        if (taken && brought) containersText = `ירדה: ${taken}, עלתה: ${brought}`;
+                        else if (taken) containersText = `ירדה: ${taken}`;
+                        else if (brought) containersText = `עלתה: ${brought}`;
+                    } else if (order['סוג פעולה'] === 'הורדה') {
+                        containersText = String(order['מספר מכולה ירדה'] || '');
+                    } else if (order['סוג פעולה'] === 'העלאה') {
+                        containersText = String(order['מספר מכולה עלתה'] || '');
+                    } else {
+                        containersText = String(order['מספרי מכולות'] || '');
+                    }
+                    row.insertCell().textContent = containersText;
+                    row.insertCell().textContent = order['הערות'] || '';
+                });
+            }
+        }
+
+
+        // --- Export, Print, Share Logic ---
+
+        /**
+         * Exports displayed table data to an Excel (CSV) file.
+         * @param {string} tableId - The ID of the table HTML element.
+         * @param {string} filename - The desired filename for the export.
+         */
+        function exportTableToExcel(tableId, filename = 'report') {
+            const table = document.getElementById(tableId);
+            if (!table) {
+                showAlert('טבלה לייצוא לא נמצאה.', 'error');
+                return;
+            }
+            const rows = Array.from(table.querySelectorAll('tr'));
+
+            if (rows.length <= 1) { // Only header row
+                showAlert('אין נתונים לייצוא בטבלה זו.', 'warning');
+                return;
+            }
+
+            const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // UTF-8 BOM for Hebrew
+
+            // Add headers
+            csvContent += headers.join(',') + '\n';
+
+            // Add data rows
+            for (let i = 1; i < rows.length; i++) {
+                const rowCells = Array.from(rows[i].querySelectorAll('td'));
+                const rowData = rowCells.map(cell => {
+                    let value = cell.textContent.trim();
+                    // Escape double quotes and enclose if value contains comma
+                    value = value.replace(/"/g, '""');
+                    if (value.includes(',')) {
+                        value = `"${value}"`;
+                    }
+                    return value;
+                });
+                csvContent += rowData.join(',') + '\n';
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${filename}_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('הנתונים יוצאו לאקסל בהצלחה!', 'success');
+        }
+
+        /**
+         * Prints the content of a specific report table.
+         * @param {string} tableId - The ID of the table HTML element.
+         */
+        function printReport(tableId) {
+            const tableContainer = document.getElementById(tableId);
+            if (!tableContainer) {
+                showAlert('טבלה להדפסה לא נמצאה.', 'error');
+                return;
+            }
+
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>הדפסת דוח</title>');
+            // Copy relevant styles for printing
+            printWindow.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">');
+            printWindow.document.write('<style>');
+            printWindow.document.write(`
+                body { font-family: 'Inter', sans-serif; direction: rtl; text-align: right; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                th { background-color: #f2f2f2; }
+                .container-pill { display: inline-block; background-color: #e0e7ff; padding: 2px 8px; border-radius: 9999px; font-size: 0.8em; margin-left: 5px; white-space: nowrap; }
+                h1, h2, h3 { text-align: center; margin-bottom: 10px; }
+            `);
+            printWindow.document.write('</style></head><body>');
+            printWindow.document.write(`<h1 style="color: ${document.body.classList.contains('dark') ? '#fff' : '#1f2937'};">דוח מערכת CRM - ${document.querySelector(`#${tableId}`).previousElementSibling.textContent.replace('דוח:', '').trim()}</h1>`); // Get report title
+            printWindow.document.write(tableContainer.outerHTML); // Include the entire table container
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+            showAlert('הדוח נשלח להדפסה.', 'success', 3000);
+        }
+
+        /**
+         * Shares the content of a specific report table to WhatsApp.
+         * @param {string} tableId - The ID of the table HTML element.
+         */
+        function shareReportToWhatsApp(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) {
+                showAlert('טבלה לשיתוף לא נמצאה.', 'error');
+                return;
+            }
+
+            const rows = Array.from(table.querySelectorAll('tr'));
+            if (rows.length <= 1) {
+                showAlert('אין נתונים לשיתוף בטבלה זו.', 'warning');
+                return;
+            }
+
+            const reportTitle = document.querySelector(`#${tableId}`).previousElementSibling.textContent.replace('דוח:', '').trim();
+            let message = `*${reportTitle}*\n\n`;
+
+            const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
+            
+            // Generate table rows as text
+            for (let i = 1; i < rows.length; i++) {
+                const rowCells = Array.from(rows[i].querySelectorAll('td'));
+                const rowData = rowCells.map(cell => cell.textContent.trim());
+                message += `${headers[0]}: ${rowData[0]}, ${headers[1]}: ${rowData[1]}`; // Example: Customer Name: X, Address: Y
+                if (rowData[2]) message += `, ${headers[2]}: ${rowData[2]}`;
+                if (rowData[3]) message += `, ${headers[3]}: ${rowData[3]}`;
+                message += '\n';
+            }
+
+            const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            showAlert('הדוח נשלח לווצאפ.', 'success', 3000);
+        }
+
+        // --- Container History Modal (reused/adapted from script.js) ---
+        // This is necessary because some tables in this CRM dashboard link to container history.
+        function openContainerHistoryModal(containerNum) {
+            const modal = document.getElementById('container-history-modal');
+            const tableBody = document.querySelector('#container-history-table tbody');
+            const noHistoryMsg = document.getElementById('no-container-history');
+            document.getElementById('history-container-number').textContent = containerNum;
+            tableBody.innerHTML = '';
+            noHistoryMsg.classList.add('hidden');
+
+            const containerHistory = allOrders.filter(order =>
+                (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
+                (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
+                (String(order['מספרי מכולות'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim())
+            ).sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה']));
+
+            if (containerHistory.length === 0) {
+                noHistoryMsg.classList.remove('hidden');
+            } else {
+                containerHistory.forEach(order => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = formatDate(order['תאריך הזמנה']);
+                    row.insertCell().textContent = order['תעודה'] || '';
+                    row.insertCell().textContent = order['שם לקוח'] || '';
+                    row.insertCell().textContent = order['סוג פעולה'] || '';
+                    row.insertCell().textContent = String(order['מספר מכולה ירדה'] || order['מספרי מכולות'] || '');
+                    row.insertCell().textContent = String(order['מספר מכולה עלתה'] || '');
+                    let statusClass = '';
+                    switch (order['סטטוס']) {
+                        case 'פתוח': statusClass = 'status-open'; break;
+                        case 'סגור': statusClass = 'status-closed'; break;
+                        case 'חורג': statusClass = 'status-overdue'; break;
+                        case 'ממתין/לא תקין': statusClass = 'status-pending'; break;
+                        default: statusClass = 'status-warning'; break;
+                    }
+                    row.insertCell().innerHTML = `<span class="${statusClass}">${order['סטטוס'] || ''}</span>`;
+                    row.insertCell().textContent = formatDate(order['תאריך סיום צפוי']);
+                });
+            }
+             if (isMobile()) {
+                modal.classList.add('mobile-drawer');
+            } else {
+                modal.classList.remove('mobile-drawer');
+            }
+            modal.classList.add('active');
+        }
+
+        function closeContainerHistoryModal() {
+            document.getElementById('container-history-modal').classList.remove('active');
+        }
+
+        // Placeholder for Order Details Modal (if needed in this context, copied from previous script)
+        function showOrderDetails(orderData) {
+            const modal = document.getElementById('order-details-modal');
+            const orderCard = document.getElementById('current-order-card');
+            
+            let containersDisplay = '';
+            if (orderData['סוג פעולה'] === 'הורדה') {
+                containersDisplay = String(orderData['מספר מכולה ירדה'] || orderData['מספרי מכולות'] || '');
+            } else if (orderData['סוג פעולה'] === 'העלאה') {
+                containersDisplay = String(orderData['מספר מכולה עלתה'] || orderData['מספרי מכולות'] || '');
+            } else if (orderData['סוג פעולה'] === 'החלפה') {
+                const taken = String(orderData['מספר מכולה ירדה'] || '');
+                const brought = String(orderData['מספר מכולה עלתה'] || '');
+                if (taken && brought) {
+                    containersDisplay = `ירדה: ${taken}, עלתה: ${brought}`;
+                } else if (taken) {
+                    containersDisplay = `ירדה: ${taken}`;
+                } else if (brought) {
+                    containersDisplay = `עלתה: ${brought}`;
+                }
+            } else {
+                containersDisplay = String(orderData['מספרי מכולות'] || '');
+            }
+
+            orderCard.innerHTML = `
+                <p><i class="fas fa-id-card icon" aria-hidden="true"></i> <strong>תעודה:</strong> ${orderData['תעודה'] || ''}</p>
+                <p><i class="fas fa-calendar-alt icon" aria-hidden="true"></i> <strong>תאריך הזמנה:</strong> ${formatDate(orderData['תאריך הזמנה'])}</p>
+                <p><i class="fas fa-user-tie icon" aria-hidden="true"></i> <strong>שם סוכן:</strong> ${orderData['שם סוכן'] || ''}</p>
+                <p><i class="fas fa-user-circle icon" aria-hidden="true"></i> <strong>שם לקוח:</strong> ${orderData['שם לקוח'] || ''}</p>
+                <p><i class="fas fa-map-marker-alt icon" aria-hidden="true"></i> <strong>כתובת:</strong> ${orderData['כתובת'] || ''}</p>
+                <p><i class="fas fa-exchange-alt icon" aria-hidden="true"></i> <strong>סוג פעולה:</strong> ${orderData['סוג פעולה'] || ''}</p>
+                <p><i class="fas fa-boxes icon" aria-hidden="true"></i> <strong>מכולות קשורות:</strong> ${containersDisplay}</p>
+                <p><i class="fas fa-info-circle icon" aria-hidden="true"></i> <strong>סטטוס:</strong> <span class="${orderData['סטטוס'] === 'פתוח' ? 'status-open' : orderData['סטטוס'] === 'חורג' ? 'status-overdue' : 'status-closed'}">${orderData['סטטוס'] || ''}</span></p>
+                <p><i class="fas fa-hourglass-half icon" aria-hidden="true"></i> <strong>ימים שעברו:</strong> ${orderData['ימים שעברו'] !== undefined ? orderData['ימים שעברו'] : ''}</p>
+                <p><i class="fas fa-calendar-check icon" aria-hidden="true"></i> <strong>תאריך סיום צפוי:</strong> ${formatDate(orderData['תאריך סיום צפוי'])}</p>
+                <p><i class="fas fa-comment-dots icon" aria-hidden="true"></i> <strong>הערות:</strong> <span class="note-text">${orderData['הערות'] || 'אין הערות'}</span></p>
+                <p><i class="fas fa-calendar-times icon" aria-hidden="true"></i> <strong>תאריך סגירה:</strong> ${formatDate(orderData['תאריך סגירה'])}</p>
+                <p><i class="fas fa-clock icon" aria-hidden="true"></i> <strong>עדכון הערה אחרון:</strong> ${formatDateTime(orderData['תאריך וזמן עדכון הערה'])}</p>
+            `;
+
+            if (isMobile()) {
+                modal.classList.add('mobile-drawer');
+            } else {
+                modal.classList.remove('mobile-drawer');
+            }
+            modal.classList.add('active');
+        }
+
+        function closeOrderDetailsModal() {
+            document.getElementById('order-details-modal').classList.remove('active');
+        }
+
+
+        // Initial Load and Event Listeners
+        window.onload = () => {
+            initializeThemeCrm(); // Initialize theme for this page
+            loadAllData();
+            updateDateTimeCrm();
+            setInterval(updateDateTimeCrm, 1000);
+            
+            // Re-draw charts on resize to make them responsive
+            window.addEventListener('resize', () => {
+                drawCharts();
+            });
+        };
+    </script>
+</body>
+</html>
