@@ -1959,15 +1959,15 @@
 
                 // If a container was taken, add it to the set for this customer/address
                 if (order['סוג פעולה'] === 'הורדה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה ירדה'])) {
-                    const containers = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
-                    containers.forEach(c => customerActiveContainers[key].containers.add(c));
+                    const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    containersTaken.forEach(c => customerActiveContainers[key].containers.add(c));
                 }
 
                 // If a container was brought back, remove it from the set for this customer/address IF it was taken earlier.
                 // This is a simplified logic. A full container management system would track each container's actual location.
                 if (order['סוג פעולה'] === 'העלאה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה עלתה'])) {
-                    const containers = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
-                    containers.forEach(c => {
+                    const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    containersBrought.forEach(c => {
                         // Only remove if it was actually "on site" for this customer
                         if (customerActiveContainers[key].containers.has(c)) {
                             customerActiveContainers[key].containers.delete(c);
@@ -2645,7 +2645,9 @@
             const messageOptionsDiv = document.getElementById('whatsapp-message-options');
             const currentOrderSheetRowInput = document.getElementById('whatsapp-current-order-sheet-row');
             
-            phoneInput.value = phoneNumber.startsWith('972') ? phoneNumber : `972${phoneNumber.substring(1)}`; // Format to Israeli international without '+'
+            // Ensure phoneNumber is treated as a string to prevent TypeError
+            const phoneString = String(phoneNumber);
+            phoneInput.value = phoneString.startsWith('972') ? phoneString : `972${phoneString.substring(1)}`; // Format to Israeli international without '+'
             currentOrderSheetRowInput.value = orderSheetRow !== null ? orderSheetRow : '';
 
             messageOptionsDiv.innerHTML = ''; // Clear previous options
@@ -2824,4 +2826,11 @@
             updateDateTimeCrm();
             setInterval(updateDateTimeCrm, 1000);
             
-            // Re-draw charts on resize to make them respons
+            // Re-draw charts on resize to make them responsive
+            window.addEventListener('resize', () => {
+                drawCharts();
+            });
+        };
+    </script>
+</body>
+</html>
