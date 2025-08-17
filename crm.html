@@ -136,6 +136,9 @@
         .btn-metric.bg-green { background: linear-gradient(135deg, #10B981, #34D399); }
         .btn-metric.bg-purple { background: linear-gradient(135deg, #8B5CF6, #A78BFA); }
         .btn-metric.bg-red { background: linear-gradient(135deg, #EF4444, #F87171); }
+        .btn-metric.bg-yellow-500 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+        .btn-metric.bg-indigo-500 { background: linear-gradient(135deg, #6366F1, #818CF8); }
+
 
         .btn-metric .metric-value {
             font-size: 2.5rem; /* Large number */
@@ -820,9 +823,25 @@
             <p id="no-notifications-msg" class="text-center text-gray-500 dark:text-gray-400 mt-4 hidden">אין התראות חדשות. כל הכבוד! 🎉</p>
         </section>
         <hr class="my-8 border-gray-200 dark:border-gray-700">
+        
+        <!-- Order Status Filter -->
+        <div class="flex justify-center mb-6">
+            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4 flex items-center gap-4">
+                <label for="order-status-filter" class="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-filter ml-2"></i> סנן לפי סטטוס הזמנה:
+                </label>
+                <select id="order-status-filter" onchange="applyOrderStatusFilter()" 
+                        class="px-4 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="all">כל ההזמנות</option>
+                    <option value="open">פתוח</option>
+                    <option value="closed">סגור</option>
+                    <option value="overdue">חורג</option>
+                </select>
+            </div>
+        </div>
 
         <!-- Report Buttons -->
-        <section id="report-buttons" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <section id="report-buttons" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <button class="btn-metric bg-blue" onclick="showReportTable('orders-per-customer-table')">
                 <span class="metric-value" id="total-orders-count">0</span>
                 <span class="metric-label">סה"כ הזמנות</span>
@@ -835,10 +854,7 @@
                 <span class="metric-value" id="customers-multiple-count">0</span>
                 <span class="metric-label">לקוחות עם מכולות מרובות</span>
             </button>
-            <button class="btn-metric bg-red" onclick="showReportTable('overdue-summary-table')">
-                <span class="metric-value" id="current-overdue-count">0</span>
-                <span class="metric-label">הזמנות חורגות כרגע</span>
-            </button>
+            <!-- Removed current-overdue-count button -->
         </section>
 
         <!-- New Custom Report Buttons -->
@@ -875,11 +891,7 @@
                 <div class="chart-svg-container" id="svg-monthly-orders"></div>
                 <p id="no-data-monthly-orders" class="text-center text-gray-500 dark:text-gray-400 hidden">אין נתונים להצגה.</p>
             </div>
-            <div id="chart-overdue-trend" class="chart-container-crm">
-                <h3>טרנד הזמנות חורגות (חודשי)</h3>
-                <div class="chart-svg-container" id="svg-overdue-trend"></div>
-                <p id="no-data-overdue-trend" class="text-center text-gray-500 dark:text-gray-400 hidden">אין נתונים להצגה.</p>
-            </div>
+            <!-- Removed chart-overdue-trend -->
         </section>
         <hr class="my-8 border-gray-200 dark:border-gray-700">
 
@@ -1047,8 +1059,11 @@
         // Define Google Apps Script URL (replace with your actual deployment URL)
         const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec'; 
 
-        let allOrders = []; // Raw data of all orders
+        let allOrders = []; // Raw data of all orders (unfiltered)
+        let filteredOrders = []; // Data filtered by selected status
         let notifications = []; // Store active notifications
+        let currentOrderFilter = 'all'; // Default filter: 'all', 'open', 'closed', 'overdue'
+
         const WHATSAPP_PHONE_NUMBER = '972508860896'; // WhatsApp number for main shares, not for individual customers
 
         // Utility Functions
@@ -1180,35 +1195,56 @@
 
         /**
          * Loads all orders from the sheet and updates all UI components.
+         * This function now loads all data and then applies the filter.
          */
         async function loadAllData() {
             const response = await fetchData('list', { status: 'all' });
             if (response.success) {
-                allOrders = response.data;
-                processDataForDashboard();
-                generateAndRenderNotifications();
-                updateReportButtons();
-                drawCharts();
-                // Initially hide all report tables
-                document.querySelectorAll('.report-table-section').forEach(section => section.classList.add('hidden'));
+                allOrders = response.data; // Keep all orders in `allOrders`
+                applyOrderStatusFilter(); // Apply initial filter and render
+                generateAndRenderNotifications(); // Notifications are still based on all orders for alerts
             }
         }
 
         /**
-         * Processes data to populate dashboard metrics.
+         * Applies the selected order status filter and updates all UI elements.
+         */
+        function applyOrderStatusFilter() {
+            currentOrderFilter = document.getElementById('order-status-filter').value;
+            console.log(`Applying filter: ${currentOrderFilter}`);
+            
+            if (currentOrderFilter === 'all') {
+                filteredOrders = [...allOrders];
+            } else if (currentOrderFilter === 'open') {
+                // 'פתוח' and 'ממתין/לא תקין' are considered open
+                filteredOrders = allOrders.filter(o => o['סטטוס'] === 'פתוח' || o['סטטוס'] === 'ממתין/לא תקין');
+            } else if (currentOrderFilter === 'closed') {
+                filteredOrders = allOrders.filter(o => o['סטטוס'] === 'סגור');
+            } else if (currentOrderFilter === 'overdue') {
+                filteredOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+            }
+
+            processDataForDashboard();
+            updateReportButtons();
+            drawCharts();
+            // Hide all report tables initially after filter change, user can click to reveal
+            document.querySelectorAll('.report-table-section').forEach(section => section.classList.add('hidden'));
+        }
+
+        /**
+         * Processes data to populate dashboard metrics based on filtered orders.
          */
         function processDataForDashboard() {
-            const activeOrders = allOrders.filter(o => o['סטטוס'] !== 'סגור');
-            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+            document.getElementById('total-orders-count').textContent = filteredOrders.length;
+            
+            // Overdue count is no longer a main metric here as per user request
+            // Instead, the filter now allows viewing overdue as a specific category.
 
-            document.getElementById('total-orders-count').textContent = allOrders.length;
-            document.getElementById('current-overdue-count').textContent = overdueOrders.length;
-
-            const topContainer = getTopMovingContainer();
+            const topContainer = getTopMovingContainer(filteredOrders); // Pass filtered orders
             document.getElementById('top-moving-container-number').textContent = topContainer.container || 'אין';
             document.getElementById('top-moving-container-count').textContent = topContainer.count;
 
-            document.getElementById('returning-customers-count').textContent = getReturningCustomers().length;
+            document.getElementById('returning-customers-count').textContent = getReturningCustomers(filteredOrders).length; // Pass filtered orders
         }
 
         /**
@@ -1252,6 +1288,7 @@
         }
 
         // --- Notifications Logic ---
+        // Notifications are still based on `allOrders` to ensure all critical alerts are visible regardless of filter.
 
         /**
          * Generates and renders notifications based on current data.
@@ -1331,7 +1368,7 @@
             });
 
             // Add general overdue orders that need attention (if not already covered by direct overdue notifications)
-            activeOrders.filter(o => o['סטטוס'] === 'חורג').forEach(order => {
+            allOrders.filter(o => o['סטטוס'] === 'חורג').forEach(order => { // Still use allOrders for notifications
                 notifications.push({
                     id: `overdue-order-${order.sheetRow}`,
                     message: `**חורג:** הזמנה **${order['תעודה']}** של לקוח **${order['שם לקוח']}** חורגת ב-${order['ימים שעברו']} ימים. ⏰`,
@@ -1449,18 +1486,18 @@
 
         /**
          * Updates the values on the report metric buttons.
+         * Now based on `filteredOrders`.
          */
         function updateReportButtons() {
-            document.getElementById('total-orders-count').textContent = allOrders.length;
+            document.getElementById('total-orders-count').textContent = filteredOrders.length;
             
-            const actionTypes = new Set(allOrders.map(order => order['סוג פעולה']).filter(Boolean));
+            const actionTypes = new Set(filteredOrders.map(order => order['סוג פעולה']).filter(Boolean));
             document.getElementById('unique-action-types-count').textContent = actionTypes.size;
 
-            const customersWithMultipleContainers = calculateCustomersWithMultipleContainers().length;
-            document.getElementById('customers-multiple-count').textContent = customersWithMultipleContainers;
+            const customersWithMultipleContainersCount = calculateCustomersWithMultipleContainers(filteredOrders).length;
+            document.getElementById('customers-multiple-count').textContent = customersWithMultipleContainersCount;
 
-            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
-            document.getElementById('current-overdue-count').textContent = overdueOrders.length;
+            // Removed `current-overdue-count` related logic from here
         }
 
         /**
@@ -1474,15 +1511,16 @@
             const targetSection = document.getElementById(tableId);
             targetSection.classList.remove('hidden');
 
-            // Render specific table data
+            // Render specific table data based on the selected filter
             if (tableId === 'orders-per-customer-table') {
-                renderOrdersPerCustomerTable();
+                renderOrdersPerCustomerTable(filteredOrders);
             } else if (tableId === 'action-type-counts-table') {
-                renderActionTypeCountsTable();
+                renderActionTypeCountsTable(filteredOrders);
             } else if (tableId === 'customers-multiple-containers-table') {
-                renderCustomersWithMultipleContainersTable();
+                renderCustomersWithMultipleContainersTable(filteredOrders);
             } else if (tableId === 'overdue-summary-table') {
-                renderOverdueSummaryTable();
+                // This table specifically shows ALL overdue orders, regardless of the main filter
+                renderOverdueSummaryTable(allOrders.filter(o => o['סטטוס'] === 'חורג')); 
             }
 
             // Smooth scroll to the table
@@ -1506,24 +1544,25 @@
         // --- Charts Logic ---
 
         /**
-         * Draws all charts for the dashboard.
+         * Draws all charts for the dashboard based on `filteredOrders`.
          */
         function drawCharts() {
-            drawOrdersPerCustomerChart();
-            drawActionTypeDistributionChart();
-            drawMonthlyOrdersChart();
-            drawOverdueTrendChart();
+            drawOrdersPerCustomerChart(filteredOrders);
+            drawActionTypeDistributionChart(filteredOrders);
+            drawMonthlyOrdersChart(filteredOrders);
+            // Removed drawOverdueTrendChart()
         }
 
         /**
          * Draws the "Orders Per Customer" bar chart.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the chart.
          */
-        function drawOrdersPerCustomerChart() {
+        function drawOrdersPerCustomerChart(dataToUse) {
             const chartDiv = d3.select("#svg-orders-per-customer");
             chartDiv.select("svg").remove();
 
             const customerOrderCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const customer = order['שם לקוח'];
                 if (customer) {
                     customerOrderCounts[customer] = (customerOrderCounts[customer] || 0) + 1;
@@ -1604,13 +1643,14 @@
 
         /**
          * Draws the "Action Type Distribution" pie chart.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the chart.
          */
-        function drawActionTypeDistributionChart() {
+        function drawActionTypeDistributionChart(dataToUse) {
             const chartDiv = d3.select("#svg-action-type-distribution");
             chartDiv.select("svg").remove();
 
             const actionTypeCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const actionType = order['סוג פעולה'];
                 if (actionType) {
                     actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
@@ -1706,13 +1746,14 @@
 
         /**
          * Draws the "Monthly Orders" line chart.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the chart.
          */
-        function drawMonthlyOrdersChart() {
+        function drawMonthlyOrdersChart(dataToUse) {
             const chartDiv = d3.select("#svg-monthly-orders");
             chartDiv.select("svg").remove();
 
             const monthlyCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const orderDate = new Date(order['תאריך הזמנה']);
                 if (!isNaN(orderDate.getTime())) {
                     const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
@@ -1791,102 +1832,15 @@
                 .attr("fill", getCurrentChartFillColor()); // Fixed: Use JS function to get color
         }
 
-        /**
-         * Draws the "Overdue Trend" bar chart.
-         */
-        function drawOverdueTrendChart() {
-            const chartDiv = d3.select("#svg-overdue-trend");
-            chartDiv.select("svg").remove();
-
-            const monthlyOverdueCounts = {};
-            allOrders.forEach(order => {
-                if (order['סטטוס'] === 'חורג') {
-                    const orderDate = new Date(order['תאריך הזמנה']);
-                    if (!isNaN(orderDate.getTime())) {
-                        const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
-                        monthlyOverdueCounts[monthKey] = (monthlyOverdueCounts[monthKey] || 0) + 1;
-                    }
-                }
-            });
-
-            const data = Object.entries(monthlyOverdueCounts)
-                .map(([month, count]) => ({ month: month, date: new Date(month + '-01'), count: count }))
-                .sort((a, b) => a.date - b.date);
-
-            const noDataMsg = document.getElementById('no-data-overdue-trend');
-            if (data.length === 0) {
-                noDataMsg.classList.remove('hidden');
-                return;
-            } else {
-                noDataMsg.classList.add('hidden');
-            }
-
-            const margin = { top: 20, right: 30, bottom: 80, left: 60 };
-            const bounds = chartDiv.node().getBoundingClientRect();
-            const width = bounds.width - margin.left - margin.right;
-            const height = bounds.height - margin.top - margin.bottom;
-
-            const svg = chartDiv.append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
-
-            const x = d3.scaleBand()
-                .range([0, width])
-                .domain(data.map(d => d.month))
-                .padding(0.2);
-
-            const y = d3.scaleLinear()
-                .range([height, 0])
-                .domain([0, d3.max(data, d => d.count) * 1.1]);
-
-            svg.append("g")
-                .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(x))
-                .selectAll("text")
-                .attr("transform", "translate(-10,0)rotate(-45)")
-                .style("text-anchor", "end")
-                .style("font-size", "0.85em")
-                .attr("class", "axis-text");
-
-            svg.append("g")
-                .call(d3.axisLeft(y).ticks(Math.max(3, d3.max(data, d => d.count))))
-                .selectAll("text")
-                .style("font-size", "0.85em")
-                .attr("class", "axis-text");
-
-            svg.selectAll(".bar")
-                .data(data)
-                .enter().append("rect")
-                .attr("class", "bar chart-bar")
-                .attr("x", d => x(d.month))
-                .attr("width", x.bandwidth())
-                .attr("y", height) // Start from bottom for animation
-                .attr("height", 0) // Start with zero height for animation
-                .transition()
-                .duration(800)
-                .delay((d, i) => i * 50)
-                .attr("y", d => y(d.count))
-                .attr("height", d => height - y(d.count));
-
-            svg.selectAll(".text")
-                .data(data)
-                .enter().append("text")
-                .attr("class", "chart-text")
-                .attr("x", d => x(d.month) + x.bandwidth() / 2)
-                .attr("y", d => y(d.count) - 5)
-                .attr("text-anchor", "middle")
-                .text(d => d.count);
-        }
-
+        // Removed drawOverdueTrendChart()
 
         // --- Report Table Data Calculation & Rendering ---
 
         /**
-         * Calculates and renders the "Orders Per Customer" table.
+         * Calculates and renders the "Orders Per Customer" table based on `dataToUse`.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table.
          */
-        function renderOrdersPerCustomerTable() {
+        function renderOrdersPerCustomerTable(dataToUse) {
             const tableBody = document.querySelector('#orders-per-customer-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-orders-per-customer-table');
@@ -1894,7 +1848,7 @@
 
             const customerData = {}; // { 'customerName|address': { ordersCount: N, activeContainers: Set, phone: string, lastOrderDate: Date, sheetRow: number } }
 
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const customerName = order['שם לקוח'] || 'לא ידוע';
                 const address = order['כתובת'] || 'לא ידוע';
                 const phone = order['טלפון לקוח'] || ''; // Assuming phone number exists
@@ -1966,16 +1920,17 @@
         }
 
         /**
-         * Calculates and renders the "Action Type Counts" table.
+         * Calculates and renders the "Action Type Counts" table based on `dataToUse`.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table.
          */
-        function renderActionTypeCountsTable() {
+        function renderActionTypeCountsTable(dataToUse) {
             const tableBody = document.querySelector('#action-type-counts-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-action-type-table');
             noDataMsg.classList.add('hidden');
 
             const actionTypeCounts = {};
-            allOrders.forEach(order => {
+            dataToUse.forEach(order => {
                 const actionType = order['סוג פעולה'] || 'לא ידוע';
                 actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
             });
@@ -1994,15 +1949,16 @@
         }
 
         /**
-         * Calculates and renders the "Customers with Multiple Containers" table.
+         * Calculates and renders the "Customers with Multiple Containers" table based on `dataToUse`.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table.
          */
-        function renderCustomersWithMultipleContainersTable() {
+        function renderCustomersWithMultipleContainersTable(dataToUse) {
             const tableBody = document.querySelector('#customers-multiple-containers-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-customers-multiple-containers-table');
             noDataMsg.classList.add('hidden');
 
-            const customersWithMultiple = calculateCustomersWithMultipleContainers();
+            const customersWithMultiple = calculateCustomersWithMultipleContainers(dataToUse); // Pass dataToUse
 
             if (customersWithMultiple.length === 0) {
                 noDataMsg.classList.remove('hidden');
@@ -2030,12 +1986,13 @@
 
         /**
          * Helper function to calculate customers with multiple active containers.
+         * @param {Array<Object>} ordersToAnalyze - The array of orders to analyze.
          * @returns {Array<Object>} List of customers with more than one active container.
          */
-        function calculateCustomersWithMultipleContainers() {
+        function calculateCustomersWithMultipleContainers(ordersToAnalyze) {
             const customerActiveContainers = {}; // { 'customerName|address': Set<containerNum> }
 
-            allOrders.filter(o => o['סטטוס'] !== 'סגור').forEach(order => {
+            ordersToAnalyze.filter(o => o['סטטוס'] !== 'סגור').forEach(order => {
                 const customerName = order['שם לקוח'] || 'לא ידוע';
                 const address = order['כתובת'] || 'לא ידוע';
                 const key = `${customerName}|${address}`;
@@ -2088,15 +2045,18 @@
         }
 
         /**
-         * Renders the "Overdue Summary" table.
+         * Renders the "Overdue Summary" table based on `dataToUse`.
+         * This function should still typically receive `allOrders.filter(o => o['סטטוס'] === 'חורג')`
+         * to display all overdue orders regardless of the main filter.
+         * @param {Array<Object>} dataToUse - The array of orders to use for the table (expected to be already filtered for overdue).
          */
-        function renderOverdueSummaryTable() {
+        function renderOverdueSummaryTable(dataToUse) {
             const tableBody = document.querySelector('#overdue-summary-table-data tbody');
             tableBody.innerHTML = '';
             const noDataMsg = document.getElementById('no-data-overdue-summary-table');
             noDataMsg.classList.add('hidden');
 
-            const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+            const overdueOrders = dataToUse; // Assume dataToUse is already filtered for overdue
             overdueOrders.sort((a, b) => (parseInt(b['ימים שעברו']) || 0) - (parseInt(a['ימים שעברו']) || 0));
 
             if (overdueOrders.length === 0) {
@@ -2139,12 +2099,13 @@
         /**
          * Calculates the top moving container.
          * A "movement" is defined as any order where the container is taken or brought.
+         * @param {Array<Object>} ordersToAnalyze - The array of orders to use for analysis.
          * @returns {Object} { container: string, count: number }
          */
-        function getTopMovingContainer() {
+        function getTopMovingContainer(ordersToAnalyze) {
             const containerMovementCounts = {}; // { containerNum: count }
 
-            allOrders.forEach(order => {
+            ordersToAnalyze.forEach(order => {
                 const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                 const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
 
@@ -2167,6 +2128,7 @@
 
         /**
          * Opens the modal to display top moving containers.
+         * Now based on `filteredOrders`.
          */
         function openTopMovingContainersModal() {
             const modal = document.getElementById('top-moving-containers-modal');
@@ -2176,7 +2138,7 @@
             noDataMsg.classList.add('hidden');
 
             const containerMovementCounts = {};
-            allOrders.forEach(order => {
+            filteredOrders.forEach(order => { // Use filteredOrders here
                 const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                 const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
 
@@ -2224,14 +2186,15 @@
         }
 
         /**
-         * Calculates and returns a list of returning customers.
+         * Calculates and returns a list of returning customers based on `ordersToAnalyze`.
          * A returning customer is defined as someone with more than 1 order.
+         * @param {Array<Object>} ordersToAnalyze - The array of orders to use for analysis.
          * @returns {Array<Object>} List of returning customers with their data.
          */
-        function getReturningCustomers() {
+        function getReturningCustomers(ordersToAnalyze) {
             const customerOrderData = {}; // { 'customerName|address': { customerName, address, orderCount, activeContainers: Set, hasOverdueHistory: boolean, phone: string } }
 
-            allOrders.forEach(order => {
+            ordersToAnalyze.forEach(order => { // Use ordersToAnalyze here
                 const customerName = order['שם לקוח'] || 'לא ידוע';
                 const address = order['כתובת'] || 'לא ידוע';
                 const phone = order['טלפון לקוח'] || '';
@@ -2245,12 +2208,16 @@
                         activeContainers: new Set(),
                         overdueOrders: [], // Store full overdue orders for this customer
                         phone: phone,
+                        lastOrderDate: new Date(0), // For new customer logic
                         firstOrderDate: new Date() // For new customer logic
                     };
                 }
                 customerOrderData[key].orderCount++;
 
                 const currentOrderDate = new Date(order['תאריך הזמנה']);
+                if (currentOrderDate > customerOrderData[key].lastOrderDate) {
+                    customerOrderData[key].lastOrderDate = currentOrderDate;
+                }
                 if (currentOrderDate < customerOrderData[key].firstOrderDate) {
                     customerOrderData[key].firstOrderDate = currentOrderDate;
                 }
@@ -2265,8 +2232,12 @@
                         containersBrought.forEach(c => customerOrderData[key].activeContainers.delete(c)); // Remove if returned
                     }
                 }
-                if (order['סטטוס'] === 'חורג') {
-                    customerOrderData[key].overdueOrders.push(order);
+                // Overdue history for returning customers is always based on all orders,
+                // so we don't filter `order['סטטוס'] === 'חורג'` here by `ordersToAnalyze`.
+                // It should be based on `allOrders` to show true overdue history.
+                const fullOrder = allOrders.find(o => o.sheetRow === order.sheetRow); // Get original order to check overdue status
+                if (fullOrder && fullOrder['סטטוס'] === 'חורג') {
+                    customerOrderData[key].overdueOrders.push(fullOrder);
                 }
             });
 
@@ -2280,6 +2251,7 @@
 
         /**
          * Opens the modal to display returning customers.
+         * Now based on `filteredOrders`.
          */
         function openReturningCustomersModal() {
             const modal = document.getElementById('returning-customers-modal');
@@ -2288,7 +2260,7 @@
             tableBody.innerHTML = '';
             noDataMsg.classList.add('hidden');
 
-            const returningCustomers = getReturningCustomers();
+            const returningCustomers = getReturningCustomers(filteredOrders); // Use filteredOrders here
 
             if (returningCustomers.length === 0) {
                 noDataMsg.classList.remove('hidden');
@@ -2428,6 +2400,9 @@
             modal.classList.add('active');
         }
 
+        function closeOrderDetailsModal() {
+            document.getElementById('order-details-modal').classList.remove('active');
+        }
 
         // --- Export, Print, Share Logic ---
 
@@ -2491,12 +2466,13 @@
             let headers = [];
             let rows = [];
             let title = '';
+            let dataToProcess = filteredOrders; // Default to filtered orders for most reports
 
             if (reportType === 'orders-per-customer-table') {
                 title = 'דוח: כמות הזמנות לכל לקוח';
                 headers = ['שם לקוח', 'כתובת', 'כמות הזמנות', 'כמות מכולות פעילות'];
                 const customerData = {}; 
-                allOrders.forEach(order => {
+                dataToProcess.forEach(order => { // Use dataToProcess
                     const customerName = order['שם לקוח'] || 'לא ידוע';
                     const address = order['כתובת'] || 'לא ידוע';
                     const key = `${customerName}|${address}`;
@@ -2526,7 +2502,7 @@
                 title = 'דוח: כמות סוגי פעולות';
                 headers = ['סוג פעולה', 'כמות'];
                 const actionTypeCounts = {};
-                allOrders.forEach(order => {
+                dataToProcess.forEach(order => { // Use dataToProcess
                     const actionType = order['סוג פעולה'] || 'לא ידוע';
                     actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
                 });
@@ -2535,7 +2511,7 @@
             } else if (reportType === 'customers-multiple-containers-table') {
                 title = 'דוח: לקוחות עם יותר ממכולה אחת';
                 headers = ['שם לקוח', 'כתובת', 'כמות מכולות פעילות', 'מספרי מכולות'];
-                const customersWithMultiple = calculateCustomersWithMultipleContainers(); // Reuse existing function
+                const customersWithMultiple = calculateCustomersWithMultipleContainers(dataToProcess); // Reuse existing function, pass dataToProcess
                 rows = customersWithMultiple.map(data => [
                     data.customerName,
                     data.address,
@@ -2545,7 +2521,8 @@
             } else if (reportType === 'overdue-summary-table') {
                 title = 'דוח: סיכום הזמנות חורגות';
                 headers = ['תעודה', 'שם לקוח', 'כתובת', 'סוג פעולה', 'ימים שעברו', 'מכולות קשורות', 'הערות'];
-                const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
+                // This report should always show ALL overdue orders, regardless of the main filter
+                const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג'); 
                 overdueOrders.sort((a, b) => (parseInt(b['ימים שעברו']) || 0) - (parseInt(a['ימים שעברו']) || 0));
                 rows = overdueOrders.map(order => {
                     let containersText = '';
@@ -2576,7 +2553,7 @@
                 title = 'מכולות מובילות בתזוזה';
                 headers = ['מכולה', 'מספר תזוזות'];
                 const containerMovementCounts = {};
-                allOrders.forEach(order => {
+                dataToProcess.forEach(order => { // Use dataToProcess
                     const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                     const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
                     containersTaken.forEach(c => { containerMovementCounts[c] = (containerMovementCounts[c] || 0) + 1; });
@@ -2589,12 +2566,13 @@
             } else if (reportType === 'returning-customers-table') {
                 title = 'לקוחות חוזרים (בעלי הזמנות רבות)';
                 headers = ['שם לקוח', 'כתובת', 'כמות הזמנות', 'מכולות פעילות', 'היסטוריה חריגה'];
-                const returningCustomers = getReturningCustomers(); // Reuse existing function
+                const returningCustomers = getReturningCustomers(dataToProcess); // Reuse existing function, pass dataToProcess
                 rows = returningCustomers.map(customer => [
                     customer.customerName,
                     customer.address,
                     customer.orderCount,
                     Array.from(customer.activeContainers).join(', ') || 'אין',
+                    // The overdue history here should still reflect ALL overdue orders for the customer
                     customer.overdueOrders && customer.overdueOrders.length > 0 ? `חורג (${customer.overdueOrders.length})` : 'תקין'
                 ]);
             }
@@ -2705,7 +2683,7 @@
             tableBody.innerHTML = '';
             noHistoryMsg.classList.add('hidden');
 
-            const containerHistory = allOrders.filter(order =>
+            const containerHistory = allOrders.filter(order => // Use allOrders here, history should be comprehensive
                 (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
                 (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
                 (String(order['מספרי מכולות'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim())
@@ -2823,8 +2801,8 @@
             { id: 'document_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת לשליחת המסמכים החסרים עבור הזמנה **[תעודה]** 📄. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול בהזמנה.\n\nתודה על שיתוף הפעולה!', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '📌' },
             { id: 'service_confirmation', text: 'שלום **[שם לקוח]**,\n\nהשירות שהוזמן (תעודה **[תעודה]**) אושר ויתבצע ב-**[תאריך סיום צפוי]** ✅. תודה שבחרת בנו ושיהיה יום נפלא!', category: 'אישור', placeholders: ['שם לקוח', 'תעודה', 'תאריך סיום צפוי'], emoji: '👍' },
             { id: 'service_delay', text: 'שלום **[שם לקוח]**,\n\nעקב נסיבות בלתי צפויות, ייתכן שיהיה עיכוב קל בטיפול בהזמנה **[תעודה]** ⏱️. אנו מתנצלים על אי הנוחות ונפעל לפתור זאת במהירות האפשרית.\n\nנודיע לך על כל עדכון! 🔜', category: 'מידע', placeholders: ['שם לקוח', 'תעודה'], emoji: '🚧' },
-            { id: 'location_update_request', text: 'שלום **[שם לקוח]**,\n\nכדי שנוכל לתאם את השירות בצורה הטובה ביותר, אנא וודא שמיקום המכולה ([**מספר מכולה**]) מעודכן ומדויק 📍. זה חשוב להגעה יעילה!', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '🗺️' },
-            { id: 'happy_birthday', text: 'יום הולדת שמח, **[שם לקוח]**! 🎉�\n\nצוות [שם החברה] מאחל לך יום מלא בשמחה, בריאות, הגשמה והרבה רגעים מתוקים! 🥳', category: 'עונתי', placeholders: ['שם לקוח'], emoji: '🎈' },
+            { id: 'location_update_request', text: 'שלום **[שם לקוח]**,\n\nכדי שנוכל לתאם את השירות בצורה הטובה ביותר, אנא וודא שמיקום המכולה ([**מספר מכולה**]) מעודכן ומדויק 📍. זה חשוב להגעה יעילה!', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '�️' },
+            { id: 'happy_birthday', text: 'יום הולדת שמח, **[שם לקוח]**! 🎉🎂\n\nצוות [שם החברה] מאחל לך יום מלא בשמחה, בריאות, הגשמה והרבה רגעים מתוקים! 🥳', category: 'עונתי', placeholders: ['שם לקוח'], emoji: '🎈' },
             { id: 'review_invitation', text: 'שלום **[שם לקוח]**,\n\nנהנית מהשירות שלנו? ✨ נשמח אם תוכל להקדיש רגע ולכתוב לנו ביקורת קצרה כאן: [**לינק לביקורת**]. תודה מראש על עזרתך להשתפר! 🙏', category: 'משוב', placeholders: ['שם לקוח', 'לינק לביקורת'], emoji: '🌟' },
             { id: 'tech_support_contact', text: 'שלום **[שם לקוח]**,\n\nלכל בעיה טכנית או תפעולית עם המכולה ([**מספר מכולה**]), מחלקת התמיכה שלנו זמינה עבורך 🧑‍🔧.\n\n**צור קשר: 097602010.**', category: 'תמיכה', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '🔧' },
             { id: 'general_thanks', text: 'תודה רבה לך, **[שם לקוח]**, על שיתוף הפעולה והאמון ב[שם החברה]! 🙏\n\nאנו מעריכים את בחירתך בנו ומקווים להמשיך לשרת אותך נאמנה. 💖', category: 'כללי', placeholders: ['שם לקוח'], emoji: '😊' },
@@ -3210,7 +3188,7 @@
         // Initial Load and Event Listeners
         window.onload = () => {
             initializeThemeCrm(); // Initialize theme for this page
-            loadAllData();
+            loadAllData(); // Loads all data and applies default filter
             updateDateTimeCrm();
             setInterval(updateDateTimeCrm, 1000);
             
