@@ -809,11 +809,16 @@
          */
         function renderNotifications() {
             const notificationsListDiv = document.getElementById('notifications-list');
-            notificationsListDiv.innerHTML = '';
+            const noNotificationsMsg = document.getElementById('no-notifications-msg'); // Get reference BEFORE clearing innerHTML
+
+            // Clear all notifications first, including the "no notifications" message if it was visible
+            notificationsListDiv.innerHTML = ''; 
+
             if (notifications.length === 0) {
-                document.getElementById('no-notifications-msg').classList.remove('hidden');
+                noNotificationsMsg.classList.remove('hidden'); // Show "no notifications" message
+                notificationsListDiv.appendChild(noNotificationsMsg); // Re-append it to ensure it's in the DOM
             } else {
-                document.getElementById('no-notifications-msg').classList.add('hidden');
+                noNotificationsMsg.classList.add('hidden'); // Hide "no notifications" message
                 notifications.forEach(notif => {
                     const notifItem = document.createElement('div');
                     notifItem.id = `notif-${notif.id}`;
