@@ -10,7 +10,9 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts for Inter and Heebo -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Custom Styles - for general app theme and overrides -->
     <link rel="stylesheet" href="style.css"> 
     <style>
@@ -38,7 +40,7 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Heebo', 'Inter', sans-serif; /* Prioritize Heebo for Hebrew, Inter as fallback */
             background-color: var(--background-light);
             color: var(--text-dark);
             transition: background-color 0.3s ease, color 0.3s ease;
@@ -322,14 +324,18 @@
             padding: 0.8rem 1rem;
             text-align: right;
             border-bottom: 1px solid var(--border-light);
-            font-size: 0.9rem;
+            font-size: 1rem; /* Increased font size */
+            font-weight: 700; /* Bold text */
+            /* Subtle glow effect */
+            text-shadow: 0 0 1px rgba(0, 0, 0, 0.1); /* Subtle black shadow for light text/background */
         }
         body.dark th, body.dark td {
             border-color: var(--dark-border-dark);
+            text-shadow: 0 0 1px rgba(255, 255, 255, 0.1); /* Subtle white shadow for dark text/background */
         }
         th {
             background-color: var(--background-light);
-            font-weight: 600;
+            font-weight: 700; /* Ensure header is bold */
             color: var(--text-dark);
             cursor: pointer;
         }
@@ -670,10 +676,14 @@
                     <table id="orders-per-customer-table-data" class="min-w-full">
                         <thead>
                             <tr>
+                                <th>תאריך הזמנה</th>
+                                <th>תעודה</th>
                                 <th>שם לקוח</th>
-                                <th>כתובת</th>
-                                <th>כמות הזמנות</th>
-                                <th>כמות מכולות פעילות</th>
+                                <th>סוג פעולה</th>
+                                <th>מספר מכולה ירדה</th>
+                                <th>מספר מכולה עלתה</th>
+                                <th>סטטוס הזמנה</th>
+                                <th>תאריך סיום צפוי</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2134,7 +2144,7 @@
             printWindow.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">');
             printWindow.document.write('<style>');
             printWindow.document.write(`
-                body { font-family: 'Inter', sans-serif; direction: rtl; text-align: right; }
+                body { font-family: 'Heebo', 'Inter', sans-serif; direction: rtl; text-align: right; }
                 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                 th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
                 th { background-color: #f2f2f2; }
