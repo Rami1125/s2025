@@ -2568,4 +2568,258 @@
             { id: 'holiday_greetings', text: 'חג שמח, [שם לקוח]!\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה ובריאות.', category: 'seasonal', placeholders: ['שם לקוח'] },
             { id: 'special_offer', text: 'שלום [שם לקוח],\nיש לנו חדשות מרגשות! מבצע מיוחד למכולות חדשות/נוספות עבורך. לפרטים נוספים, השב להודעה זו או התקשר: 097602010.', category: 'marketing', placeholders: ['שם לקוח'] },
             { id: 'follow_up_issue', text: 'שלום [שם לקוח],\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה [תעודה]. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו.', category: 'support', placeholders: ['שם לקוח', 'תעודה'] },
-            { id: 'document_reminder', text: 'שלום [שם לקוח],\nתזכורת לשליחת המסמכים החסרים עבור הזמנה [תעודה]. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול.', categ
+            { id: 'document_reminder', text: 'שלום [שם לקוח],\nתזכורת לשליחת המסמכים החסרים עבור הזמנה [תעודה]. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול.', category: 'reminder', placeholders: ['שם לקוח', 'תעודה'] },
+            { id: 'service_confirmation', text: 'שלום [שם לקוח],\nהשירות שהוזמן (תעודה [תעודה]) אושר ויתבצע ב-[תאריך סיום צפוי]. תודה שבחרת בנו!', category: 'confirmation', placeholders: ['שם לקוח', 'תעודה', 'תאריך סיום צפוי'] },
+            { id: 'service_delay', text: 'שלום [שם לקוח],\nעקב נסיבות בלתי צפויות, ייתכן שיהיה עיכוב קל בטיפול בהזמנה [תעודה]. אנו מתנצלים על אי הנוחות ונפעל לפתור זאת במהירות.', category: 'info', placeholders: ['שם לקוח', 'תעודה'] },
+            { id: 'location_update_request', text: 'שלום [שם לקוח],\nכדי שנוכל לתאם את השירות בצורה הטובה ביותר, אנא וודא שמיקום המכולה ([מספר מכולה]) מעודכן ומדויק.', category: 'reminder', placeholders: ['שם לקוח', 'מספר מכולה'] },
+            { id: 'happy_birthday', text: 'יום הולדת שמח, [שם לקוח]! 🎉\nצוות [שם החברה] מאחל לך יום מלא בשמחה, בריאות והגשמה.', category: 'seasonal', placeholders: ['שם לקוח'] },
+            { id: 'review_invitation', text: 'שלום [שם לקוח],\nנהנית מהשירות שלנו? נשמח אם תוכל להקדיש רגע ולכתוב לנו ביקורת קצרה כאן: [לינק לביקורת]. תודה!', category: 'feedback', placeholders: ['שם לקוח', 'לינק לביקורת'] },
+            { id: 'tech_support_contact', text: 'שלום [שם לקוח],\nלכל בעיה טכנית או תפעולית עם המכולה ([מספר מכולה]), מחלקת התמיכה שלנו זמינה עבורך.\nצור קשר: 097602010.', category: 'support', placeholders: ['שם לקוח', 'מספר מכולה'] },
+            { id: 'general_thanks', text: 'תודה רבה לך, [שם לקוח], על שיתוף הפעולה והאמון ב[שם החברה]!', category: 'general', placeholders: ['שם לקוח'] },
+            { id: 'multi_container_reminder', text: 'שלום [שם לקוח],\nשמנו לב שברשותך מספר מכולות פעילות. אנו כאן כדי לוודא שכל הצרכים שלך מסופקים. האם יש משהו שנוכל לעזור בו בנוגע למכולות שלך?', category: 'general', placeholders: ['שם לקוח'] }
+        ];
+
+        let typingInterval;
+        let currentMessageFullText = '';
+        let typingIndex = 0;
+
+        /**
+         * Selects a message and displays it with a typing effect.
+         * @param {string} messageId - The ID of the message to display.
+         * @param {Object} placeholders - Object with placeholder values.
+         */
+        function selectAndTypeMessage(messageId, placeholders = {}) {
+            clearInterval(typingInterval);
+            const message = whatsappMessages.find(msg => msg.id === messageId);
+            const textarea = document.getElementById('whatsapp-message-textarea');
+            const typingDisplay = document.getElementById('typing-effect-display');
+
+            if (message) {
+                currentMessageFullText = message.text;
+                // Replace placeholders
+                for (const key in placeholders) {
+                    currentMessageFullText = currentMessageFullText.replace(new RegExp(`\\[${key}\\]`, 'g'), placeholders[key]);
+                }
+                
+                typingIndex = 0;
+                typingDisplay.textContent = '';
+                textarea.value = ''; // Clear textarea initially
+
+                typingInterval = setInterval(() => {
+                    if (typingIndex < currentMessageFullText.length) {
+                        typingDisplay.textContent += currentMessageFullText.charAt(typingIndex);
+                        typingIndex++;
+                    } else {
+                        clearInterval(typingInterval);
+                        textarea.value = currentMessageFullText; // Put full text in textarea for editing
+                        typingDisplay.textContent = ''; // Clear typing display
+                    }
+                }, 30); // Typing speed in ms
+            }
+        }
+
+        /**
+         * Populates message options and opens the WhatsApp modal.
+         * @param {string} phoneNumber - The customer's phone number.
+         * @param {string} suggestedMessageId - The ID of the message to pre-select.
+         * @param {number|null} orderSheetRow - The sheet row of the order, for logging.
+         * @param {string} customerName - The customer's name for placeholders.
+         * @param {number|null} daysOverdue - Days overdue for overdue messages.
+         * @param {string} containerNum - Container number for relevant messages.
+         * @param {string|null} docId - Document ID (תעודה) for messages.
+         * @param {string|null} expectedEndDate - Expected end date for messages.
+         * @param {string|null} reviewLink - Link for review requests.
+         */
+        function openWhatsAppModal(phoneNumber, suggestedMessageId = 'general_greeting', orderSheetRow = null, customerName = 'לקוח יקר', daysOverdue = 0, containerNum = '', docId = '', expectedEndDate = '', reviewLink = 'https://example.com/review') {
+            const modal = document.getElementById('whatsapp-modal');
+            const phoneInput = document.getElementById('whatsapp-phone-input');
+            const messageOptionsDiv = document.getElementById('whatsapp-message-options');
+            const currentOrderSheetRowInput = document.getElementById('whatsapp-current-order-sheet-row');
+            
+            phoneInput.value = phoneNumber.startsWith('972') ? phoneNumber : `972${phoneNumber.substring(1)}`; // Format to Israeli international without '+'
+            currentOrderSheetRowInput.value = orderSheetRow !== null ? orderSheetRow : '';
+
+            messageOptionsDiv.innerHTML = ''; // Clear previous options
+            whatsappMessages.forEach(msg => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = `message-option-item`;
+                if (msg.id === suggestedMessageId) {
+                    optionDiv.classList.add('selected');
+                }
+                // Display a truncated version of the message for the option list
+                const displayMsg = msg.text.replace(/\[.*?\]/g, '...').substring(0, 70) + '...';
+                optionDiv.textContent = displayMsg;
+                optionDiv.onclick = () => {
+                    // Remove selected from others
+                    document.querySelectorAll('.message-option-item').forEach(item => item.classList.remove('selected'));
+                    optionDiv.classList.add('selected');
+                    // Prepare placeholders for the selected message
+                    const placeholders = {
+                        'שם לקוח': customerName,
+                        'ימים שעברו': daysOverdue,
+                        'מספר מכולה': containerNum,
+                        'תעודה': docId,
+                        'תאריך סיום צפוי': expectedEndDate,
+                        'לינק לביקורת': reviewLink
+                    };
+                    selectAndTypeMessage(msg.id, placeholders);
+                };
+                messageOptionsDiv.appendChild(optionDiv);
+            });
+
+            // Trigger click on suggested message to load it
+            const defaultSelectedOption = messageOptionsDiv.querySelector(`.message-option-item.selected`);
+            if (defaultSelectedOption) {
+                defaultSelectedOption.click();
+            } else if (whatsappMessages.length > 0) {
+                // If suggested not found, or no suggestion, select the first one
+                messageOptionsDiv.querySelector('.message-option-item').click();
+            }
+
+            if (isMobile()) {
+                modal.classList.add('mobile-drawer');
+            } else {
+                modal.classList.remove('mobile-drawer');
+            }
+            modal.classList.add('active');
+        }
+
+        function closeWhatsAppModal() {
+            document.getElementById('whatsapp-modal').classList.remove('active');
+            clearInterval(typingInterval); // Stop typing effect
+        }
+
+        /**
+         * Sends the WhatsApp message to the entered number.
+         */
+        function sendWhatsAppMessage() {
+            const phoneInput = document.getElementById('whatsapp-phone-input');
+            const messageTextarea = document.getElementById('whatsapp-message-textarea');
+            const orderSheetRow = document.getElementById('whatsapp-current-order-sheet-row').value;
+
+            const phoneNumber = phoneInput.value.trim().replace(/\D/g, ''); // Clean phone number (digits only)
+            const message = messageTextarea.value.trim();
+
+            if (!phoneNumber) {
+                showAlert('אנא הזן מספר טלפון תקין.', 'error');
+                return;
+            }
+            if (!message) {
+                showAlert('תוכן ההודעה לא יכול להיות ריק.', 'error');
+                return;
+            }
+
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            showAlert('ההודעה נשלחה ל-WhatsApp (נפתח חלון חדש).', 'success', 5000);
+            closeWhatsAppModal();
+
+            // Log message history to notes if an order is associated
+            if (orderSheetRow) {
+                logWhatsAppMessage(parseInt(orderSheetRow), message);
+            }
+        }
+
+        /**
+         * Logs the sent WhatsApp message to the order's notes in the backend.
+         * This function assumes you have a Google Apps Script function named `updateOrderNote`
+         * that takes `sheetRow` and `note` as parameters.
+         * @param {number} sheetRow - The row number of the order in the Google Sheet.
+         * @param {string} message - The message text that was sent.
+         */
+        async function logWhatsAppMessage(sheetRow, message) {
+            const timestamp = new Date().toLocaleString('he-IL', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const noteToLog = `[נשלח וואטסאפ: ${timestamp}] ${message}`;
+
+            // Find the order in `allOrders` and update its 'הערות' locally
+            const orderIndex = allOrders.findIndex(order => order.sheetRow === sheetRow);
+            if (orderIndex !== -1) {
+                const currentNotes = allOrders[orderIndex]['הערות'] || '';
+                allOrders[orderIndex]['הערות'] = currentNotes ? `${currentNotes}\n${noteToLog}` : noteToLog;
+                // Re-render relevant tables if needed to show updated notes (though notes column is not always visible)
+            }
+
+            // Send to backend
+            const response = await fetchData('updateOrderNote', { sheetRow: sheetRow, note: noteToLog });
+            if (response.success) {
+                console.log('WhatsApp message logged to backend successfully.');
+            } else {
+                console.error('Failed to log WhatsApp message to backend:', response.message);
+                showAlert('שגיאה בתיעוד ההודעה במערכת.', 'error');
+            }
+        }
+
+        /**
+         * Determines the most appropriate WhatsApp message ID for a given order.
+         * @param {Object} order - The order object.
+         * @returns {string} The ID of the suggested message.
+         */
+        function getSuggestedMessageIdForOrder(order) {
+            const daysOverdue = parseInt(order['ימים שעברו']) || 0;
+            const orderDate = new Date(order['תאריך הזמנה']);
+            const today = new Date();
+            const daysSinceOrder = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+
+            if (order['סטטוס'] === 'חורג') {
+                if (daysOverdue <= 7) return 'overdue_7_days';
+                if (daysOverdue <= 30) return 'overdue_30_days';
+                return 'overdue_long';
+            }
+            
+            // Check for approaching due date for active (non-overdue, non-closed) orders
+            if (order['סטטוס'] === 'פתוח' && order['תאריך סיום צפוי']) {
+                const expectedEndDate = new Date(order['תאריך סיום צפוי']);
+                const daysUntilDue = Math.floor((expectedEndDate - today) / (1000 * 60 * 60 * 24));
+                if (daysUntilDue <= 3 && daysUntilDue >= 0) return 'approaching_due_3_days';
+                if (daysUntilDue <= 7 && daysUntilDue > 3) return 'approaching_due_7_days';
+            }
+
+            // New customer check (first order, relatively new)
+            // This is a rough heuristic. A more robust solution would track customer creation.
+            if (daysSinceOrder <= 30 && order['מספר מכולה ירדה'] && order['סוג פעולה'] === 'הורדה') {
+                const customerOrders = allOrders.filter(o => o['שם לקוח'] === order['שם לקוח'] && o['כתובת'] === order['כתובת']);
+                if (customerOrders.length === 1) { // Only one order for this customer
+                    return 'new_customer_welcome';
+                }
+            }
+
+            // Default fallback
+            return 'general_inquiry';
+        }
+
+
+        // --- Back to Top Button Logic ---
+        const backToTopBtn = document.getElementById("back-to-top-btn");
+
+        window.onscroll = function() { scrollFunction() };
+
+        function scrollFunction() {
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+                backToTopBtn.style.display = "block";
+            } else {
+                backToTopBtn.style.display = "none";
+            }
+        }
+
+        backToTopBtn.addEventListener('click', topFunction);
+
+        function topFunction() {
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // Smooth scroll to top
+        }
+
+
+        // Initial Load and Event Listeners
+        window.onload = () => {
+            initializeThemeCrm(); // Initialize theme for this page
+            loadAllData();
+            updateDateTimeCrm();
+            setInterval(updateDateTimeCrm, 1000);
+            
+            // Re-draw charts on resize to make them responsive
+            window.addEventListener('resize', () => {
+                drawCharts();
+            });
+        };
+    </script>
+</body>
+</html>
