@@ -14,6 +14,12 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
+    <script>
+    // Redirect to mobile version if on a small screen
+    if (window.innerWidth <= 768) { // Adjust this breakpoint as needed (Tailwind's 'md' is 768px)
+        window.location.href = "index2.html"; // Replace with the actual path to your mobile page
+    }
+</script>
 <body class="bg-gray-50 text-gray-800">
 
     <!-- Loader Spinner -->
