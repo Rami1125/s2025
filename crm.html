@@ -576,8 +576,9 @@
             </h2>
             <div id="notifications-list" class="space-y-3">
                 <!-- Notifications will be loaded here by JavaScript -->
-                <p id="no-notifications-msg" class="text-center text-gray-500 dark:text-gray-400">אין התראות חדשות. כל הכבוד! 🎉</p>
             </div>
+            <!-- Moved outside notifications-list to prevent being cleared by innerHTML = '' -->
+            <p id="no-notifications-msg" class="text-center text-gray-500 dark:text-gray-400 mt-4 hidden">אין התראות חדשות. כל הכבוד! 🎉</p>
         </section>
         <hr class="my-8 border-gray-200 dark:border-gray-700">
 
@@ -1090,12 +1091,11 @@
             const notificationsListDiv = document.getElementById('notifications-list');
             const noNotificationsMsg = document.getElementById('no-notifications-msg'); 
 
-            // Clear all notifications first, including the "no notifications" message if it was visible
+            // Clear all notifications first
             notificationsListDiv.innerHTML = ''; 
 
             if (notifications.length === 0) {
                 noNotificationsMsg.classList.remove('hidden'); // Show "no notifications" message
-                notificationsListDiv.appendChild(noNotificationsMsg); // Re-append it to ensure it's in the DOM
             } else {
                 noNotificationsMsg.classList.add('hidden'); // Hide "no notifications" message
                 notifications.forEach(notif => {
@@ -2144,7 +2144,6 @@
             printWindow.document.write('</style></head><body>');
             printWindow.document.write(`<h1 style="color: ${document.body.classList.contains('dark') ? '#fff' : '#1f2937'};">דוח מערכת CRM - ${document.querySelector(`#${tableId}`).previousElementSibling.textContent.replace('דוח:', '').trim()}</h1>`); // Get report title
             printWindow.document.write(tableContainer.outerHTML); // Include the entire table container
-            printWindow.document.write('</body></html>');
             printWindow.document.close();
             printWindow.print();
             showAlert('הדוח נשלח להדפסה.', 'success', 3000);
