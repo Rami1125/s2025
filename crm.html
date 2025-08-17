@@ -472,13 +472,16 @@
             font-size: 1.5rem; /* Larger icon */
         }
 
-        /* WhatsApp Modal specific styles */
+        /* WhatsApp Modal specific styles - ENHANCED */
         #whatsapp-modal .modal-content {
-            max-width: 500px;
+            max-width: 800px; /* Wider for desktop */
+            width: 95%; /* More adaptive width */
             background: linear-gradient(145deg, #E0F2F7, #B2EBF2); /* Light blue gradient for freshness */
             border: 1px solid #81D4FA;
             box-shadow: 0 10px 30px rgba(0, 188, 212, 0.3);
             color: #263238; /* Dark text for contrast */
+            padding: 2.5rem; /* More padding */
+            border-radius: 16px; /* More rounded */
         }
         body.dark #whatsapp-modal .modal-content {
             background: linear-gradient(145deg, #263238, #37474F); /* Darker blue gradient */
@@ -501,13 +504,14 @@
 
         #whatsapp-message-textarea {
             resize: vertical;
-            min-height: 120px;
-            @apply p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100;
+            min-height: 150px; /* Taller textarea */
+            @apply p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100;
             font-weight: 500;
-            line-height: 1.6; /* Better readability */
+            line-height: 1.7; /* Better readability */
+            font-size: 1rem;
         }
         #whatsapp-message-options {
-            @apply mb-4 bg-white dark:bg-gray-800 rounded-md shadow-inner overflow-hidden; /* Accordion container */
+            @apply mb-4 bg-white dark:bg-gray-800 rounded-lg shadow-inner overflow-hidden; /* Accordion container */
             border: 1px solid var(--border-light);
             transition: all 0.3s ease;
         }
@@ -515,7 +519,8 @@
             border-color: var(--dark-border-dark);
         }
         .message-option-header {
-            @apply flex items-center justify-between p-3 cursor-pointer bg-gray-100 dark:bg-gray-700 font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600;
+            @apply flex items-center justify-between p-4 cursor-pointer bg-gray-100 dark:bg-gray-700 font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600;
+            font-size: 1.125rem; /* Larger header */
         }
         .message-option-header:hover {
             @apply bg-gray-200 dark:bg-gray-600;
@@ -535,12 +540,12 @@
             border-bottom-right-radius: 8px;
         }
         .message-option-list-container.expanded {
-            max-height: 300px; /* Adjust as needed */
+            max-height: 350px; /* Adjust as needed for more messages */
             overflow-y: auto;
         }
 
         .message-option-item {
-            @apply cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm;
+            @apply cursor-pointer p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-base; /* Larger text */
             margin-bottom: 0.25rem;
             color: var(--text-dark); /* Ensure text color matches theme */
             font-weight: 500;
@@ -558,15 +563,16 @@
         }
 
         .typing-effect-container {
-            min-height: 100px; /* Ensure space for typing effect */
+            min-height: 120px; /* Ensure space for typing effect */
             background-color: var(--background-light);
             border: 1px dashed var(--border-light);
-            padding: 1rem;
+            padding: 1.2rem;
             border-radius: 8px;
             margin-bottom: 1rem;
             color: var(--text-dark);
             font-weight: 500;
-            line-height: 1.6;
+            line-height: 1.7;
+            font-size: 1rem;
         }
         body.dark .typing-effect-container {
             background-color: var(--dark-background-dark);
@@ -1202,7 +1208,6 @@
             if (response.success) {
                 allOrders = response.data; // Keep all orders in `allOrders`
                 applyOrderStatusFilter(); // Apply initial filter and render
-                generateAndRenderNotifications(); // Notifications are still based on all orders for alerts
             }
         }
 
@@ -1227,6 +1232,7 @@
             processDataForDashboard();
             updateReportButtons();
             drawCharts();
+            generateAndRenderNotifications(); // Re-render notifications based on new filter
             // Hide all report tables initially after filter change, user can click to reveal
             document.querySelectorAll('.report-table-section').forEach(section => section.classList.add('hidden'));
         }
@@ -1288,20 +1294,35 @@
         }
 
         // --- Notifications Logic ---
-        // Notifications are still based on `allOrders` to ensure all critical alerts are visible regardless of filter.
+        // Notifications are now filtered based on the `currentOrderFilter`
 
         /**
-         * Generates and renders notifications based on current data.
+         * Generates and renders notifications based on current data and filter.
          */
         function generateAndRenderNotifications() {
             notifications = []; // Clear existing notifications
-            const activeOrders = allOrders.filter(o => o['סטטוס'] !== 'סגור');
+            
+            // Apply filter to notifications based on currentOrderFilter
+            let ordersForNotifications = [];
+            if (currentOrderFilter === 'all') {
+                ordersForNotifications = allOrders; // All orders show all notifications
+            } else if (currentOrderFilter === 'overdue') {
+                // Only show overdue/pending notifications when 'overdue' filter is active
+                ordersForNotifications = allOrders.filter(o => o['סטטוס'] === 'חורג' || o['סטטוס'] === 'ממתין/לא תקין');
+            } else {
+                // If 'open' or 'closed' is selected, clear critical notifications.
+                // This assumes critical notifications are mostly tied to overdue/pending.
+                // If there are other "info" level notifications for open/closed orders, they would need separate logic.
+                ordersForNotifications = []; 
+            }
+
+            const activeOrdersForNotif = ordersForNotifications.filter(o => o['סטטוס'] !== 'סגור');
             
             // Check for potential container mismatches (e.g., container taken but not returned after a long time)
             const containerStatus = {}; // { containerNum: { lastAction: 'taken'|'returned', order: {}, timestamp: Date } }
 
             // Sort orders chronologically to build accurate container history
-            const sortedOrders = [...allOrders].sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה']));
+            const sortedOrders = [...ordersForNotifications].sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה']));
 
             sortedOrders.forEach(order => {
                 const orderDate = new Date(order['תאריך הזמנה']);
@@ -1349,7 +1370,7 @@
             }
             
             // Check for orders marked as "ממתין/לא תקין" without recent notes
-            activeOrders.filter(o => o['סטטוס'] === 'ממתין/לא תקין').forEach(order => {
+            activeOrdersForNotif.filter(o => o['סטטוס'] === 'ממתין/לא תקין').forEach(order => {
                 const lastNoteUpdate = order['תאריך וזמן עדכון הערה'] ? new Date(order['תאריך וזמן עדכון הערה']) : new Date(order['תאריך הזמנה']);
                 const daysSinceLastUpdate = Math.floor((new Date() - lastNoteUpdate) / (1000 * 60 * 60 * 24));
                 if (daysSinceLastUpdate > 30) { // If no update in the last 30 days
@@ -1367,21 +1388,24 @@
                 }
             });
 
-            // Add general overdue orders that need attention (if not already covered by direct overdue notifications)
-            allOrders.filter(o => o['סטטוס'] === 'חורג').forEach(order => { // Still use allOrders for notifications
-                notifications.push({
-                    id: `overdue-order-${order.sheetRow}`,
-                    message: `**חורג:** הזמנה **${order['תעודה']}** של לקוח **${order['שם לקוח']}** חורגת ב-${order['ימים שעברו']} ימים. ⏰`,
-                    type: 'warning',
-                    isHandled: false,
-                    orderId: order.sheetRow,
-                    customerName: order['שם לקוח'],
-                    customerPhone: order['טלפון לקוח'], // Assuming this field exists
-                    daysOverdue: order['ימים שעברו'],
-                    docId: order['תעודה'], // Pass Document ID
-                    expectedEndDate: order['תאריך סיום צפוי'] // Pass Expected End Date
+            // Add general overdue orders that need attention 
+            // Only add if currentFilter is 'all' or 'overdue'
+            if (currentOrderFilter === 'all' || currentOrderFilter === 'overdue') {
+                ordersForNotifications.filter(o => o['סטטוס'] === 'חורג').forEach(order => { 
+                    notifications.push({
+                        id: `overdue-order-${order.sheetRow}`,
+                        message: `**חורג:** הזמנה **${order['תעודה']}** של לקוח **${order['שם לקוח']}** חורגת ב-${order['ימים שעברו']} ימים. ⏰`,
+                        type: 'warning',
+                        isHandled: false,
+                        orderId: order.sheetRow,
+                        customerName: order['שם לקוח'],
+                        customerPhone: order['טלפון לקוח'], // Assuming this field exists
+                        daysOverdue: order['ימים שעברו'],
+                        docId: order['תעודה'], // Pass Document ID
+                        expectedEndDate: order['תאריך סיום צפוי'] // Pass Expected End Date
+                    });
                 });
-            });
+            }
 
             renderNotifications();
         }
@@ -2391,6 +2415,385 @@
 
             orderCard.innerHTML = htmlContent;
             document.getElementById('details-modal-title').textContent = 'פרטי היסטוריית לקוח';
+
+            if (isMobile()) {
+                modal.classList.add('mobile-drawer');
+            } else {
+                modal.classList.remove('mobile-drawer');
+            }
+            modal.classList.add('active');
+        }
+
+        function closeOrderDetailsModal() {
+            document.getElementById('order-details-modal').classList.remove('active');
+        }
+
+        // --- Export, Print, Share Logic ---
+
+        /**
+         * Exports displayed table data to an Excel (CSV) file.
+         * @param {string} tableId - The ID of the table HTML element.
+         * @param {string} filename - The desired filename for the export.
+         */
+        function exportTableToExcel(tableId, filename = 'report') {
+            const table = document.getElementById(tableId);
+            if (!table) {
+                showAlert('טבלה לייצוא לא נמצאה.', 'error');
+                return;
+            }
+            const rows = Array.from(table.querySelectorAll('tr'));
+
+            if (rows.length <= 1) { // Only header row
+                showAlert('אין נתונים לייצוא בטבלה זו.', 'warning');
+                return;
+            }
+
+            const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // UTF-8 BOM for Hebrew
+
+            // Add headers
+            csvContent += headers.join(',') + '\n';
+
+            // Add data rows
+            for (let i = 1; i < rows.length; i++) {
+                const rowCells = Array.from(rows[i].querySelectorAll('td'));
+                const rowData = rowCells.map(cell => {
+                    let value = cell.textContent.trim();
+                    // Escape double quotes and enclose if value contains comma
+                    value = value.replace(/"/g, '""');
+                    if (value.includes(',')) {
+                        value = `"${value}"`;
+                    }
+                    return value;
+                });
+                csvContent += rowData.join(',') + '\n';
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${filename}_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('הנתונים יוצאו לאקסל בהצלחה!', 'success');
+        }
+
+        /**
+         * Helper function to get structured data for printing for each report type.
+         * This function centralizes the data retrieval logic for printing purposes,
+         * ensuring consistent data format regardless of the current DOM state.
+         * @param {string} reportType - The identifier for the type of report (e.g., 'orders-per-customer-table').
+         * @returns {Object} An object containing headers (Array<string>), rows (Array<Array<string>>), and title (string).
+         */
+        function getReportDataForPrinting(reportType) {
+            let headers = [];
+            let rows = [];
+            let title = '';
+            let dataToProcess = filteredOrders; // Default to filtered orders for most reports
+
+            if (reportType === 'orders-per-customer-table') {
+                title = 'דוח: כמות הזמנות לכל לקוח';
+                headers = ['שם לקוח', 'כתובת', 'כמות הזמנות', 'כמות מכולות פעילות'];
+                const customerData = {}; 
+                dataToProcess.forEach(order => { // Use dataToProcess
+                    const customerName = order['שם לקוח'] || 'לא ידוע';
+                    const address = order['כתובת'] || 'לא ידוע';
+                    const key = `${customerName}|${address}`;
+                    if (!customerData[key]) {
+                        customerData[key] = { customerName: customerName, address: address, ordersCount: 0, activeContainers: new Set() };
+                    }
+                    customerData[key].ordersCount++;
+                    if (order['סטטוס'] !== 'סגור') {
+                        if (order['סוג פעולה'] === 'הורדה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה ירדה'])) {
+                            const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                            containersTaken.forEach(c => customerData[key].activeContainers.add(c));
+                        }
+                        if (order['סוג פעולה'] === 'העלאה' || (order['סוג פעולה'] === 'החלפה' && order['מספר מכולה עלתה'])) {
+                            const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                            containersBrought.forEach(c => customerData[key].activeContainers.delete(c));
+                        }
+                    }
+                });
+                const sortedCustomers = Object.values(customerData).sort((a, b) => b.ordersCount - a.ordersCount);
+                rows = sortedCustomers.map(data => [
+                    data.customerName,
+                    data.address,
+                    data.ordersCount,
+                    Array.from(data.activeContainers).join(', ') || 'אין'
+                ]);
+            } else if (reportType === 'action-type-counts-table') {
+                title = 'דוח: כמות סוגי פעולות';
+                headers = ['סוג פעולה', 'כמות'];
+                const actionTypeCounts = {};
+                dataToProcess.forEach(order => { // Use dataToProcess
+                    const actionType = order['סוג פעולה'] || 'לא ידוע';
+                    actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
+                });
+                const sortedActionTypes = Object.entries(actionTypeCounts).sort((a, b) => b[1] - a[1]);
+                rows = sortedActionTypes; 
+            } else if (reportType === 'customers-multiple-containers-table') {
+                title = 'דוח: לקוחות עם יותר ממכולה אחת';
+                headers = ['שם לקוח', 'כתובת', 'כמות מכולות פעילות', 'מספרי מכולות'];
+                const customersWithMultiple = calculateCustomersWithMultipleContainers(dataToProcess); // Reuse existing function, pass dataToProcess
+                rows = customersWithMultiple.map(data => [
+                    data.customerName,
+                    data.address,
+                    data.containerCount,
+                    data.containers.join(', ')
+                ]);
+            } else if (reportType === 'overdue-summary-table') {
+                title = 'דוח: סיכום הזמנות חורגות';
+                headers = ['תעודה', 'שם לקוח', 'כתובת', 'סוג פעולה', 'ימים שעברו', 'מכולות קשורות', 'הערות'];
+                // This report should always show ALL overdue orders, regardless of the main filter
+                const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג'); 
+                overdueOrders.sort((a, b) => (parseInt(b['ימים שעברו']) || 0) - (parseInt(a['ימים שעברו']) || 0));
+                rows = overdueOrders.map(order => {
+                    let containersText = '';
+                    if (order['סוג פעולה'] === 'החלפה') {
+                        const taken = String(order['מספר מכולה ירדה'] || '');
+                        const brought = String(order['מספר מכולה עלתה'] || '');
+                        if (taken && brought) containersText = `ירדה: ${taken}, עלתה: ${brought}`;
+                        else if (taken) containersText = `ירדה: ${taken}`;
+                        else if (brought) containersText = `עלתה: ${brought}`;
+                    } else if (order['סוג פעולה'] === 'הורדה') {
+                        containersText = String(order['מספר מכולה ירדה'] || '');
+                    } else if (order['סוג פעולה'] === 'העלאה') {
+                        containersText = String(order['מספר מכולה עלתה'] || '');
+                    } else {
+                        containersText = String(order['מספרי מכולות'] || '');
+                    }
+                    return [
+                        order['תעודה'] || '',
+                        order['שם לקוח'] || '',
+                        order['כתובת'] || '',
+                        order['סוג פעולה'] || '',
+                        order['ימים שעברו'] !== undefined ? order['ימים שעברו'] : '',
+                        containersText,
+                        order['הערות'] || ''
+                    ];
+                });
+            } else if (reportType === 'top-moving-containers-table') {
+                title = 'מכולות מובילות בתזוזה';
+                headers = ['מכולה', 'מספר תזוזות'];
+                const containerMovementCounts = {};
+                dataToProcess.forEach(order => { // Use dataToProcess
+                    const containersTaken = (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    const containersBrought = (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).filter(c => c);
+                    containersTaken.forEach(c => { containerMovementCounts[c] = (containerMovementCounts[c] || 0) + 1; });
+                    containersBrought.forEach(c => { containerMovementCounts[c] = (containerMovementCounts[c] || 0) + 1; });
+                });
+                const sortedContainers = Object.entries(containerMovementCounts)
+                    .map(([container, count]) => ({ container, count }))
+                    .sort((a, b) => b.count - a.count);
+                rows = sortedContainers.map(d => [d.container, d.count]);
+            } else if (reportType === 'returning-customers-table') {
+                title = 'לקוחות חוזרים (בעלי הזמנות רבות)';
+                headers = ['שם לקוח', 'כתובת', 'כמות הזמנות', 'מכולות פעילות', 'היסטוריה חריגה'];
+                const returningCustomers = getReturningCustomers(dataToProcess); // Reuse existing function, pass dataToProcess
+                rows = returningCustomers.map(customer => [
+                    customer.customerName,
+                    customer.address,
+                    customer.orderCount,
+                    Array.from(customer.activeContainers).join(', ') || 'אין',
+                    // The overdue history here should still reflect ALL overdue orders for the customer
+                    customer.overdueOrders && customer.overdueOrders.length > 0 ? `חורג (${customer.overdueOrders.length})` : 'תקין'
+                ]);
+            }
+
+            return { headers, rows, title };
+        }
+
+        /**
+         * Prints the content of a specific report table using a generated HTML structure.
+         * @param {string} reportType - The identifier for the type of report to print.
+         */
+        function printReport(reportType) {
+            const { headers, rows, title } = getReportDataForPrinting(reportType);
+
+            if (rows.length === 0) {
+                showAlert('אין נתונים להדפסה בדוח זה.', 'warning');
+                return;
+            }
+
+            // Build the table HTML for printing
+            let tableHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            ${headers.map(h => `<th style="border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #f2f2f2;">${h}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(row => `
+                            <tr>
+                                ${row.map(cell => `<td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${cell}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            // Open a new window for printing
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>הדפסת דוח</title>');
+            // Add basic print styles directly to the new window
+            printWindow.document.write('<style>');
+            printWindow.document.write(`
+                body { font-family: 'Heebo', 'Inter', sans-serif; direction: rtl; text-align: right; margin: 20px; }
+                h1 { text-align: center; margin-bottom: 20px; color: #1f2937; }
+                /* Ensure table headers repeat on new pages and content doesn't break mid-row */
+                @media print {
+                    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+                    table { page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+                }
+            `);
+            printWindow.document.write('</style></head><body>');
+            printWindow.document.write(`<h1>${title}</h1>`); // Add dynamic title
+            printWindow.document.write(tableHtml); // Add the generated table
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print(); // Trigger the print dialog
+            showAlert('הדוח נשלח להדפסה.', 'success', 3000);
+        }
+
+        /**
+         * Shares the content of a specific report table to WhatsApp.
+         * @param {string} tableId - The ID of the table HTML element.
+         */
+        function shareReportToWhatsApp(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) {
+                showAlert('טבלה לשיתוף לא נמצאה.', 'error');
+                return;
+            }
+
+            const rows = Array.from(table.querySelectorAll('tr'));
+            if (rows.length <= 1) {
+                showAlert('אין נתונים לשיתוף בטבלה זו.', 'warning');
+                return;
+            }
+
+            const reportTitle = document.querySelector(`#${tableId}`).previousElementSibling.textContent.replace('דוח:', '').trim();
+            let message = `*${reportTitle}*\n\n`;
+
+            const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
+            
+            // Generate table rows as text
+            for (let i = 1; i < rows.length; i++) {
+                const rowCells = Array.from(rows[i].querySelectorAll('td'));
+                const rowData = rowCells.map(cell => cell.textContent.trim());
+                message += `${headers[0]}: ${rowData[0]}, ${headers[1]}: ${rowData[1]}`; // Example: Customer Name: X, Address: Y
+                if (rowData[2]) message += `, ${headers[2]}: ${rowData[2]}`;
+                if (rowData[3]) message += `, ${headers[3]}: ${rowData[3]}`;
+                message += '\n';
+            }
+
+            const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            showAlert('הדוח נשלח לווצאפ.', 'success', 3000);
+        }
+
+        // --- Container History Modal (reused/adapted from script.js) ---
+        // This is necessary because some tables in this CRM dashboard link to container history.
+        function openContainerHistoryModal(containerNum) {
+            const modal = document.getElementById('container-history-modal');
+            const tableBody = document.querySelector('#container-history-table tbody');
+            const noHistoryMsg = document.getElementById('no-container-history');
+            document.getElementById('history-container-number').textContent = containerNum;
+            tableBody.innerHTML = '';
+            noHistoryMsg.classList.add('hidden');
+
+            const containerHistory = allOrders.filter(order => // Use allOrders here, history should be comprehensive
+                (String(order['מספר מכולה ירדה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
+                (String(order['מספר מכולה עלתה'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim()) ||
+                (String(order['מספרי מכולות'] || '')).split(',').map(c => c.trim()).includes(containerNum.trim())
+            ).sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה']));
+
+            if (containerHistory.length === 0) {
+                noHistoryMsg.classList.remove('hidden');
+            } else {
+                containerHistory.forEach(order => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = formatDate(order['תאריך הזמנה']);
+                    row.insertCell().textContent = order['תעודה'] || '';
+                    row.insertCell().textContent = order['שם לקוח'] || '';
+                    row.insertCell().textContent = order['סוג פעולה'] || '';
+                    row.insertCell().textContent = String(order['מספר מכולה ירדה'] || order['מספרי מכולות'] || '');
+                    row.insertCell().textContent = String(order['מספר מכולה עלתה'] || '');
+                    let statusClass = '';
+                    switch (order['סטטוס']) {
+                        case 'פתוח': statusClass = 'status-open'; break;
+                        case 'סגור': statusClass = 'status-closed'; break;
+                        case 'חורג': statusClass = 'status-overdue'; break;
+                        case 'ממתין/לא תקין': statusClass = 'status-pending'; break;
+                        default: statusClass = 'status-warning'; break;
+                    }
+                    row.insertCell().innerHTML = `<span class="${statusClass}">${order['סטטוס'] || ''}</span>`;
+                    row.insertCell().textContent = formatDate(order['תאריך סיום צפוי']);
+                    const whatsappCell = row.insertCell();
+                    if (order['טלפון לקוח']) {
+                        const suggestedMsgId = getSuggestedMessageIdForOrder(order);
+                        whatsappCell.innerHTML = `<i class="fab fa-whatsapp whatsapp-btn-icon" title="שלח WhatsApp" onclick="event.stopPropagation(); openWhatsAppModal('${order['טלפון לקוח']}', '${suggestedMsgId}', ${order.sheetRow}, '${order['שם לקוח']}', ${order['ימים שעברו']}, '${order['מספר מכולה ירדה'] || order['מספר מכולה עלתה'] || ''}', '${order['תעודה'] || ''}', '${formatDate(order['תאריך סיום צפוי']) || ''}', '${order['כתובת'] || ''}')"></i>`;
+                    } else {
+                        whatsappCell.textContent = 'אין טלפון';
+                    }
+                });
+            }
+             if (isMobile()) {
+                modal.classList.add('mobile-drawer');
+            } else {
+                modal.classList.remove('mobile-drawer');
+            }
+            modal.classList.add('active');
+        }
+
+        function closeContainerHistoryModal() {
+            document.getElementById('container-history-modal').classList.remove('active');
+        }
+
+        // Placeholder for Order Details Modal (if needed in this context, copied from previous script)
+        function showOrderDetails(orderData) {
+            const modal = document.getElementById('order-details-modal');
+            const orderCard = document.getElementById('current-order-card');
+            
+            let containersDisplay = '';
+            if (orderData['סוג פעולה'] === 'הורדה') {
+                containersDisplay = String(orderData['מספר מכולה ירדה'] || orderData['מספרי מכולות'] || '');
+            } else if (orderData['סוג פעולה'] === 'העלאה') {
+                containersDisplay = String(orderData['מספר מכולה עלתה'] || orderData['מספרי מכולות'] || '');
+            } else if (orderData['סוג פעולה'] === 'החלפה') {
+                const taken = String(orderData['מספר מכולה ירדה'] || '');
+                const brought = String(orderData['מספר מכולה עלתה'] || '');
+                if (taken && brought) {
+                    containersDisplay = `ירדה: ${taken}, עלתה: ${brought}`;
+                } else if (taken) {
+                    containersDisplay = `ירדה: ${taken}`;
+                } else if (brought) {
+                    containersDisplay = `עלתה: ${brought}`;
+                }
+            } else {
+                containersDisplay = String(orderData['מספרי מכולות'] || '');
+            }
+
+            orderCard.innerHTML = `
+                <p><i class="fas fa-id-card icon" aria-hidden="true"></i> <strong>תעודה:</strong> ${orderData['תעודה'] || ''}</p>
+                <p><i class="fas fa-calendar-alt icon" aria-hidden="true"></i> <strong>תאריך הזמנה:</strong> ${formatDate(orderData['תאריך הזמנה'])}</p>
+                <p><i class="fas fa-user-tie icon" aria-hidden="true"></i> <strong>שם סוכן:</strong> ${orderData['שם סוכן'] || ''}</p>
+                <p><i class="fas fa-user-circle icon" aria-hidden="true"></i> <strong>שם לקוח:</strong> ${orderData['שם לקוח'] || ''}</p>
+                <p><i class="fas fa-map-marker-alt icon" aria-hidden="true"></i> <strong>כתובת:</strong> ${orderData['כתובת'] || ''}</p>
+                <p><i class="fas fa-exchange-alt icon" aria-hidden="true"></i> <strong>סוג פעולה:</strong> ${orderData['סוג פעולה'] || ''}</p>
+                <p><i class="fas fa-boxes icon" aria-hidden="true"></i> <strong>מכולות קשורות:</strong> ${containersDisplay}</p>
+                <p><i class="fas fa-info-circle icon" aria-hidden="true"></i> <strong>סטטוס:</strong> <span class="${orderData['סטטוס'] === 'פתוח' ? 'status-open' : orderData['סטטוס'] === 'חורג' ? 'status-overdue' : 'status-closed'}">${orderData['סטטוס'] || ''}</span></p>
+                <p><i class="fas fa-hourglass-half icon" aria-hidden="true"></i> <strong>ימים שעברו:</strong> ${orderData['ימים שעברו'] !== undefined ? orderData['ימים שעברו'] : ''}</p>
+                <p><i class="fas fa-calendar-check icon" aria-hidden="true"></i> <strong>תאריך סיום צפוי:</strong> ${formatDate(orderData['תאריך סיום צפוי'])}</p>
+                <p><i class="fas fa-comment-dots icon" aria-hidden="true"></i> <strong>הערות:</strong> <span class="note-text">${orderData['הערות'] || 'אין הערות'}</span></p>
+                <p><i class="fas fa-calendar-times icon" aria-hidden="true"></i> <strong>תאריך סגירה:</strong> ${formatDate(orderData['תאריך סגירה'])}</p>
+                <p><i class="fas fa-clock icon" aria-hidden="true"></i> <strong>עדכון הערה אחרון:</strong> ${formatDateTime(orderData['תאריך וזמן עדכון הערה'])}</p>
+            `;
 
             if (isMobile()) {
                 modal.classList.add('mobile-drawer');
