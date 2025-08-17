@@ -1172,7 +1172,7 @@ body.dark .autocomplete-items div:hover {
 body.dark .highlight {
     background-color: #FFA500; /* Orange highlight for dark mode */
 }
-    
+
 /* Pagination controls */
 .pagination-controls {
     display: flex;
