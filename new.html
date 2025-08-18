@@ -72,6 +72,25 @@
         .status-yellow { background-color: #fef9c3; color: #854d0e; }
         .status-red { background-color: #fee2e2; color: #991b1b; }
         .status-gray { background-color: #f3f4f6; color: #4b5563; }
+
+        /* Custom styles for larger and bolder table text */
+        .table-large-text td { 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+        }
+        /* Typing effect cursor */
+        .typing-effect-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em; /* Adjust to match font size */
+            background-color: black;
+            animation: blink-caret 0.75s step-end infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink-caret {
+            from, to { background-color: transparent }
+            50% { background-color: black }
+        }
     </style>
 </head>
 <body class="antialiased text-gray-800">
@@ -102,25 +121,28 @@
         <main>
             <!-- Dashboard Page -->
             <section id="page-dashboard" class="space-y-8">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-700 mb-4">סקירה כללית</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="kpi-card">
-                            <h3 class="text-gray-500 font-semibold">מכולות פעילות באתרים</h3>
-                            <p id="kpi-active-containers" class="text-4xl font-bold text-blue-600 mt-2">0</p>
-                        </div>
-                        <div class="kpi-card">
-                            <h3 class="text-gray-500 font-semibold">לקוחות בחריגה <span class="text-xs">(מעל 10 ימים)</span></h3>
-                            <p id="kpi-overdue-customers" class="text-4xl font-bold text-red-600 mt-2">0</p>
-                        </div>
-                        <div class="kpi-card">
-                            <h3 class="text-gray-500 font-semibold">מכולות פנויות במלאי</h3>
-                            <p id="kpi-available-containers" class="text-4xl font-bold text-green-600 mt-2">0</p>
-                        </div>
-                        <div class="kpi-card">
-                            <h3 class="text-gray-500 font-semibold">סה"כ פעולות (כל הזמנים)</h3>
-                            <p id="kpi-total-operations" class="text-4xl font-bold text-gray-700 mt-2">0</p>
-                        </div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-700">סקירה כללית</h2>
+                    <button onclick="openNewOrderModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i>הזמנה חדשה
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">מכולות פעילות באתרים</h3>
+                        <p id="kpi-active-containers" class="text-4xl font-bold text-blue-600 mt-2">0</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">לקוחות בחריגה <span class="text-xs">(מעל 10 ימים)</span></h3>
+                        <p id="kpi-overdue-customers" class="text-4xl font-bold text-red-600 mt-2">0</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">מכולות פנויות במלאי</h3>
+                        <p id="kpi-available-containers" class="text-4xl font-bold text-green-600 mt-2">0</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">סה"כ פעולות (כל הזמנים)</h3>
+                        <p id="kpi-total-operations" class="text-4xl font-bold text-gray-700 mt-2">0</p>
                     </div>
                 </div>
 
@@ -159,7 +181,7 @@
                                     <th class="py-3 px-4 text-right font-bold">פעולות</th>
                                 </tr>
                             </thead>
-                            <tbody id="all-operations-table">
+                            <tbody id="all-operations-table" class="table-large-text">
                                 <!-- Data will be populated by JS -->
                             </tbody>
                         </table>
@@ -182,7 +204,7 @@
                                     <th class="py-3 px-4 text-right font-bold">היסטוריה</th>
                                 </tr>
                             </thead>
-                            <tbody id="in-use-containers-table">
+                            <tbody id="in-use-containers-table" class="table-large-text">
                                 <!-- Data will be populated by JS -->
                             </tbody>
                         </table>
@@ -200,7 +222,7 @@
                                     <th class="py-3 px-4 text-right font-bold">היסטוריה</th>
                                 </tr>
                             </thead>
-                            <tbody id="available-containers-table">
+                            <tbody id="available-containers-table" class="table-large-text">
                                 <!-- Data will be populated by JS -->
                             </tbody>
                         </table>
@@ -239,7 +261,7 @@
                                 <th class="py-2 px-3 text-right">סטטוס</th>
                             </tr>
                         </thead>
-                        <tbody id="modal-customer-history-table"></tbody>
+                        <tbody id="modal-customer-history-table" class="table-large-text"></tbody>
                     </table>
                 </div>
             </div>
@@ -286,149 +308,108 @@
         </div>
     </div>
 
+    <!-- New Order Modal -->
+    <div id="new-order-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center">
+        <div class="modal-content bg-white rounded-lg shadow-2xl w-11/12 max-w-2xl overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold">הוספת הזמנה חדשה</h2>
+                <button onclick="closeNewOrderModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="new-order-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-1">
+                        <label for="new-order-date" class="block text-sm font-semibold text-gray-700 mb-1">תאריך הזמנה</label>
+                        <input type="date" id="new-order-date" name="תאריך הזמנה" class="w-full p-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-docid" class="block text-sm font-semibold text-gray-700 mb-1">תעודה</label>
+                        <input type="text" id="new-order-docid" name="תעודה" class="w-full p-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-agent" class="block text-sm font-semibold text-gray-700 mb-1">שם סוכן</label>
+                        <input type="text" id="new-order-agent" name="שם סוכן" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-customer-name" class="block text-sm font-semibold text-gray-700 mb-1">שם לקוח</label>
+                        <input type="text" id="new-order-customer-name" name="שם לקוח" class="w-full p-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="new-order-address" class="block text-sm font-semibold text-gray-700 mb-1">כתובת</label>
+                        <input type="text" id="new-order-address" name="כתובת" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-action-type" class="block text-sm font-semibold text-gray-700 mb-1">סוג פעולה</label>
+                        <select id="new-order-action-type" name="סוג פעולה" class="w-full p-2 border border-gray-300 rounded-md" required>
+                            <option value="">בחר פעולה</option>
+                            <option value="הצבה">הצבה</option>
+                            <option value="החלפה">החלפה</option>
+                            <option value="הורדה">הורדה</option>
+                            <option value="הוצאה">הוצאה</option>
+                            <option value="הזזה">הזזה</option>
+                            <option value="פינוי במקום">פינוי במקום</option>
+                            <option value="גישה ללא פעולה">גישה ללא פעולה</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-status" class="block text-sm font-semibold text-gray-700 mb-1">סטטוס</label>
+                        <select id="new-order-status" name="סטטוס" class="w-full p-2 border border-gray-300 rounded-md" required>
+                            <option value="פתוח">פתוח</option>
+                            <option value="חורג">חורג</option>
+                            <option value="סגור">סגור</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-container-dropped" class="block text-sm font-semibold text-gray-700 mb-1">מספר מכולה ירדה</label>
+                        <input type="text" id="new-order-container-dropped" name="מספר מכולה ירדה" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-container-lifted" class="block text-sm font-semibold text-gray-700 mb-1">מספר מכולה עלתה</label>
+                        <input type="text" id="new-order-container-lifted" name="מספר מכולה עלתה" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-expected-end-date" class="block text-sm font-semibold text-gray-700 mb-1">תאריך סיום צפוי</label>
+                        <input type="date" id="new-order-expected-end-date" name="תאריך סיום צפוי" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-phone" class="block text-sm font-semibold text-gray-700 mb-1">טלפון לקוח</label>
+                        <input type="tel" id="new-order-phone" name="טלפון לקוח" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-2">
+                        <label for="new-order-notes" class="block text-sm font-semibold text-gray-700 mb-1">הערות</label>
+                        <textarea id="new-order-notes" name="הערות" class="w-full p-2 border border-gray-300 rounded-md" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 bg-gray-50 text-left flex justify-end gap-2">
+                <button onclick="closeNewOrderModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">ביטול</button>
+                <button onclick="submitNewOrder()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">הוסף הזמנה</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript code -->
     <script>
-        const fullTrackingDataRaw = `תאריך הזמנה,תעודה,שם סוכן,שם לקוח,כתובת,סוג פעולה,ימים שעברו,מספר מכולה ירדה,מספר מכולה עלתה,מספרי מכולות,סטטוס,הערות,תאריך סיום צפוי,הערות סיום,תאריך סגירה,ימים שעברו (עלתה),טלפון לקוח
-2025-07-24,6713571,אגבאריה/שארק,א.ערן אזולאי - אנקורים,אנקורים 2 רמת גן,החלפה,25,209,9,9,פתוח,רוצה כמה ימים,07/08/2025,,,,508860896
-2025-07-29,6713658,אגבאריה/שארק,"אורבר בנייה/ירמיהו ר""ג",ירמיהו 11 רמת גן,הורדה,20,31,,,פתוח,ביקש כמה ימים,12/08/2025,,,,508860896
-2025-07-24,6713566,אגבאריה/שארק,אילן יוסף,הפסנתר 1 הוד השרון,החלפה,25,60,209,209,פתוח,החלפה היום,07/08/2025,,,,508860896
-2025-07-29,6713670,אגבאריה/שארק,ע.דרקו,אבן יהודה,החלפה,20,55,13,13,פתוח,,12/08/2025,,,,508860896
-2025-07-22,6713520,אגבאריה/שארק,עאסי אחמד עב בנין,החרמון 15 תל אביב,החלפה,27,14,18,18,פתוח,,05/08/2025,,,,508860896
-2025-08-07,6713844,אגבאריה/שארק,"פינוי פסולת בשרון בע""מ",החרש 10 הוד השרון,החלפה,11,22,20,20,פתוח,,21/08/2025,,,,508860896
-2025-07-31,6713705,מוחמד/שארק,רני שיראי,כרם 5 רמות השבים,הורדה,18,58,,,פתוח,,14/08/2025,,,,508860896
-2025-07-29,6713651,אגבאריה/שארק,הכל מבראשית/אוניברסי,האוניברסיטה תל אביב,החלפה,20,121,11,11,פתוח,,12/08/2025,,,,508860896
-2025-07-28,6713628,אגבאריה/שארק,שארק/נאדר,החרש 10 הוד השרון,החלפה,21,11,2,2,פתוח,,11/08/2025,,,,508860896
-2025-07-24,6713580,מוחמד/שארק,שארק/עומר צמפיון,המחשב 5 נתניה,החלפה,25,2,25,25,פתוח,,07/08/2025,,,,508860896
-2025-07-22,6713532,מוחמד/שארק,"מיי דסק בע""מ",אלפסי 4 רעננה,החלפה,27,203,7,7,פתוח,,05/08/2025,,,,508860896
-2025-07-21,6713515,אגבאריה/שארק,זהבי יצחק,מרדכי בן חמו 13 כפר יונה,החלפה,28,43,19,19,פתוח,,04/08/2025,,,,508860896
-2025-07-20,6713466,מוחמד/שארק,זהבי יצחק,מרדכי בן חמו 13 כפר יונה,הצבה,29,19,,,פתוח,,03/08/2025,,,,508860896
-2025-07-20,6713467,מוחמד/שארק,זהבי יצחק,מרדכי בן חמו 13 כפר יונה,הצבה,29,20,,,פתוח,,03/08/2025,,,,508860896
-2025-07-16,6713395,מוחמד/שארק,גיא פריגת,שחף 16 כפר ויתקין,הוצאה,33,42,,,פתוח,,30/07/2025,,,,508860896
-2025-07-15,6713372,מוחמד/שארק,פלח משה/כללי,הזית 29 קדימה,הורדה,34,51,,,פתוח,,29/07/2025,,,,508860896
-2025-07-14,6713340,מוחמד/שארק,"בן ענבר-בי""ס ליידי ד",בית לידי ד הוד השרון,הצבה,35,47,,,פתוח,,28/07/2025,,,,508860896
-2025-07-13,6713314,מוחמד/שארק,אלנבי על הים/האגדה,אלנבי 126 תל אביב,החלפה,36,25,50,50,פתוח,החלפה,27/07/2025,,,,508860896
-2025-07-13,6713313,רמי/שארק,"מ.צ שחיבר בניה בע""מ",החרוב 25 הוד השרון,החלפה,36,60,20,20,פתוח,,27/07/2025,,,,508860896
-2025-07-13,6713311,מוחמד/שארק,"מ.צ שחיבר בניה בע""מ",החרוב 25 הוד השרון,החלפה,36,20,60,60,פתוח,,27/07/2025,,,,508860896
-2025-07-11,6713304,מוחמד/שארק,בן ענבר-קרית אונו,העלייה 120 קרית אונו,החלפה,38,18,17,17,פתוח,,25/07/2025,,,,508860896
-2025-07-11,6713302,מוחמד/שארק,שחר לוי,שפירא 17 כפר סבא,הורדה,38,19,,,פתוח,,25/07/2025,,,,508860896
-2025-07-11,6713301,מוחמד/שארק,א.ערן אזולאי - קידמה,העלייה 120 קרית אונו,הורדה,38,17,,,פתוח,,25/07/2025,,,,508860896
-2025-07-10,6713297,רמי/שארק,בן ענבר-קרית אונו,שחף 16 כפר ויתקין,החלפה,39,17,18,18,פתוח,החלפה היום,24/07/2025,,,,508860896
-2025-07-10,6713293,מוחמד/שארק,רני שיראי,גרונר 30 כפר סבא,החלפה,39,26,16,16,פתוח,,24/07/2025,,,,508860896
-2025-07-10,6713285,מוחמד/שארק,"בזלת מזר בע""מ",החרוב 25 הוד השרון,החלפה,39,16,26,26,פתוח,החלפה,24/07/2025,,,,508860896
-2025-07-10,6713282,מוחמד/שארק,מודי יבוא/בני ברק,הרב קוק 105 בני ברק,החלפה,39,15,24,24,פתוח,,24/07/2025,,,,508860896
-2025-07-10,6713288,מוחמד/שארק,רני שיראי,כרם 5 רמות השבים,הצבה,39,16,,,פתוח,,24/07/2025,,,,508860896
-2025-07-09,6713266,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,החלפה,40,24,15,15,פתוח,,23/07/2025,,,,508860896
-2025-07-07,6713244,מוחמד/שארק,א.כ.רימונים/מלכי הרצ,מלכי הרצליה 12 הרצליה,הורדה,42,23,,,פתוח,,21/07/2025,,,,508860896
-2025-07-07,6713238,רמי/שארק,קובי בנישו,כפר סבא,הורדה,42,22,,,פתוח,,21/07/2025,,,,508860896
-2025-07-07,6713237,רמי/שארק,שחר שאול תכנון/כללי,גלגל המזלות הוד השרון,הצבה,42,21,,,פתוח,,21/07/2025,,,,508860896
-2025-07-07,6713232,מוחמד/שארק,בן ענבר-קרית אונו,העלייה 120 קרית אונו,הצבה,42,18,,,פתוח,,21/07/2025,,,,508860896
-2025-07-07,6713225,רמי/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,החלפה,42,21,24,24,פתוח,,21/07/2025,,,,508860896
-2025-07-06,6713205,מוחמד/שארק,אורם הנדסה וניהול בע,התמר 10 הוד השרון,הורדה,43,20,,,פתוח,,20/07/2025,,,,508860896
-2025-07-06,6713201,מוחמד/שארק,יונתן מנשה,יהודה הנשיא 31 תל אביב,הצבה,43,17,,,פתוח,,20/07/2025,,,,508860896
-2025-07-06,6713198,רמי/שארק,שחר שאול תכנון/כללי,גלגל המזלות הוד השרון,הורדה,43,21,,,פתוח,,20/07/2025,,,,508860896
-2025-07-03,6713179,מוחמד/שארק,אורם הנדסה וניהול בע,התמר 10 הוד השרון,הצבה,46,20,,,פתוח,,17/07/2025,,,,508860896
-2025-07-03,6713166,מוחמד/שארק,פינוי פסולת בשרון בע,החרש 10 הוד השרון,החלפה,46,14,12,12,פתוח,,17/07/2025,,,,508860896
-2025-07-02,6713151,מוחמד/שארק,מודי יבוא/בני ברק,הרב קוק 105 בני ברק,הורדה,47,24,,,פתוח,,16/07/2025,,,,508860896
-2025-07-02,6713150,מוחמד/שארק,א.כ.רימונים/מלכי הרצ,מלכי הרצליה 12 הרצליה,הצבה,47,23,,,פתוח,,16/07/2025,,,,508860896
-2025-07-02,6713146,רמי/שארק,א.ערן אזולאי - קידמה,העלייה 120 קרית אונו,הורדה,47,17,,,פתוח,,16/07/2025,,,,508860896
-2025-07-02,6713137,מוחמד/שארק,"בזלת מזר בע""מ",החרוב 25 הוד השרון,הצבה,47,16,,,פתוח,,16/07/2025,,,,508860896
-2025-07-02,6713132,מוחמד/שארק,עופר פוביצר,ברקת 19 אבן יהודה,הורדה,47,13,,,פתוח,,16/07/2025,,,,508860896
-2025-07-02,6713131,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,הצבה,47,15,,,פתוח,,16/07/2025,,,,508860896
-2025-07-02,6713129,רמי/שארק,שמעון הראל,תנועת המכבים 15 מודיעין,החלפה,47,19,43,43,פתוח,,16/07/2025,,,,508860896
-2025-07-01,6713123,רמי/שארק,מודי יבוא/בני ברק,הרב קוק 105 בני ברק,החלפה,48,24,15,15,פתוח,,15/07/2025,,,,508860896
-2025-07-01,6713111,רמי/שארק,נדלסטיצ'ר איתי/לוטם,דוד אלעזר 10 הרצליה,הצבה,48,10,,,פתוח,,15/07/2025,,,,508860896
-2025-07-01,6713107,מוחמד/שארק,מוזס סרנגה,הגפן 120 הוד השרון,הורדה,48,9,,,פתוח,,15/07/2025,,,,508860896
-2025-06-30,6713094,מוחמד/שארק,ע.דרקו,אבן יהודה,החלפה,49,13,55,55,פתוח,,14/07/2025,,,,508860896
-2025-06-30,6713092,רמי/שארק,"מיי דסק בע""מ",אלפסי 4 רעננה,החלפה,49,7,203,203,פתוח,,14/07/2025,,,,508860896
-2025-06-30,6713091,רמי/שארק,אילן יוסף,הפסנתר 1 הוד השרון,הורדה,49,209,,,פתוח,,14/07/2025,,,,508860896
-2025-06-30,6713090,רמי/שארק,"מ.צ שחיבר בניה בע""מ",החרוב 25 הוד השרון,החלפה,49,20,60,60,פתוח,,14/07/2025,,,,508860896
-2025-06-30,6713084,מוחמד/שארק,מודי יבוא/בני ברק,הרב קוק 105 בני ברק,החלפה,49,24,15,15,פתוח,,14/07/2025,,,,508860896
-2025-06-29,6713064,מוחמד/שארק,ליאור יצחקי-קיבוץ עי,קיבוץ עינת,הורדה,50,8,,,פתוח,,13/07/2025,,,,508860896
-2025-06-29,6713053,מוחמד/שארק,פינת במזל (יבגני),נחמני 37 תל אביב,הורדה,50,11,,,פתוח,,13/07/2025,,,,508860896
-2025-06-27,6713043,ריימונד/שארק,ביליאור יצחקי-כללי,אלפסי 4 רעננה,הורדה,52,7,,,פתוח,,11/07/2025,,,,508860896
-2025-06-26,6712998,מוחמד/שארק,פינת במזל (יבגני),נחמני 37 תל אביב,החלפה,53,12,11,11,פתוח,,10/07/2025,,,,508860896
-2025-06-25,6712984,מוחמד/שארק,פינת במזל (יבגני),נחמני 37 תל אביב,החלפה,54,11,12,12,פתוח,,09/07/2025,,,,508860896
-2025-06-25,6712979,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,החלפה,54,15,24,24,פתוח,,09/07/2025,,,,508860896
-2025-06-24,6712954,מוחמד/שארק,א.ערן אזולאי - קידמה,העלייה 120 קרית אונו,הורדה,55,17,,,פתוח,,08/07/2025,,,,508860896
-2025-06-22,6712906,מוחמד/שארק,פינוי פסולת בשרון בע,החרש 10 הוד השרון,החלפה,57,12,14,14,פתוח,,06/07/2025,,,,508860896
-2025-06-20,6712886,מוחמד/שארק,שחר שאול תכנון/כללי,גלגל המזלות הוד השרון,הורדה,59,21,,,פתוח,,04/07/2025,,,,508860896
-2025-06-19,6712877,מוחמד/שארק,ע.דרקו,אבן יהודה,החלפה,60,55,13,13,פתוח,,03/07/2025,,,,508860896
-2025-06-18,6712849,מוחמד/שארק,"מיי דסק בע""מ",אלפסי 4 רעננה,החלפה,61,203,7,7,פתוח,,02/07/2025,,,,508860896
-2025-06-17,6712834,מוחמד/שארק,קבוצת חסון,כפר סבא,הורדה,62,2,,,פתוח,,01/07/2025,,,,508860896
-2025-06-17,6712823,מוחמד/שארק,ב.ר.ש תחזוקת מרלוגים,נחמני 37 תל אביב,הורדה,62,50,,,פתוח,,01/07/2025,,,,508860896
-2025-06-12,6712778,מוחמד/שארק,פינוי פסולת בשרון בע,החרש 10 הוד השרון,החלפה,67,14,12,12,פתוח,,26/06/2025,,,,508860896
-2025-06-12,6712774,מוחמד/שארק,שחר שאול תכנון/כללי,גלגל המזלות הוד השרון,החלפה,67,21,10,10,פתוח,,26/06/2025,,,,508860896
-2025-06-12,6712766,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,החלפה,67,15,24,24,פתוח,,26/06/2025,,,,508860896
-2025-06-11,6712760,מוחמד/שארק,"מ.צ שחיבר בניה בע""מ",הורדה,68,60,,,פתוח,,25/06/2025,,,,508860896
-2025-06-11,6712755,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,הורדה,68,24,,,פתוח,,25/06/2025,,,,508860896
-2025-06-11,6712750,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,הורדה,68,15,,,פתוח,,25/06/2025,,,,508860896
-2025-06-10,6712744,מוחמד/שארק,אוהד טל,השקד 15 הוד השרון,החלפה,69,12,25,25,פתוח,,24/06/2025,,,,508860896
-2025-06-10,6712739,מוחמד/שארק,מודי יבוא/בני ברק,הרב קוק 105 בני ברק,החלפה,69,24,15,15,פתוח,,24/06/2025,,,,508860896
-2025-06-05,6712721,מוחמד/שארק,אלנבי על הים/האגדה,אלנבי 126 תל אביב,הורדה,74,50,,,פתוח,,19/06/2025,,,,508860896
-2025-06-05,6712718,מוחמד/שארק,עאסי אחמד עב בנין,החרמון 15 תל אביב,הורדה,74,18,,,פתוח,,19/06/2025,,,,508860896
-2025-06-05,6712713,רמי/שארק,גום טכניקה חברה לייצ,ויצמן 104 כפר סבא,החלפה,74,43,7,7,פתוח,,19/06/2025,,,,508860896
-2025-06-05,6712709,רמי/שארק,א.ערן אזולאי - יהודה,יהודה המכבי 17 תל אביב,הורדה,74,17,,,פתוח,,19/06/2025,,,,508860896
-2025-06-04,6712705,רמי/שארק,דוד חיים ובניו - כלל,הגפן 120 הוד השרון,הורדה,75,9,,,פתוח,,18/06/2025,,,,508860896
-2025-06-04,6712691,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,הורדה,75,24,,,פתוח,,18/06/2025,,,,508860896
-2025-06-03,6712689,רמי/שארק,מודי יבוא/בני ברק,הרב קוק 105 בני ברק,הורדה,76,15,,,פתוח,,17/06/2025,,,,508860896
-2025-06-03,6712685,מוחמד/שארק,פלח משה/כללי,הזית 29 קדימה,הורדה,76,51,,,פתוח,,17/06/2025,,,,508860896
-2025-06-01,6712661,01/06/2025,בן ענבר-בי""ס ליידי ד,בית לידי ד הוד השרון,הורדה,78,47,,,פתוח,,15/06/2025,,,,508860896
-2025-06-01,6712659,מוחמד/שארק,ניר ומירי נובק,ברקת 19 אבן יהודה,הורדה,78,13,,,פתוח,,15/06/2025,,,,508860896
-2025-06-01,6712656,רמי/שארק,שארק/נאדר,החרש 10 הוד השרון,הורדה,78,11,,,פתוח,,15/06/2025,,,,508860896
-2025-06-01,6712655,רמי/שארק,שמעון הראל,תנועת המכבים 15 מודיעין,הורדה,78,43,,,פתוח,,15/06/2025,,,,508860896
-2025-06-01,6712645,רמי/שארק,בן ענבר-בי""ס ליידי ד,בית לידי ד הוד השרון,החלפה,78,47,25,25,פתוח,,15/06/2025,,,,508860896
-`;
-        
+        // Global state
         let allOperations = [];
         let charts = {};
+        let isLoadingData = false; // Added loading state
 
         // Utility functions
-        const parseFullTrackingCSV = (raw) => {
-            const lines = raw.trim().split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
-            return lines.slice(1).map(line => {
-                const values = [];
-                let inQuote = false;
-                let currentVal = '';
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') {
-                        inQuote = !inQuote;
-                    } else if (char === ',' && !inQuote) {
-                        values.push(currentVal.trim().replace(/""/g, '"'));
-                        currentVal = '';
-                    } else {
-                        currentVal += char;
-                    }
-                }
-                values.push(currentVal.trim().replace(/""/g, '"')); // Add the last value
-
-                const entry = headers.reduce((obj, header, index) => {
-                    obj[header] = values[index] || '';
-                    return obj;
-                }, {});
-
-                // Clean up string values (remove extra quotes from original CSV parsing)
-                for (const key in entry) {
-                    if (typeof entry[key] === 'string') {
-                        entry[key] = entry[key].replace(/^"|"$/g, '');
-                    }
-                }
-
-                return entry;
-            });
+        const parseFullTrackingCSV = (data) => {
+            // Assumes data is already parsed JSON from Google Apps Script
+            // and headers are consistent.
+            return data;
         };
 
         const formatDate = (dateStr) => {
             if (!dateStr) return null;
-            const parts = dateStr.split('/');
-            // Check for YYYY-MM-DD format first (from 'תאריך הזמנה' column)
-            if (dateStr.includes('-') && parts.length === 1) {
+            // Handle both YYYY-MM-DD and DD/MM/YYYY formats
+            if (dateStr.includes('-') && dateStr.split('-').length === 3) {
                 const date = new Date(dateStr);
                 return isNaN(date.getTime()) ? null : date;
             }
-            // Assume DD/MM/YYYY if '/' is present
-            if (parts.length === 3) {
+            if (dateStr.includes('/') && dateStr.split('/').length === 3) {
+                const parts = dateStr.split('/');
                 const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                 return isNaN(date.getTime()) ? null : date;
             }
@@ -539,20 +520,88 @@
         let currentMessageFullText = '';
         let typingIndex = 0;
 
+        // Function to fetch data from Google Sheet
+        const fetchDataFromGoogleSheet = async () => {
+            isLoadingData = true;
+            // Optionally, show a loading indicator here
+            // document.getElementById('loader').classList.remove('hidden'); 
+
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getData`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                // Parse and sort the fetched data
+                allOperations = data
+                    .map(op => ({
+                        ...op,
+                        'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
+                        'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
+                        'תאריך סגירה': formatDate(op['תאריך סגירה']),
+                    }))
+                    .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
+
+                renderDashboard();
+                renderInventory();
+                renderTreatmentBoard();
+
+            } catch (error) {
+                console.error("Error fetching data from Google Sheet:", error);
+                // Using a non-blocking message box instead of alert
+                showStatusMessage("שגיאה בטעינת הנתונים מגיליון גוגל: " + error.message, 'error');
+            } finally {
+                isLoadingData = false;
+                // Optionally, hide loading indicator
+                // document.getElementById('loader').classList.add('hidden');
+            }
+        };
+
+        // Function to add new order to Google Sheet
+        const addNewOrderToSheet = async (orderData) => {
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=addOrder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json', // Send as JSON
+                    },
+                    body: JSON.stringify(orderData) // Send as JSON object directly
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatusMessage('ההזמנה נוספה בהצלחה לגיליון!', 'success');
+                    fetchDataFromGoogleSheet(); // Reload data after adding
+                } else {
+                    showStatusMessage('שגיאה בהוספת ההזמנה: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding order to sheet:', error);
+                showStatusMessage('שגיאה בתקשורת עם השרת בעת הוספת הזמנה.', 'error');
+            }
+        };
+
+        // Custom status message display (instead of alert)
+        const showStatusMessage = (message, type) => {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `fixed bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white font-semibold z-50`;
+            if (type === 'success') {
+                statusDiv.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                statusDiv.classList.add('bg-red-600');
+            } else {
+                statusDiv.classList.add('bg-gray-700');
+            }
+            statusDiv.textContent = message;
+            document.body.appendChild(statusDiv);
+            setTimeout(() => {
+                statusDiv.remove();
+            }, 5000); // Message disappears after 5 seconds
+        };
+
+
         document.addEventListener('DOMContentLoaded', () => {
-            allOperations = parseFullTrackingCSV(fullTrackingDataRaw)
-                .map(op => ({
-                    ...op,
-                    'תאריך הזמנה': formatDate(op['תאריך הזמנה']), 
-                    'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
-                    'תאריך סגירה': formatDate(op['תאריך סגירה']),
-                }))
-                .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
-
-            renderDashboard();
-            renderInventory();
-            renderTreatmentBoard();
-
+            fetchDataFromGoogleSheet(); // Call fetch function to load initial data
             document.getElementById('main-search').addEventListener('input', renderAllOperationsTable);
         });
 
@@ -595,8 +644,7 @@
                 const info = detailedContainerStatus[containerNum];
                 if (info.status === 'in_use') {
                     currentActiveContainersCount++;
-                    const daysSincePlacement = daysSince(info.lastActionDate);
-                    if (info.latestOperation && info.latestOperation['סטטוס'] === 'חריג') {
+                    if (info.latestOperation && info.latestOperation['סטטוס'] === 'חורג') {
                         totalOverdueCustomerIds.add(info.customerId);
                     }
                 } else if (info.status === 'available') {
@@ -630,7 +678,7 @@
             
             const filteredOps = allOperations.filter(op => 
                 (op['שם לקוח'] && op['שם לקוח'].toLowerCase().includes(searchTerm)) ||
-                (op['תעודה'] && op['תעודה'].toLowerCase().includes(searchTerm)) ||
+                (op['תעודה'] && String(op['תעודה']).toLowerCase().includes(searchTerm)) || // Ensure תעודה is string
                 (op['שם סוכן'] && op['שם סוכן'].toLowerCase().includes(searchTerm))
             );
 
@@ -651,7 +699,7 @@
 
                 const row = `
                     <tr class="hover:bg-gray-50 cursor-pointer">
-                        <td class="py-3 px-4">${op['מתאריך']}</td>
+                        <td class="py-3 px-4">${op['תאריך הזמנה'] ? op['תאריך הזמנה'].toLocaleDateString('he-IL') : ''}</td>
                         <td class="py-3 px-4">${op['תעודה']}</td>
                         <td class="py-3 px-4 font-semibold text-gray-700">${op['שם לקוח']}</td>
                         <td class="py-3 px-4">${op['שם סוכן']}</td>
@@ -902,7 +950,7 @@
                  }
                 const row = `
                     <tr>
-                        <td class="py-2 px-3">${op['מתאריך']}</td>
+                        <td class="py-2 px-3">${op['תאריך הזמנה'] ? op['תאריך הזמנה'].toLocaleDateString('he-IL') : ''}</td>
                         <td class="py-2 px-3">${op['תעודה']}</td>
                         <td class="py-2 px-3">${op['סוג פעולה']}</td>
                         <td class="py-2 px-3"><span class="status-badge ${statusClass}">${statusText}</span></td>
@@ -942,7 +990,7 @@
                  const customerId = allOperations.find(op => op['טלפון לקוח'] === order['טלפון לקוח'])?.['לקוח'];
                  if (customerId) {
                      const customerOperations = allOperations.filter(op => op['לקוח'] === customerId);
-                     if (customerOperations.length === 1 && customerOperations[0]['תעודה'] === order['תעודה']) {
+                     if (customerOperations.length === 1 && String(customerOperations[0]['תעודה']) === String(order['תעודה'])) { // Ensure comparison is string to string
                          return 'new_customer_welcome';
                      }
                  }
@@ -1083,11 +1131,11 @@
             const docId = document.getElementById('whatsapp-doc-id').value;
 
             if (!phoneNumber) {
-                alert('אנא הזן מספר טלפון תקין.');
+                showStatusMessage('אנא הזן מספר טלפון תקין.', 'error');
                 return;
             }
             if (!message) {
-                alert('תוכן ההודעה לא יכול להיות ריק.');
+                showStatusMessage('תוכן ההודעה לא יכול להיות ריק.', 'error');
                 return;
             }
 
@@ -1102,10 +1150,10 @@
 
                 while (retries < maxRetries) {
                     try {
-                        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=logWhatsAppMessage&docId=${encodeURIComponent(docId)}&message=${encodeURIComponent(message)}}`);
+                        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=logWhatsAppMessage&docId=${encodeURIComponent(docId)}&message=${encodeURIComponent(message)}`);
                         const data = await response.json();
                         if (data.success) {
-                            alert('ההודעה נשלחה ותועדה בהצלחה!');
+                            showStatusMessage('ההודעה נשלחה ותועדה בהצלחה!', 'success');
                             return;
                         } else if (data.message && data.message.includes('Service invoked too many times')) {
                             const delay = baseDelay * Math.pow(2, retries);
@@ -1113,18 +1161,18 @@
                             await new Promise(resolve => setTimeout(resolve, delay));
                             retries++;
                         } else {
-                            alert('שגיאה בתיעוד ההודעה: ' + data.message);
+                            showStatusMessage('שגיאה בתיעוד ההודעה: ' + data.message, 'error');
                             return;
                         }
                     } catch (error) {
                         console.error('Fetch error:', error);
-                        alert('שגיאה בתקשורת עם השרת: ' + error.message);
+                        showStatusMessage('שגיאה בתקשורת עם השרת: ' + error.message, 'error');
                         return;
                     }
                 }
-                alert('נכשל תיעוד ההודעה לאחר מספר ניסיונות חוזרים.');
+                showStatusMessage('נכשל תיעוד ההודעה לאחר מספר ניסיונות חוזרים.', 'error');
             } else {
-                alert('ההודעה נשלחה, אך לא שויכה למסמך (חסר מספר תעודה).');
+                showStatusMessage('ההודעה נשלחה, אך לא שויכה למסמך (חסר מספר תעודה).', 'warning');
             }
         };
 
@@ -1146,6 +1194,67 @@
         const toggleMessageOptions = () => {
             const container = document.getElementById('whatsapp-message-options-container');
             container.classList.toggle('hidden');
+        };
+
+        // New Order Modal Functions
+        const openNewOrderModal = () => {
+            document.getElementById('new-order-modal').classList.remove('hidden');
+            document.getElementById('new-order-modal').classList.add('flex');
+            // Pre-fill some fields if desired, e.g., current date
+            document.getElementById('new-order-date').valueAsDate = new Date();
+            document.getElementById('new-order-status').value = 'פתוח'; // Default status
+        };
+
+        const closeNewOrderModal = () => {
+            document.getElementById('new-order-modal').classList.add('hidden');
+            document.getElementById('new-order-modal').classList.remove('flex');
+            document.getElementById('new-order-form').reset(); // Clear form inputs
+        };
+
+        const submitNewOrder = async () => {
+            const form = document.getElementById('new-order-form');
+            const formData = new FormData(form);
+            const order = {};
+            // Collect all form data
+            formData.forEach((value, key) => {
+                order[key] = value;
+            });
+
+            // Calculate 'ימים שעברו' if 'תאריך הזמנה' is provided
+            const orderDateObj = order['תאריך הזמנה'] ? new Date(order['תאריך הזמנה']) : null;
+            order['ימים שעברו'] = orderDateObj && !isNaN(orderDateObj.getTime()) ? daysSince(orderDateObj) : '';
+
+            // Combine container numbers for 'מספרי מכולות' if not explicitly provided
+            order['מספרי מכולות'] = order['מספרי מכולות'] || 
+                                     `${order['מספר מכולה ירדה'] || ''},${order['מספר מכולה עלתה'] || ''}`
+                                     .replace(/^,|,$/g, '')
+                                     .replace(/,,/g, ',');
+
+            // Ensure all headers expected by the Google Sheet are present, even if empty
+            const sheetHeaders = [
+                "תאריך הזמנה", "תעודה", "שם סוכן", "שם לקוח", "כתובת", "סוג פעולה", 
+                "ימים שעברו", "מספר מכולה ירדה", "מספר מכולה עלתה", "מספרי מכולות", 
+                "סטטוס", "הערות", "תאריך סיום צפוי", "הערות סיום", "תאריך סגירה", 
+                "ימים שעברו (עלתה)", "טלפון לקוח"
+            ];
+            const completeOrder = {};
+            sheetHeaders.forEach(header => {
+                completeOrder[header] = order[header] !== undefined ? order[header] : '';
+            });
+            
+            // Convert date objects back to YYYY-MM-DD string format for the sheet
+            if (completeOrder['תאריך הזמנה'] instanceof Date) {
+                completeOrder['תאריך הזמנה'] = completeOrder['תאריך הזמנה'].toISOString().split('T')[0];
+            }
+            if (completeOrder['תאריך סיום צפוי'] instanceof Date) {
+                completeOrder['תאריך סיום צפוי'] = completeOrder['תאריך סיום צפוי'].toISOString().split('T')[0];
+            }
+            if (completeOrder['תאריך סגירה'] instanceof Date) {
+                completeOrder['תאריך סגירה'] = completeOrder['תאריך סגירה'].toISOString().split('T')[0];
+            }
+            
+            await addNewOrderToSheet(completeOrder);
+            closeNewOrderModal();
         };
 
     </script>
