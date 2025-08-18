@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול מכולות</title>
+    <!-- Chosen Palette: Calm Neutrals with Purple Accent -->
+    <!-- Application Structure Plan: The SPA is designed as a multi-tab dashboard. The default view is the 'Dashboard' which provides high-level KPIs and a full, filterable list of all container operations. Additional tabs allow the user to focus on specific tasks: 'Container Inventory' for tracking the status of each physical container, and 'Treatment Board' for a Kanban-style view of overdue orders that require action. This task-oriented structure, guided by the specification, allows the manager to quickly assess the overall status and then drill down into specific management areas (inventory, overdue accounts) for efficient workflow. Modals are used for detailed views (e.g., customer history) to avoid cluttering the main interface. -->
+    <!-- Visualization & Content Choices: 
+        - KPIs (Total containers, overdue, etc.): Goal=Inform -> Method=Dynamic text in Cards -> Interaction=None -> Justification=Quick, scannable overview.
+        - All Operations List: Goal=Organize/Compare -> Method=Interactive HTML Table -> Interaction=Search, Filter, Sort -> Justification=Allows deep-diving into the full dataset.
+        - Overdue Orders: Goal=Inform/Act -> Method=Kanban Board & Highlighted Table -> Interaction=Visual grouping, direct links to customer details -> Justification=Focuses attention on urgent tasks.
+        - Operations per Agent: Goal=Inform/Compare -> Method=Bar Chart (Chart.js Canvas) -> Interaction=Hover for details -> Justification=Clear visual comparison of agent performance.
+        - Operations over Time: Goal=Change -> Method=Line Chart (Chart.js Canvas) -> Interaction=Hover for details -> Justification=Shows trends and business activity patterns.
+        - Container Status: Goal=Organize -> Method=Two distinct HTML tables (In Use/Available) -> Interaction=Click for history -> Justification=Clear separation of inventory status for operational planning.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #f8fafc; /* gray-50 */
+        }
+        .nav-tab-btn {
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+        }
+        .nav-tab-btn.active {
+            border-bottom-color: #8b5cf6; /* violet-500 */
+            color: #6d28d9; /* violet-700 */
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 50;
+        }
+        .modal-content {
+            max-height: 90vh;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            max-height: 400px;
+        }
+        .kanban-column {
+            min-height: 200px;
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .status-green { background-color: #dcfce7; color: #166534; }
+        .status-yellow { background-color: #fef9c3; color: #854d0e; }
+        .status-red { background-color: #fee2e2; color: #991b1b; }
+        .status-gray { background-color: #f3f4f6; color: #4b5563; }
+
+        /* Custom styles for larger and bolder table text */
+        .table-large-text td { 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+        }
+        /* Typing effect cursor */
+        .typing-effect-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em; /* Adjust to match font size */
+            background-color: black;
+            animation: blink-caret 0.75s step-end infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink-caret {
+            from, to { background-color: transparent }
+            50% { background-color: black }
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">מערכת ניהול מכולות</h1>
+            <p class="text-lg text-gray-600">לוח בקרה מרכזי לניהול, מעקב וניתוח פעילות</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex justify-center border-b border-gray-200 mb-8">
+            <button id="nav-dashboard" class="nav-tab-btn active text-lg font-semibold px-6 py-3" onclick="showPage('dashboard')">
+                <i class="fas fa-tachometer-alt mr-2"></i>לוח בקרה
+            </button>
+            <button id="nav-inventory" class="nav-tab-btn text-lg font-semibold px-6 py-3" onclick="showPage('inventory')">
+                <i class="fas fa-boxes-stacked mr-2"></i>מלאי מכולות
+            </button>
+            <button id="nav-treatment" class="nav-tab-btn text-lg font-semibold px-6 py-3" onclick="showPage('treatment')">
+                <i class="fas fa-clipboard-check mr-2"></i>לוח טיפול בחריגות
+            </button>
+        </nav>
+
+        <!-- Page Content -->
+        <main>
+            <!-- Dashboard Page -->
+            <section id="page-dashboard" class="space-y-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-700">סקירה כללית</h2>
+                    <button onclick="openNewOrderModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i>הזמנה חדשה
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">מכולות פעילות באתרים</h3>
+                        <p id="kpi-active-containers" class="text-4xl font-bold text-blue-600 mt-2">0</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">לקוחות בחריגה <span class="text-xs">(מעל 10 ימים)</span></h3>
+                        <p id="kpi-overdue-customers" class="text-4xl font-bold text-red-600 mt-2">0</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">מכולות פנויות במלאי</h3>
+                        <p id="kpi-available-containers" class="text-4xl font-bold text-green-600 mt-2">0</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h3 class="text-gray-500 font-semibold">סה"כ פעולות (כל הזמנים)</h3>
+                        <p id="kpi-total-operations" class="text-4xl font-bold text-gray-700 mt-2">0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="kpi-card">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4">פעילות לפי סוכן</h3>
+                        <div class="chart-container">
+                            <canvas id="agentActivityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4">פעולות לאורך זמן</h3>
+                         <div class="chart-container">
+                            <canvas id="operationsTimelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">כלל הפעולות</h2>
+                     <div class="flex items-center mb-4">
+                        <i class="fas fa-search text-gray-400 mr-3"></i>
+                        <input type="text" id="main-search" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="חפש לפי שם לקוח, תעודה, שם סוכן...">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="py-3 px-4 text-right font-bold">תאריך</th>
+                                    <th class="py-3 px-4 text-right font-bold">תעודה</th>
+                                    <th class="py-3 px-4 text-right font-bold">שם לקוח</th>
+                                    <th class="py-3 px-4 text-right font-bold">שם סוכן</th>
+                                    <th class="py-3 px-4 text-right font-bold">סוג פעולה</th>
+                                    <th class="py-3 px-4 text-right font-bold">ימים בשכירות</th>
+                                    <th class="py-3 px-4 text-right font-bold">סטטוס</th>
+                                    <th class="py-3 px-4 text-right font-bold">פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-operations-table" class="table-large-text">
+                                <!-- Data will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory Page -->
+            <section id="page-inventory" class="hidden space-y-8">
+                 <div class="kpi-card">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">מכולות בשימוש פעיל</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="py-3 px-4 text-right font-bold">מספר מכולה</th>
+                                    <th class="py-3 px-4 text-right font-bold">לקוח נוכחי</th>
+                                    <th class="py-3 px-4 text-right font-bold">תאריך הצבה</th>
+                                    <th class="py-3 px-4 text-right font-bold">ימים באתר</th>
+                                    <th class="py-3 px-4 text-right font-bold">היסטוריה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="in-use-containers-table" class="table-large-text">
+                                <!-- Data will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                 <div class="kpi-card">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">מכולות פנויות</h2>
+                     <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="py-3 px-4 text-right font-bold">מספר מכולה</th>
+                                    <th class="py-3 px-4 text-right font-bold">תאריך חזרה למלאי</th>
+                                    <th class="py-3 px-4 text-right font-bold">לקוח אחרון</th>
+                                    <th class="py-3 px-4 text-right font-bold">היסטוריה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="available-containers-table" class="table-large-text">
+                                <!-- Data will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Treatment Page -->
+            <section id="page-treatment" class="hidden">
+                 <h2 class="text-2xl font-bold text-gray-700 mb-4">לוח טיפול בלקוחות חורגים</h2>
+                 <p class="text-gray-600 mb-6">כאן מרוכזות כל המכולות שנמצאות אצל לקוחות מעל 10 ימי עבודה ודורשות טיפול (החלפה או הוצאה).</p>
+                 <div id="treatment-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Kanban columns will be populated by JS -->
+                 </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Customer History Modal -->
+    <div id="customer-history-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center">
+        <div class="modal-content bg-white rounded-lg shadow-2xl w-11/12 max-w-4xl overflow-y-auto">
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold" id="modal-customer-name"></h2>
+            </div>
+            <div class="p-6">
+                <h3 class="text-lg font-semibold mb-2">סיכום פעילות</h3>
+                <div id="modal-customer-summary" class="grid grid-cols-3 gap-4 mb-6"></div>
+                 <h3 class="text-lg font-semibold mb-2">מכולות ששויכו ללקוח</h3>
+                <div id="modal-customer-containers" class="mb-6 p-3 bg-gray-50 rounded-md text-gray-700">
+                    <p id="customer-container-list">...</p>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">היסטוריית פעולות</h3>
+                <div class="overflow-y-auto max-h-96">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="py-2 px-3 text-right">תאריך</th>
+                                <th class="py-2 px-3 text-right">תעודה</th>
+                                <th class="py-2 px-3 text-right">פעולה</th>
+                                <th class="py-2 px-3 text-right">סטטוס</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-customer-history-table" class="table-large-text"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 text-left">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Message Modal -->
+    <div id="whatsapp-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center">
+        <div class="modal-content bg-white rounded-lg shadow-2xl w-11/12 max-w-xl">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold">שליחת הודעת WhatsApp</h2>
+                <button onclick="closeModalWhatsApp()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label for="whatsapp-phone-input" class="block text-sm font-semibold text-gray-700 mb-1">מספר טלפון:</label>
+                    <input type="text" id="whatsapp-phone-input" class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                 <div class="mb-4">
+                    <button onclick="toggleMessageOptions()" class="w-full text-right bg-gray-100 p-3 rounded-md font-semibold text-gray-700 flex justify-between items-center">
+                        <span>בחר הודעה מובנית</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="whatsapp-message-options-container" class="hidden mt-2 border border-gray-200 rounded-md max-h-60 overflow-y-auto bg-white">
+                        <input type="text" id="message-filter-input" class="w-full p-2 border-b border-gray-200" placeholder="חפש הודעה..." onkeyup="filterMessageOptions()">
+                        <div id="message-options-list"></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="whatsapp-message-textarea" class="block text-sm font-semibold text-gray-700 mb-1">תוכן ההודעה:</label>
+                     <div class="border border-gray-300 rounded-md p-2 min-h-[100px] bg-gray-50 mb-2">
+                        <span id="typing-effect-display" class="whitespace-pre-wrap"></span><span class="typing-effect-cursor">|</span>
+                    </div>
+                    <textarea id="whatsapp-message-textarea" class="w-full p-2 border border-gray-300 rounded-md" rows="5"></textarea>
+                </div>
+                <input type="hidden" id="whatsapp-doc-id">
+                <div class="flex justify-end">
+                    <button onclick="sendWhatsAppMessage()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">שלח הודעה</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Order Modal -->
+    <div id="new-order-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center">
+        <div class="modal-content bg-white rounded-lg shadow-2xl w-11/12 max-w-2xl overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold">הוספת הזמנה חדשה</h2>
+                <button onclick="closeNewOrderModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="new-order-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-1">
+                        <label for="new-order-date" class="block text-sm font-semibold text-gray-700 mb-1">תאריך הזמנה</label>
+                        <input type="date" id="new-order-date" name="תאריך הזמנה" class="w-full p-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-docid" class="block text-sm font-semibold text-gray-700 mb-1">תעודה</label>
+                        <input type="text" id="new-order-docid" name="תעודה" class="w-full p-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-agent" class="block text-sm font-semibold text-gray-700 mb-1">שם סוכן</label>
+                        <input type="text" id="new-order-agent" name="שם סוכן" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-customer-name" class="block text-sm font-semibold text-gray-700 mb-1">שם לקוח</label>
+                        <input type="text" id="new-order-customer-name" name="שם לקוח" class="w-full p-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="new-order-address" class="block text-sm font-semibold text-gray-700 mb-1">כתובת</label>
+                        <input type="text" id="new-order-address" name="כתובת" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-action-type" class="block text-sm font-semibold text-gray-700 mb-1">סוג פעולה</label>
+                        <select id="new-order-action-type" name="סוג פעולה" class="w-full p-2 border border-gray-300 rounded-md" required>
+                            <option value="">בחר פעולה</option>
+                            <option value="הצבה">הצבה</option>
+                            <option value="החלפה">החלפה</option>
+                            <option value="הורדה">הורדה</option>
+                            <option value="הוצאה">הוצאה</option>
+                            <option value="הזזה">הזזה</option>
+                            <option value="פינוי במקום">פינוי במקום</option>
+                            <option value="גישה ללא פעולה">גישה ללא פעולה</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-status" class="block text-sm font-semibold text-gray-700 mb-1">סטטוס</label>
+                        <select id="new-order-status" name="סטטוס" class="w-full p-2 border border-gray-300 rounded-md" required>
+                            <option value="פתוח">פתוח</option>
+                            <option value="חורג">חורג</option>
+                            <option value="סגור">סגור</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-container-dropped" class="block text-sm font-semibold text-gray-700 mb-1">מספר מכולה ירדה</label>
+                        <input type="text" id="new-order-container-dropped" name="מספר מכולה ירדה" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-container-lifted" class="block text-sm font-semibold text-gray-700 mb-1">מספר מכולה עלתה</label>
+                        <input type="text" id="new-order-container-lifted" name="מספר מכולה עלתה" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-expected-end-date" class="block text-sm font-semibold text-gray-700 mb-1">תאריך סיום צפוי</label>
+                        <input type="date" id="new-order-expected-end-date" name="תאריך סיום צפוי" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="new-order-phone" class="block text-sm font-semibold text-gray-700 mb-1">טלפון לקוח</label>
+                        <input type="tel" id="new-order-phone" name="טלפון לקוח" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="col-span-2">
+                        <label for="new-order-notes" class="block text-sm font-semibold text-gray-700 mb-1">הערות</label>
+                        <textarea id="new-order-notes" name="הערות" class="w-full p-2 border border-gray-300 rounded-md" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 bg-gray-50 text-left flex justify-end gap-2">
+                <button onclick="closeNewOrderModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">ביטול</button>
+                <button onclick="submitNewOrder()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">הוסף הזמנה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript code -->
+    <script>
+        // Global state
+        let allOperations = [];
+        let charts = {};
+        let isLoadingData = false; // Added loading state
+
+        // Utility functions
+        // This function is now mostly for historical name, as data is expected to be JSON array
+        const parseFullTrackingCSV = (data) => data; 
+
+        const formatDate = (dateStr) => {
+            if (!dateStr) return null;
+            // Handle both YYYY-MM-DD and DD/MM/YYYY formats
+            if (dateStr.includes('-') && dateStr.split('-').length === 3) {
+                const date = new Date(dateStr);
+                return isNaN(date.getTime()) ? null : date;
+            }
+            if (dateStr.includes('/') && dateStr.split('/').length === 3) {
+                const parts = dateStr.split('/');
+                const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); // Assumes DD/MM/YYYY
+                return isNaN(date.getTime()) ? null : date;
+            }
+            return null;
+        };
+
+        const daysSince = (date) => {
+            if (!date || isNaN(date.getTime())) return 0;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today to start of day
+            const opDate = new Date(date);
+            opDate.setHours(0, 0, 0, 0); // Normalize opDate to start of day
+
+            const diff = today.getTime() - opDate.getTime();
+            return Math.floor(diff / (1000 * 60 * 60 * 24));
+        };
+
+        // Global functions for HTML onclick attributes (MUST BE GLOBAL)
+        const showPage = (pageId) => {
+            ['dashboard', 'inventory', 'treatment'].forEach(id => {
+                document.getElementById(`page-${id}`).classList.add('hidden');
+                document.getElementById(`nav-${id}`).classList.remove('active');
+            });
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            document.getElementById(`nav-${pageId}`).classList.add('active');
+        };
+
+        const getCityFromAddress = (address) => {
+            if (!address) return null;
+            const israeliCities = [
+                "תל אביב", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "באר שבע",
+                "נתניה", "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "הרצליה",
+                "כפר סבא", "חדרה", "בית שמש", "מודיעין-מכבים-רעות", "לוד", "רמלה", "רעננה",
+                "נהריה", "קריית גת", "אילת", "עכו", "צפת", "טבריה", "נצרת", "אום אל-פאחם",
+                "בני ציון", "אבן יהודה", "אור יהודה", "אור עקיבא", "אריאל", "אשקלון", "באקה אל-גרבייה",
+                "גבעתיים", "דימונה", "הוד השרון", "זכרון יעקב", "יבנה", "יהוד-מונוסון", "יוקנעם עילית",
+                "כוכב יאיר", "כפר יונה", "כפר קאסם", "כרמיאל", "מגדל העמק", "מכבים", "מעלה אדומים",
+                "מצפה רמון", "נהריה", "נס ציונה", "נשר", "עפולה", "ערד", "פרדס חנה-כרכור",
+                "קריית אונו", "קריית ביאליק", "קריית ים", "קריית מוצקין", "קריית שמונה",
+                "שוהם", "שדרות", "רמת השרון"
+            ].sort((a,b) => b.length - a.length);
+
+            for (const city of israeliCities) {
+                if (address.includes(city)) {
+                    return city;
+                }
+            }
+            return null;
+        };
+
+        const whatsappMessages = [
+            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! 🥳 לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
+            { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** 🗓️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
+            { id: 'approaching_due_3_days', text: 'שלום **[שם לקוח]**,\n\nתקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת ממש בקרוב, בעוד **3 ימים** ⚠️. אנא טפל בנושא כדי למנוע חריגות.\n\nאנו לרשותך לכל עזרה! 🙏', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏳' },
+            { id: 'overdue_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להודיע לך על חריגה בימי שכירות של המכולה ([**מספר מכולה**]) ב-**[ימים שעברו] ימים** 🚨. נא ליצור קשר עם מחלקת הזמנות **[טלפון חברה]** או להשיב להודעה זו מה תרצה שנבצע (החלפה/הוצאה).', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '❗️' },
+            { id: 'overdue_30_days', text: '**התראה חמורה, [שם לקוח]:**\n\nהמכולה ([**מספר מכולה**]) שבשימושך חורגת ב-**[ימים שעברו] ימים**! יש לטפל בנושא בדחיפות כדי למנוע חיובים נוספים וסיבוכים משפטיים. ⚖️\n\n**צור קשר מיידית: [טלפון חברה].**', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '🔴' },
+            { id: 'overdue_long', text: '**לכבוד: [שם לקוח]**\n\n**הנדון: חוב בגין שכירות מכולה חורגת**\n\nאנו פונים אליך בהתייחס לחשבונך, הנמצא בחריגה משמעותית של [**ימים שעברו**] ימים עבור מכולה ([**מספר מכולה**]).\n\nבהיעדר הסדרה מיידית, אנו נאלצים לנקוט בצעדים משפטיים לגבייה. אנו קוראים לך ליצור קשר דחוף להסדר: **[טלפון חברה]**.', category: 'משפטי', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '' },
+            { id: 'general_inquiry', text: 'שלום **[שם לקוח]**,\n\nאיך אנחנו יכולים לעזור לך היום? 🤔 אם יש לך שאלות, בקשות או תזכורות, אל תהסס לפנות אלינו. אנחנו כאן בשבילך! ✨', category: 'כללי', placeholders: ['שם לקוח'], emoji: '💬' },
+            { id: 'payment_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת ידידותית לגבי תשלום חשבונית מספר **[תעודה]** 💰. אנו מודים לך על תשומת הלב המהירה ועל המשך שיתוף הפעולה.', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '💲' },
+            { id: 'service_feedback', text: 'שלום **[שם לקוח]**,\n\nאנו מקווים ששירותינו עונים על ציפיותיך. נשמח לקבל משוב על החוויה שלך עם מכולה מספר **[מספר מכולה]** כדי שנוכל להשתפר ולהעניק לך שירות טוב יותר. ⭐', category: 'משוב', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '📝' },
+            { id: 'holiday_greetings', text: 'חג שמח, **[שם לקוח]**! 🎉\n\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה, בריאות והמון שמחה! 🥳', category: 'עונתי', placeholders: ['שם לקוח', 'שם החברה'], emoji: '🎁' },
+            { id: 'special_offer', text: 'שלום **[שם לקוח]**,\n\nיש לנו חדשות מרגשות! 🎁 מבצע מיוחד למכולות חדשות/נוספות עבורך. אל תחמיץ! לפרטים נוספים, השב להודעה זו או התקשר: **[טלפון חברה]**.', category: 'שיווק', placeholders: ['שם לקוח', 'טלפון חברה'], emoji: '✨' },
+            { id: 'follow_up_issue', text: 'שלום **[שם לקוח]**,\n\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה **[תעודה]** 🛠️. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו כדי שנוכל להמשיך לטפל.', category: 'תמיכה', placeholders: ['שם לקוח', 'תעודה'], emoji: '✅' },
+            { id: 'document_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת לשליחת המסמכים החסרים עבור הזמנה **[תעודה]** 📄. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול בהזמנה.\n\nתודה על שיתוף הפעולה!', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '📌' },
+            { id: 'service_confirmation', text: 'שלום **[שם לקוח]**,\n\nהשירות שהוזמן (תעודה **[תעודה]**) אושר ויתבצע ב-**[תאריך סיום צפוי]** ✅. תודה שבחרת בנו ושיהיה יום נפלא!', category: 'אישור', placeholders: ['שם לקוח', 'תעודה', 'תאריך סיום צפוי'], emoji: '👍' },
+            { id: 'service_delay', text: 'שלום **[שם לקוח]**,\n\nעקב נסיבות בלתי צפויות, ייתכן שיהיה עיכוב קל בטיפול בהזמנה **[תעודה]** ⏱️. אנו מתנצלים על אי הנוחות ונפעל לפתור זאת במהירות האפשרית.\n\nנודיע לך על כל עדכון! 🔜', category: 'מידע', placeholders: ['שם לקוח', 'תעודה'], emoji: '🚧' },
+            { id: 'location_update_request', text: 'שלום **[שם לקוח]**,\n\nכדי שנוכל לתאם את השירות בצורה הטובה ביותר, אנא וודא שמיקום המכולה ([**מספר מכולה**]) מעודכן ומדויק 📍. זה חשוב להגעה יעילה!', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '🗺️' },
+            { id: 'happy_birthday', text: 'יום הולדת שמח, **[שם לקוח]**! 🎉🎂\n\nצוות [שם החברה] מאחל לך יום מלא בשמחה, בריאות, הגשמה והרבה רגעים מתוקים! 🥳', category: 'עונתי', placeholders: ['שם לקוח', 'שם החברה'], emoji: '🎈' },
+            { id: 'review_invitation', text: 'שלום **[שם לקוח]**,\n\nנהנית מהשירות שלנו? ✨ נשמח אם תוכל להקדיש רגע ולכתוב לנו ביקורת קצרה כאן: [**לינק לביקורת**]. תודה מראש על עזרתך להשתפר! 🙏', category: 'משוב', placeholders: ['שם לקוח', 'לינק לביקורת'], emoji: '🌟' },
+            { id: 'tech_support_contact', text: 'שלום **[שם לקוח]**,\n\nלכל בעיה טכנית או תפעולית עם המכולה ([**מספר מכולה**]), מחלקת התמיכה שלנו זמינה עבורך 🧑‍🔧.\n\n**צור קשר: [טלפון חברה].**', category: 'תמיכה', placeholders: ['שם לקוח', 'מספר מכולה', 'טלפון חברה'], emoji: '🔧' },
+            { id: 'general_thanks', text: 'תודה רבה לך, **[שם לקוח]**, על שיתוף הפעולה והאמון ב[שם החברה]! 🙏\n\nאנו מעריכים את בחירתך בנו ומקווים להמשיך לשרת אותך נאמנה. 💖', category: 'כללי', placeholders: ['שם לקוח', 'שם החברה'], emoji: '😊' },
+            { id: 'multi_container_reminder', text: 'שלום **[שם לקוח]**,\n\nשמנו לב שברשותך **מספר מכולות פעילות** 🏗️. אנו כאן כדי לוודא שכל הצרכים שלך מסופקים.\n\nהאם יש משהו שנוכל לעזור בו בנוגע למכולות שלך? אל תהסס לפנות! 🤝', category: 'תזכורות', placeholders: ['שם לקוח'], emoji: '📦' },
+            { id: 'container_mismatch', text: 'שלום **[שם לקוח]**,\n\n**התראה:** מכולה מספר **[מספר מכולה]** ירדה אצל לקוח **[שם לקוח]** בתעודה **[תעודה]** לפני **[ימים שעברו]** ימים וטרם הוחזרה/נסגרה! 🚨', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'תעודה', 'ימים שעברו'], emoji: '🚨' },
+            { id: 'pending_order_reminder', text: 'שלום **[שם לקוח]**,\n\n**בטיפול:** הזמנה **[תעודה]** של לקוח **[שם לקוח]** מסומנת "בטיפול" ולא עודכנה **[ימים שעברו]** ימים. דורש בדיקה! ⚠️', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה', 'ימים שעברו'], emoji: '⚠️' }
+        ];
+
+        const cityGuidelines = {
+            'הרצליה': {
+                id: 'herzliya_permit',
+                text: 'הנחיה חשובה לתושבי הרצליה:\nכדי להציב מכולת פסולת בניין ברחוב בהרצליה, יש להגיש בקשה מראש לאגף הפיקוח העירוני. הבקשה כרוכה בתשלום אגרה ונדרש אישור בכתב. מומלץ לוודא את כל הפרטים באתר העירייה או בטלפון.\n\nקישור למידע: https://www.herzliya.muni.il/pages/%D7%90%D7%92%D7%A8%D7%95%D7%AA%20%D7%95%D7%94%D7%99%D7%AA%D7%A8%D7%99%D7%9D',
+                link: 'https://www.herzliya.muni.il/pages/%D7%90%D7%92%D7%A8%D7%95%D7%AA%20%D7%95%D7%94%D7%99%D7%AA%D7%A8%D7%99%D7%9D',
+                category: 'היתרים עירוניים',
+                placeholders: [],
+                emoji: '📝'
+            },
+            'רעננה': {
+                id: 'raanana_permit',
+                text: 'הנחיה חשובה לתושבי רעננה:\nברעננה, חל איסור מוחלט להשאיר מכולות פסולת בניין במקום ציבורי (ברחוב) בסופי שבוע ובחגים. יש לדאוג להזמין פינוי לפני כניסת השבת/חג. קנסות יינתנו למפרים. אנא הקפד על הנחיות אלו.\n\nמידע נוסף: https://www.raanana.muni.il/pages/%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9A',
+                link: 'https://www.raanana.muni.il/pages/%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9A',
+                category: 'היתרים עירוניים',
+                placeholders: [],
+                emoji: '🚫'
+            },
+            'תל אביב': {
+                id: 'telaviv_permit',
+                text: 'הנחיה חשובה לתושבי תל אביב:\nבתל אביב, הצבת מכולות פסולת ברחוב מחייבת קבלת היתר מהעירייה. יש להגיש בקשה מקוונת ולצרף את כל המסמכים הנדרשים. שימו לב להנחיות המדויקות לגבי סימון המכולה ומשך ההצבה.\n\nלמידע והגשת בקשה: https://www.tel-aviv.muni.il/Bussiness/Construction/Pages/WasteContainers.aspx',
+                link: 'https://www.tel-aviv.muni.il/Bussiness/Construction/Pages/WasteContainers.aspx',
+                category: 'היתרים עירוניים',
+                placeholders: [],
+                emoji: '🏛️'
+            }
+        };
+
+        const companyInfo = {
+            phoneNumber: '972508860896', 
+            companyPhone: '097602010', 
+            companyName: 'ח.סבן' 
+        };
+
+        // This is your Google Apps Script Web App URL. Make sure it's deployed correctly.
+        // If you switch back to using Google Sheet as data source, uncomment the fetchDataFromGoogleSheet call below
+        // and re-enable the API key. For now, we are using static data.
+        const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzk03pVBEBzHIWkFj1OzqM0T5buH5cfNjD8njGza8AoKWulO1sPtiBrOpUZZItOd_gi/exec'; 
+
+        let typingInterval;
+        let currentMessageFullText = '';
+        let typingIndex = 0;
+
+        // Helper to generate consistent phone numbers for customers for static data
+        const customerPhones = {};
+        let nextPhoneNumber = 972501000000;
+        const getCustomerPhone = (customerName) => {
+            if (!customerPhones[customerName]) {
+                customerPhones[customerName] = `97250${nextPhoneNumber++}`;
+            }
+            return customerPhones[customerName];
+        };
+
+        // Helper to generate container numbers (very basic simulation for static data)
+        const containerCounter = {
+            placed: 100, // For הצבה (placement)
+            lifted: 500, // For הוצאה (removal)
+            replaced: 1000 // For החלפה (exchange)
+        };
+
+        const generateContainerNumbers = (actionType) => {
+            let dropped = '';
+            let lifted = '';
+            let all = '';
+
+            if (actionType === 'הצבה') {
+                dropped = String(containerCounter.placed++);
+                all = dropped;
+            } else if (actionType === 'הוצאה') {
+                lifted = String(containerCounter.lifted++);
+                all = lifted;
+            } else if (actionType === 'החלפה' || actionType === 'החalפה') { // Handle typo for now
+                dropped = String(containerCounter.replaced++);
+                lifted = String(containerCounter.replaced + 1); // Get another number for lifted
+                containerCounter.replaced += 2;
+                all = `${dropped},${lifted}`;
+            }
+            return { dropped, lifted, all };
+        };
+
+        // Raw data from the provided "טבלת פעולות מאוחדת" (CSV format parsed to array of objects)
+        // This data simulates a full dataset for the CRM, adding missing fields.
+        const rawDataString = `
+תאריך,תעודה,שם לקוח,שם סוכן,סוג פעולה
+2025-06-01,6712645,בן ענבר-בי"ס ליידי ד,רמי/שארק,החלפה
+2025-06-01,6712655,שמעון הראל,רמי/שארק,החלפה
+2025-06-01,6712656,שארק/נאדר,רמי/שארק,החלפה
+2025-06-01,6712659,ניר ומירי נובק,מוחמד/שארק,הוצאה
+2025-06-01,6712661,בן ענבר-בי"ס ליידי ד,מוחמד/שארק,הוצאה
+2025-06-03,6712685,פלח משה/כללי,מוחמד/שארק,החלפה
+2025-06-03,6712689,מודי יבוא/בני ברק,רמי/שארק,החלפה
+2025-06-04,6712691,הכל מבראשית/אוניברסי,מוחמד/שארק,הוצאה
+2025-06-04,6712705,דוד חיים ובניו - כלל,רמי/שארק,הוצאה
+2025-06-05,6712709,א.ערן אזולאי - יהודה,רמי/שארק,הוצאה
+2025-06-05,6712713,גום טכניקה חברה לייצ,רמי/שארק,החלפה
+2025-06-05,6712713,גום טכניקה חברה לייצ,רמי/שארק,החלפה
+2025-06-05,6712718,עאסי אחמד עב בנין,מוחמד/שארק,הוצאה
+2025-06-05,6712721,אלנבי על הים/האגדה,מוחמד/שארק,הוצאה
+2025-06-10,6712739,מודי יבוא/בני ברק,מוחמד/שארק,החלפה
+2025-06-10,6712744,אוהד טל,מוחמד/שארק,החלפה
+2025-06-11,6712750,הכל מבראשית/אוניברסי,מוחמד/שארק,הוצאה
+2025-06-11,6712755,הכל מבראשית/אוניברסי,מוחמד/שארק,הוצאה
+2025-06-11,6712760,מ.צ שחיבר בניה בע"מ,מוחמד/שארק,הוצאה
+2025-06-12,6712766,הכל מבראשית/אוניברסי,מוחמד/שארק,החלפה
+2025-06-12,6712774,שחר שאול תכנון/כללי,מוחמד/שארק,החלפה
+2025-06-13,6712778,פינוי פסולת בשרון בע,מוחמד/שארק,החלפה
+2025-06-17,6712823,ב.ר.ש תחזוקת מרלוגים,מוחמד/שארק,הוצאה
+2025-06-17,6712834,קבוצת חסון,מוחמד/שארק,הוצאה
+2025-06-18,6712849,מיי דסק בע"מ,מוחמד/שארק,החלפה
+2025-06-19,6712877,ע.דרקו,מוחמד/שארק,החלפה
+2025-06-20,6712886,שחר שאול תכנון/כללי,מוחמד/שארק,הוצאה
+2025-06-22,6712906,פינוי פסולת בשרון בע,מוחמד/שארק,החלפה
+2025-06-24,6712954,א.ערן אזולאי - קידמה,מוחמד/שארק,החלפה
+2025-06-25,6712979,הכל מבראשית/אוניברסי,מוחמד/שארק,החלפה
+2025-06-25,6712984,פינת במזל (יבגני),מוחמד/שארק,החלפה
+2025-06-26,6712998,פינת במזל (יבגני),מוחמד/שארק,החלפה
+2025-06-27,6713043,ביליאור יצחקי-כללי,ריימונד/שארק,הוצאה
+2025-06-29,6713053,פינת במזל (יבגני),מוחמד/שארק,הוצאה
+2025-06-29,6713064,ליאור יצחקי-קיבוץ עי,מוחמד/שארק,הוצאה
+2025-06-30,6713084,מודי יבוא/בני ברק,מוחמד/שארק,החלפה
+2025-06-30,6713090,מ.צ שחיבר בניה בע"מ,רמי/שארק,החלפה
+2025-06-30,6713091,אילן יוסף,רמי/שארק,הוצאה
+2025-06-30,6713092,מיי דסק בע"מ,רמי/שארק,החלפה
+2025-06-30,6713094,ע.דרקו,מוחמד/שארק,החalפה
+2025-07-01,6713107,מוזס סרנגה,מוחמד/שארק,הוצאה
+2025-07-01,6713111,נדלסטיצ'ר איתי/לוטם,רמי/שארק,הצבה
+2025-07-01,6713123,מודי יבוא/בני ברק,רמי/שארק,החלפה
+2025-07-02,6713131,הכל מבראשית/אוניברסי,מוחמד/שארק,הצבה
+2025-07-02,6713132,עופר פוביצר,מוחמד/שארק,הוצאה
+2025-07-02,6713137,בזלת מזר בע"מ,מוחמד/שארק,הצבה
+2025-07-02,6713146,א.ערן אזולאי - קידמה,רמי/שארק,הוצאה
+2025-07-02,6713150,א.כ.רימונים/מלכי הרצ,מוחמד/שארק,הצבה
+2025-07-02,6713151,מודי יבוא/בני ברק,מוחמד/שארק,הוצאה
+2025-07-02,6713129,שמעון הראל,רמי/שארק,החלפה
+2025-07-02,6713129,שמעון הראל,רמי/שארק,החלפה
+2025-07-03,6713166,פינוי פסולת בשרון בע,מוחמד/שארק,החלפה
+2025-07-03,6713179,אורם הנדסה וניהול בע,מוחמד/שארק,הצבה
+2025-07-06,6713195,בן ענבר-קרית אונו,מוחמד/שארק,הצבה
+2025-07-06,6713198,שחר שאול תכנון/כללי,רמי/שארק,הוצאה
+2025-07-06,6713201,יונתן מנשה,מוחמד/שארק,הצבה
+2025-07-06,6713205,אורם הנדסה וניהול בע,מוחמד/שארק,הוצאה
+2025-07-07,6713225,הכל מבראשית/אוניברסי,רמי/שארק,החלפה
+2025-07-07,6713232,בן ענבר-קרית אונו,מוחמד/שארק,הצבה
+2025-07-07,6713237,שחר שאול תכנון/כללי,רמי/שארק,הצבה
+2025-07-07,6713238,קובי בנישו,רמי/שארק,הוצאה
+2025-07-07,6713243,א.ערן אזולאי - קידמה,מוחמד/שארק,הצבה
+2025-07-07,6713244,א.כ.רימונים/מלכי הרצ,מוחמד/שארק,הוצאה
+2025-07-09,6713266,הכל מבראשית/אוניברסי,מוחמד/שארק,החלפה
+2025-07-10,6713282,מודי יבוא/בני ברק,מוחמד/שארק,החלפה
+2025-07-10,6713285,בזלת מזר בע"מ,מוחמד/שארק,החלפה
+2025-07-10,6713288,רני שיראי,מוחמד/שארק,הצבה
+2025-07-10,6713293,רני שיראי,מוחמד/שארק,החלפה
+2025-07-10,6713296,הכל מבראשית/אוניברסי,מוחמד/שארק,הוצאה
+2025-07-10,6713297,בן ענבר-קרית אונו,רמי/שארק,החלפה
+2025-07-10,6713297,בן ענבר-קרית אונו,רמי/שארק,החלפה
+2025-07-11,6713301,א.ערן אזולאי - קידמה,מוחמד/שארק,הוצאה
+2025-07-11,6713302,שחר לוי,מוחמד/שארק,הוצאה
+2025-07-11,6713304,בן ענבר-קרית אונו,מוחמד/שארק,החלפה
+2025-07-11,6713306,רני שיראי,מוחמד/שארק,הוצאה
+2025-07-13,6713311,מ.צ שחיבר בניה בע"מ,מוחמד/שארק,החלפה
+2025-07-13,6713311,מ.צ שחיבר בניה בע"מ,רמי/שארק,החלפה
+2025-07-13,6713313,מ.צ שחיבר בניה בע"מ,רמי/שארק,החלפה
+2025-07-13,6713314,אלנבי על הים/האגדה,מוחמד/שארק,החalפה
+2025-07-13,6713322,אוהד טל,מוחמד/שארק,החלפה
+2025-07-14,6713340,בן ענבר-בי"ס ליידי ד,מוחמד/שארק,הצבה
+2025-07-14,6713356,אורניל-אשר לוי,רמי/שארק,הוצאה
+2025-07-15,6713365,הכל מבראשית/אוניברסי,מוחמד/שארק,הוצאה
+2025-07-15,6713368,בן ענבר-בי"ס ליידי ד,רמי/שארק,הוצאה
+2025-07-15,6713370,שחר שאול תכנון/כללי,מוחמד/שארק,הצבה
+2025-07-15,6713372,פלח משה/כללי,מוחמד/שארק,הוצאה
+2025-07-15,6713386,מוזס סרנגה,מוחמד/שארק,הצבה
+2025-07-15,6713388,בהר אהוד-אבן יהודה,רמי/שארק,הוצאה
+2025-07-16,671339,בזלת מזר בע"מ,מוחמד/שארק,החלפה
+2025-07-16,6713395,גיא פריגת,מוחמד/שארק,הוצאה
+2025-07-16,6713411,פינוי פסולת בשרון בע,רמי/שארק,החלפה
+2025-07-20,6713466,זהבי יצחק,מוחמד/שארק,הצבה
+2025-07-20,6713467,זהבי יצחק,מוחמד/שארק,הצבה
+2025-07-20,6713475,גום טכניקה חברה לייצור בע"מ,מוחמד/שארק,החלפה
+2025-07-20,6713475,גום טכניקה חברה לייצ,מוחמד/שארק,החלפה
+2025-07-21,6713496,הכל מבראשית/אוניברסי,מוחמד/שארק,החלפה
+2025-07-21,6713515,זהבי יצחק,אגבאריה/שא,החלפה
+2025-07-21,6713518,זהבי יצחק,אגבאריה/שא,החלפה
+2025-07-21,6713519,שמעון הראל,מוחמד/שארק,הוצאה
+2025-07-21,6713519,שמעון הראל,מוחמד/שארק,הוצאה
+2025-07-22,6713520,עאסי אחמד עב בנין,אגבאריה/שא,החלפה
+2025-07-22,6713523,מודי יבוא/בני ברק,מוחמד/שארק,החלפה
+2025-07-22,6713524,זהבי יצחק,מוחמד/שארק,החלפה
+2025-07-22,6713526,בוקטוס אילן-כללי,אגבאריה/שארק,הוצאה
+2025-07-22,6713527,זהבי יצחק,אגבאריה/שארק,הצבה
+2025-07-22,6713527,זהבי יצחק,אגבאריה/שא,הוצאה
+2025-07-22,6713532,מיי דסק בע"מ,מוחמד/שארק,החלפה
+2025-07-22,6713533,בן ענבר-קרית אונו,אגבאריה/שא,הוצאה
+2025-07-24,6713566,אילן יוסף,אגבאריה/שארק,החלפה
+2025-07-24,6713571,א.ערן אזולאי - אנקור,אגבאריה/שארק,החלפה
+2025-07-24,6713578,שמעון הראל,אגבאריה/שארק,הוצאה
+2025-07-24,6713580,שארק/עומר צמפיון,מוחמד/שארק,החלפה
+2025-07-25,6713586,ליאור יצחקי-קיבוץ עי,אגבאריה/שא,החלפה
+2025-07-25,6713588,ליאור יצחקי-קיבוץ עי,אגבאריה/שא,החלפה
+2025-07-27,6713599,אילן ששון,אגבאריה/שארק,הוצאה
+2025-07-27,6713600,פינוי פסולת בשרון בע,אגבאריה/שא,הוצאה
+2025-07-28,6713622,הכל מבראשית/אוניברסי,מוחמד/שארק,החלפה
+2025-07-28,6713628,שארק/נאדר,אגבאריה/שא,החלפה
+2025-07-28,6713628,שארק/נאדר,אגבאריה/שא,החלפה
+2025-07-28,6713640,אלנבי על הים/האגדה,מוחמד/שארק,החלפה
+2025-07-29,6713651,הכל מבראשית/אוניברסי,אגבאריה/שא,החלפה
+2025-07-29,6713658,אורבר בנייה/ירמיהו ר"ג,אגבאריה/שארק,הוצאה
+2025-07-29,6713661,מוזס סרנגה,אגבאריה/שא,הוצאה
+2025-07-29,6713670,ע.דרקו,אגבאריה/שא,החלפה
+2025-07-30,6713678,שארק/עומר צמפיון,אגבאריה/שא,החלפה
+2025-07-30,6713683,יונתן מנשה,אגבאריה/שא,הוצאה
+2025-07-30,671369,שחר שאול תכנון/כללי,אגבאריה/שא,הוצאה
+2025-07-31,6713705,רני שיראי,מוחמד/שארק,הוצאה
+2025-07-31,6713722,ליאור יצחקי-קיבוץ עי,אגבאריה/שא,הוצאה
+2025-08-01,6713730,מודי יבוא/בני ברק,מוחמד/שארק,החלפה
+2025-08-01,6713732,נדלסטיצ'ר איתי/לוטם,מוחמד/שארק,הוצאה
+2025-08-01,6713736,פינוי פסולת בשרון בע,מוחמד/שארק,החלפה
+2025-08-03,6713742,אמיר קין,מוחמד/שארק,הוצאה
+2025-08-03,6713744,אלקאר לבניה בע"מ,מוחמד/שארק,הוצאה
+2025-08-03,6713745,בזלת מזר בע"מ,אגבאריה/שא,הוצאה
+2025-08-03,6713755,כחילה צחי-כללי,מוחמד/שארק,הצבה
+2025-08-04,6713767,מודי יבוא/בני ברק,אגבאריה/שא,החלפה
+2025-08-04,6713769,בזלת מזר בע"מ,אגבאריה/שארק,הוצאה
+2025-08-04,6713771,שחר שאול תכנון/כללי,מוחמד/שארק,החלפה
+2025-08-04,6713771,שחר שאול תכנון/כללי,מוחמד/שארק,החלפה
+2025-08-05,6713801,רני שיראי,אגבאריה/שא,הוצאה
+2025-08-06,6713827,הכל מבראשית/אוניברסי,מוחמד/שארק,הוצאה
+2025-08-06,6713831,שארק/אורן,אגבאריה/שא,החלפה
+2025-08-07,6713844,פינוי פסולת בשרון בע,אגבאריה/שארק,החלפה
+2025-08-07,6713851,י.א. ניס בע"מ,מוחמד/שארק,הצבה
+2025-08-07,6713853,אילן ששון,אגבאריה/שארק,הצבה
+2025-08-08,6713881,שני אילתי/כללי,מוחמד/שארק,הצבה
+2025-08-09,6713891,מיי דסק בע"מ,אגבאריה/שארק,החלפה
+2025-08-10,6713895,ג.ד אחים כהן בעמ,אגבאריה/שארק,הוצאה
+2025-08-10,6713938,הכל מבראשית/אוניברסי,מוחמד/שארק,החלפה
+2025-08-11,6713917,בן ענבר-קרית אונו,אגבאריה/שא,הוצאה
+2025-08-11,6713934,בן ענבר-קרית אונו,אגבאריה/שא,הוצאה
+2025-08-12,6713941,שני אילתי/כללי,אגבאריה/שא,החלפה
+2025-08-12,6713947,י.א. ניס בע"מ,אגבאריה/שארק,החלפה
+2025-08-13,6713971,כחילה צחי-כללי,אגבאריה/שא,החלפה
+2025-08-13,6713975,שחר שאול תכנון/כללי,מוחמד/שארק,החלפה
+2025-08-13,6713980,שני אילתי/כללי,אגבאריה/שא,הצבה
+2025-08-13,6713988,אמיר קין,מוחמד/שארק,הוצאה
+2025-08-13,6713991,כחילה צחי-כללי,מוחמד/שארק,הוצאה
+2025-08-14,6714012,שני אילתי/כללי,מוחמד/שארק,החלפה
+2025-08-14,6714018,שני אילתי/כללי,מוחמד/שארק,החלפה
+2025-08-14,6714022,שני אילתי/כללי,מוחמד/שארק,החלפה
+2025-08-15,6714030,מודי יבוא/בני ברק,מוחמד/שארק,החלפה
+2025-08-15,6714032,שני אילתי/כללי,אגבאריה/שא,החלפה
+2025-08-15,6714037,בזלת מזר בע"מ,אגבאריה/שארק,החלפה
+2025-08-17,6714041,שני אילתי/כללי,מוחמד/שארק,הצבה
+2025-08-17,6714051,אוהד טל,אגבאריה/שא,החלפה
+2025-08-17,6714058,מ.צ שחיבר בניה/הוד ה,אגבאריה/שא,הוצאה
+2025-08-17,6714059,יונתן מנשה,אגבאריה/שא,הצבה
+2025-08-17,6714063,מ.צ שחיבר בניה/הוד ה,אגבאריה/שא,הוצאה
+2025-08-18,6713988,בוקטוס אילן-כללי,אגבאריה/שארק,הצבה
+2025-08-18,6714067,בוקטוס אילן-כללי,מוחמד/שארק,הוצאה
+`.trim(); // Trim to remove leading/trailing whitespace
+
+        const parseCSVString = (csvString) => {
+            const lines = csvString.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length === 0) return [];
+
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = [];
+                let inQuote = false;
+                let currentValue = '';
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    if (char === '"') {
+                        inQuote = !inQuote;
+                    } else if (char === ',' && !inQuote) {
+                        values.push(currentValue.trim());
+                        currentValue = '';
+                    } else {
+                        currentValue += char;
+                    }
+                }
+                values.push(currentValue.trim()); // Push the last value
+
+                const rowObject = {};
+                for (let k = 0; k < headers.length; k++) {
+                    rowObject[headers[k]] = values[k] !== undefined ? values[k] : '';
+                }
+                data.push(rowObject);
+            }
+            return data;
+        };
+
+        const rawParsedData = parseCSVString(rawDataString);
+
+        // Generate the full static data with simulated missing fields
+        const fullStaticData = rawParsedData.map(row => {
+            const actionType = row['סוג פעולה'].trim();
+            const containerNums = generateContainerNumbers(actionType);
+            const customerPhone = getCustomerPhone(row['שם לקוח']);
+            const orderDate = new Date(row['תאריך']); // For daysSince calculation
+
+            let status = 'פתוח';
+            if (actionType === 'הוצאה' || actionType === 'פינוי במקום') { // Assume 'פינוי במקום' also closes an order
+                status = 'סגור';
+            }
+
+            // Default dates for fields that might be empty or need simulation
+            const defaultDate = orderDate && !isNaN(orderDate.getTime()) ? orderDate.toISOString().split('T')[0] : '';
+            // Simulate a future date if status is open, 14 days from order date
+            const futureDate = orderDate && !isNaN(orderDate.getTime()) ? new Date(orderDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : ''; 
+
+            return {
+                'תאריך הזמנה': row['תאריך'],
+                'תעודה': row['תעודה'],
+                'שם סוכן': row['שם סוכן'],
+                'שם לקוח': row['שם לקוח'],
+                'כתובת': `${row['שם לקוח'].split('/')[0]} רחוב לדוגמה, עיר כלשהי`, // Simulate address
+                'סוג פעולה': actionType,
+                'ימים שעברו': daysSince(orderDate), // Will be recalculated by the app based on actual current date
+                'מספר מכולה ירדה': containerNums.dropped,
+                'מספר מכולה עלתה': containerNums.lifted,
+                'מספרי מכולות': containerNums.all,
+                'סטטוס': status, // Initial status based on action type. Dynamic overdue logic will override for display.
+                'הערות': '',
+                'תאריך סיום צפוי': status === 'פתוח' ? futureDate : '', // Simulate expected end date for open orders
+                'הערות סיום': '',
+                'תאריך סגירה': status === 'סגור' ? defaultDate : '', // If closed, set close date as order date
+                'ימים שעברו (עלתה)': '', // Not explicitly used in logic, but included for completeness
+                'טלפון לקוח': customerPhone
+            };
+        });
+
+        // Function to fetch data from Google Sheet
+        // This function is now commented out as we are using static data.
+        // Uncomment it and related calls if you wish to revert to Google Sheets backend.
+        /*
+        const fetchDataFromGoogleSheet = async () => {
+            isLoadingData = true;
+            // document.getElementById('loader').classList.remove('hidden'); 
+
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getData`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const result = await response.json(); 
+
+                if (result.success && Array.isArray(result.data)) {
+                    allOperations = result.data
+                        .map(op => ({
+                            ...op,
+                            'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
+                            'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
+                            'תאריך סגירה': formatDate(op['תאריך סגירה']),
+                        }))
+                        .sort((a, b) => {
+                            const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                            const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                            return dateB - dateA;
+                        });
+                    console.log("Fetched and processed data from Google Sheet:", allOperations); 
+                } else {
+                    console.error("Received data is not an array or success is false:", result);
+                    showStatusMessage("שגיאה: הנתונים שהתקבלו מגיליון גוגל אינם בפורמט צפוי או שהייתה שגיאה בשרת: " + (result.message || 'אין הודעה ספציפית'), 'error');
+                    allOperations = []; 
+                }
+
+                renderDashboard();
+                renderInventory();
+                renderTreatmentBoard();
+
+            } catch (error) {
+                console.error("Error fetching data from Google Sheet:", error);
+                showStatusMessage("שגיאה בטעינת הנתונים מגיליון גוגל: " + error.message, 'error');
+            } finally {
+                isLoadingData = false;
+                // document.getElementById('loader').classList.add('hidden');
+            }
+        };
+        */
+
+        // Function to add new order to Google Sheet (still uses API as it's a write operation)
+        const addNewOrderToSheet = async (orderData) => {
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=addOrder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json', 
+                    },
+                    body: JSON.stringify(orderData) 
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatusMessage('ההזמנה נוספה בהצלחה לגיליון!', 'success');
+                    // If using static data, we'd update the allOperations array directly here
+                    // For now, it will only log to the sheet, not update the local static data automatically
+                    // To add to local static data: allOperations.unshift(orderData); renderAll();
+                } else {
+                    showStatusMessage('שגיאה בהוספת ההזמנה: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding order to sheet:', error);
+                showStatusMessage('שגיאה בתקשורת עם השרת בעת הוספת הזמנה.', 'error');
+            }
+        };
+
+        // Custom status message display (instead of alert)
+        const showStatusMessage = (message, type) => {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `fixed bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white font-semibold z-50`;
+            if (type === 'success') {
+                statusDiv.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                statusDiv.classList.add('bg-red-600');
+            } else {
+                statusDiv.classList.add('bg-gray-700');
+            }
+            statusDiv.textContent = message;
+            document.body.appendChild(statusDiv);
+            setTimeout(() => {
+                statusDiv.remove();
+            }, 5000); // Message disappears after 5 seconds
+        };
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Assign static data for operations
+            allOperations = fullStaticData.map(op => ({
+                ...op,
+                // Convert relevant date strings to Date objects for calculations
+                'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
+                'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
+                'תאריך סגירה': formatDate(op['תאריך סגירה']),
+            })).sort((a, b) => {
+                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                return dateB - dateA;
+            });
+            console.log("Loaded static data:", allOperations);
+            renderDashboard(); // Initial render with static data
+            renderInventory();
+            renderTreatmentBoard();
+
+            document.getElementById('main-search').addEventListener('input', renderAllOperationsTable);
+        });
+
+        const getKPIs = () => {
+            let totalOverdueCustomerNames = new Set(); // Using Set to count unique overdue customers
+            let currentActiveContainers = new Set();
+            let currentAvailableContainers = new Set();
+
+            // To accurately track container status (in_use vs available), we need to process operations in chronological order.
+            // However, for KPIs, we need the CURRENT status of containers.
+            // Let's create a map of container_number -> {status: 'in_use'/'available', lastOpDate, currentCustomerName, lastOpDocId}
+            const containerHistoryForStatus = {};
+
+            // Sort all operations by date to correctly determine latest container status
+            allOperations.slice().sort((a, b) => {
+                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                return dateA - dateB; // Sort ascending
+            }).forEach(op => {
+                const opDate = op['תאריך הזמנה'];
+                if (!opDate || isNaN(opDate.getTime())) return;
+
+                const containersDropped = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containersLifted = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+
+                // A container is 'in_use' if it was dropped/placed and not yet lifted/removed
+                containersDropped.forEach(containerNum => {
+                    containerHistoryForStatus[containerNum] = {
+                        status: 'in_use',
+                        customerName: op['שם לקוח'],
+                        lastActionDate: opDate,
+                        latestOperationDocId: op['תעודה']
+                    };
+                });
+
+                // A container is 'available' if it was lifted/removed
+                containersLifted.forEach(containerNum => {
+                    containerHistoryForStatus[containerNum] = {
+                        status: 'available',
+                        lastCustomerName: op['שם לקוח'], // The customer it was removed from
+                        lastActionDate: opDate,
+                        latestOperationDocId: op['תעודה']
+                    };
+                });
+            });
+
+            // Now, iterate through the determined current status of each container
+            for (const containerNum in containerHistoryForStatus) {
+                const info = containerHistoryForStatus[containerNum];
+                if (info.status === 'in_use') {
+                    currentActiveContainers.add(containerNum);
+                    const daysInRental = daysSince(info.lastActionDate);
+                    if (daysInRental >= 10) {
+                        totalOverdueCustomerNames.add(info.customerName);
+                    }
+                } else if (info.status === 'available') {
+                    currentAvailableContainers.add(containerNum);
+                }
+            }
+
+            return {
+                activeContainers: currentActiveContainers.size,
+                overdueCustomers: totalOverdueCustomerNames.size,
+                availableContainers: currentAvailableContainers.size,
+                totalOperations: allOperations.length,
+            };
+        };
+
+
+        const renderDashboard = () => {
+            const { activeContainers, overdueCustomers, availableContainers, totalOperations } = getKPIs();
+            document.getElementById('kpi-active-containers').textContent = activeContainers;
+            document.getElementById('kpi-overdue-customers').textContent = overdueCustomers;
+            document.getElementById('kpi-available-containers').textContent = availableContainers;
+            document.getElementById('kpi-total-operations').textContent = totalOperations;
+            
+            renderAllOperationsTable();
+            renderCharts();
+        };
+
+        const renderAllOperationsTable = () => {
+            const searchTerm = document.getElementById('main-search').value.toLowerCase();
+            const tableBody = document.getElementById('all-operations-table');
+            tableBody.innerHTML = '';
+            
+            const filteredOps = allOperations.filter(op => 
+                (op['שם לקוח'] && op['שם לקוח'].toLowerCase().includes(searchTerm)) ||
+                (op['תעודה'] && String(op['תעודה']).toLowerCase().includes(searchTerm)) || 
+                (op['שם סוכן'] && op['שם סוכן'].toLowerCase().includes(searchTerm)) ||
+                (String(op['מספר מכולה ירדה'] || '').toLowerCase().includes(searchTerm)) ||
+                (String(op['מספר מכולה עלתה'] || '').toLowerCase().includes(searchTerm))
+            );
+
+            filteredOps.slice(0, 100).forEach(op => { 
+                const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
+                let displayStatusText, displayStatusClass;
+
+                // Determine status dynamically for display
+                if (op['סטטוס'] === 'סגור') { // If explicit status is 'סגור' from data, it's closed
+                    displayStatusText = 'סגור';
+                    displayStatusClass = 'status-gray';
+                } else if (days !== '-' && days >= 10) { 
+                    displayStatusText = 'חריגה';
+                    displayStatusClass = 'status-red';
+                } else { 
+                    displayStatusText = 'פעיל';
+                    displayStatusClass = 'status-green';
+                }
+
+                const row = `
+                    <tr class="hover:bg-gray-50 cursor-pointer">
+                        <td class="py-3 px-4">${op['תאריך הזמנה'] ? op['תאריך הזמנה'].toLocaleDateString('he-IL') : ''}</td>
+                        <td class="py-3 px-4">${op['תעודה']}</td>
+                        <td class="py-3 px-4 font-semibold text-gray-700">${op['שם לקוח']}</td>
+                        <td class="py-3 px-4">${op['שם סוכן']}</td>
+                        <td class="py-3 px-4">${op['סוג פעולה']}</td>
+                        <td class="py-3 px-4">${days}</td>
+                        <td class="py-3 px-4"><span class="status-badge ${displayStatusClass}">${displayStatusText}</span></td>
+                        <td class="py-3 px-4">
+                            <button onclick="openWhatsAppModal(event, '${op['טלפון לקוח']}', '${op['שם לקוח']}', '${op['תעודה']}', ${days}, '${op['מספר מכולה ירדה'] || op['מספר מכולה עלתה'] || ''}', '${op['תאריך סיום צפוי'] ? op['תאריך סיום צפוי'].toLocaleDateString('he-IL') : ''}', '${op['כתובת']}')" class="text-green-500 hover:text-green-600 focus:outline-none">
+                                <i class="fab fa-whatsapp text-xl"></i>
+                            </button>
+                            <button onclick="openModal('${op['תעודה']}')" class="text-blue-600 hover:text-blue-700 ml-2 focus:outline-none">
+                                <i class="fas fa-eye text-xl"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        };
+
+        const renderCharts = () => {
+            const agentCounts = allOperations.reduce((acc, op) => {
+                const agent = op['שם סוכן'] || 'לא ידוע';
+                acc[agent] = (acc[agent] || 0) + 1;
+                return acc;
+            }, {});
+            // Destroy existing chart if it exists to prevent rendering issues
+            if (charts.agent) charts.agent.destroy();
+            charts.agent = new Chart(document.getElementById('agentActivityChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(agentCounts).map(label => {
+                        if (label.length > 16) {
+                            return label.match(/.{1,8}/g).join('\n'); 
+                        }
+                        return label;
+                    }),
+                    datasets: [{
+                        label: 'מספר פעולות',
+                        data: Object.values(agentCounts),
+                        backgroundColor: '#8b5cf6',
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                     plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label.replace(/\n/g, ' '); 
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const timelineCounts = allOperations.reduce((acc, op) => {
+                if (op['תאריך הזמנה'] && !isNaN(op['תאריך הזמנה'].getTime())) {
+                    const month = op['תאריך הזמנה'].toISOString().slice(0, 7);
+                    acc[month] = (acc[month] || 0) + 1;
+                }
+                return acc;
+            }, {});
+            const sortedTimeline = Object.entries(timelineCounts).sort((a, b) => a[0].localeCompare(b[0]));
+            // Destroy existing chart if it exists
+            if (charts.timeline) charts.timeline.destroy();
+            charts.timeline = new Chart(document.getElementById('operationsTimelineChart'), {
+                type: 'line',
+                data: {
+                    labels: sortedTimeline.map(e => e[0]),
+                    datasets: [{
+                        label: 'כמות פעולות חודשית',
+                        data: sortedTimeline.map(e => e[1]),
+                        borderColor: '#6d28d9',
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                 options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        };
+        
+        const renderInventory = () => {
+            const inUseBody = document.getElementById('in-use-containers-table');
+            const availableBody = document.getElementById('available-containers-table');
+            inUseBody.innerHTML = '';
+            availableBody.innerHTML = '';
+
+            const containerCurrentStatus = {}; 
+
+            // Determine the latest status for each container based on all operations
+            allOperations.slice().sort((a, b) => {
+                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                return dateA - dateB; // Sort ascending to get the latest state
+            }).forEach(op => {
+                const containersDropped = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containersLifted = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+
+                // A container is 'in_use' if it was dropped/placed and not yet lifted/removed
+                containersDropped.forEach(containerNum => {
+                    containerCurrentStatus[containerNum] = {
+                        status: 'in_use',
+                        customerName: op['שם לקוח'],
+                        lastActionDate: op['תאריך הזמנה'],
+                        latestOperationDocId: op['תעודה']
+                    };
+                });
+
+                // A container is 'available' if it was lifted/removed
+                containersLifted.forEach(containerNum => {
+                    containerCurrentStatus[containerNum] = {
+                        status: 'available',
+                        lastCustomerName: op['שם לקוח'], // The customer it was removed from
+                        lastActionDate: op['תאריך הזמנה'],
+                        latestOperationDocId: op['תעודה']
+                    };
+                });
+            });
+            
+            const uniqueContainersSorted = Object.keys(containerCurrentStatus).sort((a,b) => parseInt(a) - parseInt(b));
+
+            uniqueContainersSorted.forEach(containerNum => {
+                const statusData = containerCurrentStatus[containerNum];
+                if (statusData.status === 'in_use') {
+                    const days = daysSince(statusData.lastActionDate);
+                    const row = `
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-3 px-4">${containerNum}</td>
+                            <td class="py-3 px-4 font-semibold">${statusData.customerName}</td>
+                            <td class="py-3 px-4">${statusData.lastActionDate ? statusData.lastActionDate.toLocaleDateString('he-IL') : ''}</td>
+                            <td class="py-3 px-4 ${days >= 10 ? 'text-red-600 font-bold' : ''}">${days}</td>
+                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.latestOperationDocId}')">צפה</button></td>
+                        </tr>`;
+                    inUseBody.innerHTML += row;
+                } else if (statusData.status === 'available') {
+                    const row = `
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-3 px-4">${containerNum}</td>
+                            <td class="py-3 px-4">${statusData.lastActionDate ? statusData.lastActionDate.toLocaleDateString('he-IL') : ''}</td>
+                            <td class="py-3 px-4">${statusData.lastCustomerName || 'לא ידוע'}</td>
+                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.latestOperationDocId}')">צפה</button></td>
+                        </tr>`;
+                    availableBody.innerHTML += row;
+                }
+            });
+
+            document.getElementById('kpi-active-containers').textContent = inUseBody.rows.length;
+            document.getElementById('kpi-available-containers').textContent = availableBody.rows.length;
+        };
+
+        const renderTreatmentBoard = () => {
+            const board = document.getElementById('treatment-board');
+            board.innerHTML = '';
+            
+            // Filter operations that are 'פתוח' (active) AND overdue (>= 10 days)
+            const overdueOperations = allOperations.filter(op => {
+                const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : -1; // -1 to handle invalid dates
+                // Only consider operations that are not explicitly marked 'סגור' in the data
+                // and whose calculated days make them overdue
+                return op['סטטוס'] !== 'סגור' && days >= 10;
+            });
+            
+            if (overdueOperations.length === 0) {
+                board.innerHTML = `<p class="text-center text-gray-600 col-span-full">אין לקוחות בחריגה כרגע. כל הכבוד! 🎉</p>`;
+                return;
+            }
+
+            overdueOperations.forEach(op => {
+                const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
+                const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containerDisplay = containersTaken.length > 0 ? `ירדה: ${containersTaken.join(', ')}` : '';
+                if (containersBrought.length > 0) {
+                    containerDisplay += (containerDisplay ? ', ' : '') + `עלתה: ${containersBrought.join(', ')}`;
+                }
+                const containerNumbersForMsg = [...containersTaken, ...containersBrought].filter(Boolean).join(', ');
+
+
+                const card = `
+                    <div class="kpi-card bg-white border-l-4 border-red-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold text-lg">${op['שם לקוח']}</h4>
+                                <p class="text-sm text-gray-500">תעודה: ${op['תעודה']}</p>
+                                <p class="text-sm text-gray-500">מכולה: ${containerDisplay || 'לא צוין'}</p>
+                            </div>
+                            <span class="font-bold text-xl text-red-600">${days} ימים חריגה</span>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center">
+                            <button class="px-3 py-1 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm" onclick="openModal('${op['תעודה']}')">פרטי לקוח</button>
+                            <button onclick="openWhatsAppModal(event, '${op['טלפון לקוח']}', '${op['שם לקוח']}', '${op['תעודה']}', ${days}, '${containerNumbersForMsg}', '${op['תאריך סיום צפוי'] ? op['תאריך סיום צפוי'].toLocaleDateString('he-IL') : ''}', '${op['כתובת']}')" class="text-green-500 hover:text-green-600 focus:outline-none">
+                                <i class="fab fa-whatsapp text-2xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                board.innerHTML += card;
+            });
+        };
+        
+        // Changed openModal to accept docId instead of customerId, for more precise history
+        const openModal = (docId) => {
+            const customerOp = allOperations.find(op => String(op['תעודה']) === String(docId));
+            if (!customerOp) {
+                showStatusMessage('לא נמצאה הזמנה עבור תעודה זו.', 'error');
+                return;
+            }
+
+            // Find all operations for this customer name
+            const customerOps = allOperations.filter(op => op['שם לקוח'] === customerOp['שם לקוח'])
+                                            .sort((a, b) => {
+                                                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                                                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                                                return dateB - dateA; // Sort descending for latest at top
+                                            });
+
+            document.getElementById('modal-customer-name').textContent = customerOp['שם לקוח'];
+
+            const totalOps = customerOps.length;
+            const totalPlacements = customerOps.filter(op => op['סוג פעולה'] === 'הצבה').length;
+            const totalRemovals = customerOps.filter(op => op['סוג פעולה'] === 'הוצאה').length;
+            
+            document.getElementById('modal-customer-summary').innerHTML = `
+                <div class="text-center"><p class="text-2xl font-bold">${totalOps}</p><p class="text-sm text-gray-500">סה"כ פעולות</p></div>
+                <div class="text-center"><p class="text-2xl font-bold">${totalPlacements}</p><p class="text-sm text-gray-500">הצבות</p></div>
+                <div class="text-center"><p class="text-2xl font-bold">${totalRemovals}</p><p class="text-sm text-gray-500">הוצאות</p></div>
+            `;
+
+            // Collect unique container numbers for this customer
+            const uniqueContainersForCustomer = new Set();
+            customerOps.forEach(op => {
+                String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(num => uniqueContainersForCustomer.add(num));
+                String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(num => uniqueContainersForCustomer.add(num));
+            });
+            document.getElementById('customer-container-list').textContent = 
+                uniqueContainersForCustomer.size > 0 ? Array.from(uniqueContainersForCustomer).sort((a,b) => parseInt(a) - parseInt(b)).join(', ') : 'אין מכולות משויכות ללקוח זה.';
+
+
+            const historyTable = document.getElementById('modal-customer-history-table');
+            historyTable.innerHTML = '';
+            customerOps.forEach(op => {
+                 const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
+                 let displayStatusText, displayStatusClass;
+                 if (op['סטטוס'] === 'סגור') {
+                    displayStatusText = 'סגור'; displayStatusClass = 'status-gray';
+                 } else if (days !== '-' && days >= 10) { 
+                    displayStatusText = 'חריגה'; displayStatusClass = 'status-red';
+                 } else { 
+                    displayStatusText = 'פעיל'; displayStatusClass = 'status-green';
+                 }
+                const row = `
+                    <tr>
+                        <td class="py-2 px-3">${op['תאריך הזמנה'] ? op['תאריך הזמנה'].toLocaleDateString('he-IL') : ''}</td>
+                        <td class="py-2 px-3">${op['תעודה']}</td>
+                        <td class="py-2 px-3">${op['סוג פעולה']}</td>
+                        <td class="py-2 px-3"><span class="status-badge ${displayStatusClass}">${displayStatusText}</span></td>
+                    </tr>`;
+                historyTable.innerHTML += row;
+            });
+
+            document.getElementById('customer-history-modal').classList.remove('hidden');
+            document.getElementById('customer-history-modal').classList.add('flex');
+        };
+
+        const closeModal = () => {
+            document.getElementById('customer-history-modal').classList.add('hidden');
+            document.getElementById('customer-history-modal').classList.remove('flex');
+        };
+
+        const getSuggestedMessageIdForOrder = (order) => {
+            const daysInRental = order['תאריך הזמנה'] ? daysSince(order['תאריך הזמנה']) : 0;
+            
+            // Check for overdue status (dynamic calculation)
+            if (order['סטטוס'] !== 'סגור' && daysInRental >= 10) { 
+                if (daysInRental <= 7) return 'overdue_7_days'; 
+                if (daysInRental <= 30) return 'overdue_30_days';
+                return 'overdue_long';
+            }
+            
+            // Check for approaching due date for open orders with an expected end date
+            if (order['סטטוס'] === 'פתוח' && order['תאריך סיום צפוי'] && !isNaN(order['תאריך סיום צפוי'].getTime())) {
+                const expectedEndDate = order['תאריך סיום צפוי'];
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const daysUntilDue = Math.floor((expectedEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                
+                if (daysUntilDue >= 0 && daysUntilDue <= 3) return 'approaching_due_3_days';
+                if (daysUntilDue > 3 && daysUntilDue <= 7) return 'approaching_due_7_days';
+            }
+
+            // Check if it's a relatively new placement for a new customer
+            if (order['סוג פעולה'] === 'הצבה' && daysInRental <= 7) { 
+                const customerOrders = allOperations.filter(op => op['שם לקוח'] === order['שם לקוח']);
+                // This logic is tricky with static data as it depends on order of data entry,
+                // but conceptually, if a customer has very few orders and this is recent, it might be a welcome.
+                // For simplicity, we'll keep the logic as is for now.
+                if (customerOrders.length <= 2 && String(customerOrders[0]['תעודה']) === String(order['תעודה'])) {
+                    return 'new_customer_welcome';
+                }
+            }
+            
+            const customerCity = getCityFromAddress(order['כתובת']);
+            if (customerCity && cityGuidelines[customerCity]) {
+                return `city_guideline_${customerCity}`;
+            }
+
+            return 'general_inquiry'; 
+        };
+
+        const openWhatsAppModal = (event, phoneNumber, customerName, docId, daysOverdue, containerNum, expectedEndDateFormatted, customerAddress) => {
+            event.stopPropagation();
+            const modal = document.getElementById('whatsapp-modal');
+            const phoneInput = document.getElementById('whatsapp-phone-input');
+            const messageOptionsListDiv = document.getElementById('message-options-list');
+            const whatsappMessageTextarea = document.getElementById('whatsapp-message-textarea');
+            const whatsappDocIdInput = document.getElementById('whatsapp-doc-id');
+
+            phoneInput.value = phoneNumber.startsWith('972') ? phoneNumber : `972${phoneNumber.substring(1)}`;
+            whatsappDocIdInput.value = docId;
+
+            // Find the full operation object to pass to getSuggestedMessageIdForOrder
+            const fullOrderOp = allOperations.find(op => String(op['תעודה']) === String(docId));
+            
+            // Create a dummy order object with parsed dates and calculated days for suggestion logic
+            // Ensure dates are Date objects for calculations in getSuggestedMessageIdForOrder
+            const dummyOrderForSuggestion = {
+                'סטטוס': fullOrderOp ? fullOrderOp['סטטוס'] : 'פתוח', 
+                'תאריך הזמנה': fullOrderOp ? fullOrderOp['תאריך הזמנה'] : new Date(new Date().getTime() - daysOverdue * 24 * 60 * 60 * 1000), 
+                'תאריך סיום צפוי': fullOrderOp ? fullOrderOp['תאריך סיום צפוי'] : (expectedEndDateFormatted ? formatDate(expectedEndDateFormatted) : null),
+                'סוג פעולה': fullOrderOp ? fullOrderOp['סוג פעולה'] : '',
+                'טלפון לקוח': phoneNumber,
+                'כתובת': customerAddress,
+                'תעודה': docId,
+                'שם לקוח': customerName 
+            };
+            const suggestedMessageId = getSuggestedMessageIdForOrder(dummyOrderForSuggestion);
+
+
+            messageOptionsListDiv.innerHTML = '';
+            
+            const allMsgs = [...whatsappMessages];
+            const customerCity = getCityFromAddress(customerAddress);
+            if (customerCity && cityGuidelines[customerCity]) {
+                const guideline = cityGuidelines[customerCity];
+                allMsgs.unshift({
+                    id: `city_guideline_${customerCity}`,
+                    text: `**הנחיית עיריית ${customerCity}:**\n${guideline.text}\n\nלמידע וטפסים נוספים: ${guideline.link}`,
+                    category: 'היתרים עירוניים',
+                    placeholders: [],
+                    emoji: guideline.emoji
+                });
+            }
+
+            allMsgs.forEach(msg => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = `message-option-item p-3 rounded-md cursor-pointer hover:bg-gray-100`;
+                if (msg.id === suggestedMessageId) {
+                    optionDiv.classList.add('bg-blue-100', 'text-blue-800');
+                }
+                const displayEmoji = msg.category === 'משפטי' ? '' : (msg.emoji || '');
+                optionDiv.innerHTML = `<strong>${displayEmoji} ${msg.category}:</strong> ${msg.text.replace(/\[.*?\]/g, '...').substring(0, 70)}...`;
+                optionDiv.onclick = () => {
+                    document.querySelectorAll('.message-option-item').forEach(item => item.classList.remove('bg-blue-100', 'text-blue-800'));
+                    optionDiv.classList.add('bg-blue-100', 'text-blue-800');
+                    const placeholders = {
+                        'שם לקוח': customerName,
+                        'ימים שעברו': daysOverdue,
+                        'מספר מכולה': containerNum,
+                        'תעודה': docId,
+                        'תאריך סיום צפוי': expectedEndDateFormatted,
+                        'מספר טלפון חברה': companyInfo.phoneNumber,
+                        'טלפון חברה': companyInfo.companyPhone,
+                        'שם החברה': companyInfo.companyName,
+                        'לינק לביקורת': 'https://example.com/review'
+                    };
+                    selectAndTypeMessage(msg.id, placeholders);
+                };
+                messageOptionsListDiv.appendChild(optionDiv);
+            });
+
+            const defaultSelection = messageOptionsListDiv.querySelector('.message-option-item.bg-blue-100');
+            if (defaultSelection) {
+                defaultSelection.click();
+            } else if (allMsgs.length > 0) {
+                messageOptionsListDiv.children[0].click();
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        const closeModalWhatsApp = () => {
+            document.getElementById('whatsapp-modal').classList.add('hidden');
+            document.getElementById('whatsapp-modal').classList.remove('flex');
+            clearInterval(typingInterval);
+        };
+
+        const selectAndTypeMessage = (messageId, placeholders = {}) => {
+            clearInterval(typingInterval);
+            const allMessagesWithGuidelines = [
+                ...whatsappMessages,
+                ...Object.values(cityGuidelines).map(g => ({
+                    id: `city_guideline_${g.id.split('_')[0]}`,
+                    text: g.text,
+                    category: g.category,
+                    placeholders: g.placeholders,
+                    emoji: g.emoji
+                }))
+            ];
+            const message = allMessagesWithGuidelines.find(msg => msg.id === messageId);
+            const typingDisplay = document.getElementById('typing-effect-display');
+            const whatsappMessageTextarea = document.getElementById('whatsapp-message-textarea');
+
+            if (message) {
+                currentMessageFullText = message.text;
+                for (const key in placeholders) {
+                    currentMessageFullText = currentMessageFullText.replace(new RegExp(`\\[\\*\\*${key}\\*\\*\\]|\\[${key}\\]`, 'g'), placeholders[key]);
+                }
+                
+                typingIndex = 0;
+                typingDisplay.textContent = '';
+                whatsappMessageTextarea.value = '';
+
+                typingInterval = setInterval(() => {
+                    if (typingIndex < currentMessageFullText.length) {
+                        typingDisplay.textContent += currentMessageFullText.charAt(typingIndex);
+                        typingIndex++;
+                    } else {
+                        clearInterval(typingInterval);
+                        whatsappMessageTextarea.value = currentMessageFullText;
+                        typingDisplay.textContent = '';
+                    }
+                }, 30);
+            }
+        };
+
+        const sendWhatsAppMessage = async () => {
+            const phoneNumber = document.getElementById('whatsapp-phone-input').value.trim().replace(/\D/g, '');
+            const message = document.getElementById('whatsapp-message-textarea').value.trim();
+            const docId = document.getElementById('whatsapp-doc-id').value;
+
+            if (!phoneNumber) {
+                showStatusMessage('אנא הזן מספר טלפון תקין.', 'error');
+                return;
+            }
+            if (!message) {
+                showStatusMessage('תוכן ההודעה לא יכול להיות ריק.', 'error');
+                return;
+            }
+
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            closeModalWhatsApp();
+
+            // The following block is for logging to Google Sheet via Apps Script.
+            // If you are using only static data and don't need logging, you can remove this.
+            if (docId) {
+                let retries = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000;
+
+                while (retries < maxRetries) {
+                    try {
+                        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=logWhatsAppMessage&docId=${encodeURIComponent(docId)}&message=${encodeURIComponent(message)}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            showStatusMessage('ההודעה נשלחה ותועדה בהצלחה!', 'success');
+                            return;
+                        } else if (data.message && data.message.includes('Service invoked too many times')) {
+                            const delay = baseDelay * Math.pow(2, retries);
+                            console.warn(`API rate limit hit. Retrying in ${delay / 1000} seconds... (attempt ${retries + 1})`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            retries++;
+                        } else {
+                            showStatusMessage('שגיאה בתיעוד ההודעה: ' + data.message, 'error');
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Fetch error:', error);
+                        showStatusMessage('שגיאה בתקשורת עם השרת: ' + error.message, 'error');
+                        return;
+                    }
+                }
+                showStatusMessage('נכשל תיעוד ההודעה לאחר מספר ניסיונות חוזרים.', 'error');
+            } else {
+                showStatusMessage('ההודעה נשלחה, אך לא שויכה למסמך (חסר מספר תעודה).', 'warning');
+            }
+        };
+
+        const filterMessageOptions = () => {
+            const input = document.getElementById('message-filter-input');
+            const filter = input.value.toLowerCase();
+            const messageItems = document.querySelectorAll('#message-options-list .message-option-item');
+
+            messageItems.forEach(item => {
+                const text = item.textContent || item.innerText;
+                if (text.toLowerCase().includes(filter)) {
+                    item.style.display = "";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        };
+
+        const toggleMessageOptions = () => {
+            const container = document.getElementById('whatsapp-message-options-container');
+            container.classList.toggle('hidden');
+        };
+
+        // New Order Modal Functions
+        const openNewOrderModal = () => {
+            document.getElementById('new-order-modal').classList.remove('hidden');
+            document.getElementById('new-order-modal').classList.add('flex');
+            // Pre-fill some fields if desired, e.g., current date
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('new-order-date').value = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('new-order-status').value = 'פתוח'; // Default status
+        };
+
+        const closeNewOrderModal = () => {
+            document.getElementById('new-order-modal').classList.add('hidden');
+            document.getElementById('new-order-modal').classList.remove('flex');
+            document.getElementById('new-order-form').reset(); // Clear form inputs
+        };
+
+        const submitNewOrder = async () => {
+            const form = document.getElementById('new-order-form');
+            if (!form.checkValidity()) { 
+                form.reportValidity();
+                return;
+            }
+            const formData = new FormData(form);
+            const order = {};
+            // Collect all form data
+            formData.forEach((value, key) => {
+                order[key] = value;
+            });
+
+            // Ensure action type is clean (remove typo if any)
+            if (order['סוג פעולה'] === 'החalפה') {
+                order['סוג פעולה'] = 'החלפה';
+            }
+
+            // Calculate 'ימים שעברו' if 'תאריך הזמנה' is provided
+            const orderDateObj = order['תאריך הזמנה'] ? formatDate(order['תאריך הזמנה']) : null;
+            order['ימים שעברו'] = orderDateObj && !isNaN(orderDateObj.getTime()) ? daysSince(orderDateObj) : '';
+
+            // Combine container numbers for 'מספרי מכולות' if not explicitly provided
+            const containerDropped = order['מספר מכולה ירדה'] || '';
+            const containerLifted = order['מספר מכולה עלתה'] || '';
+            if (containerDropped && containerLifted) {
+                order['מספרי מכולות'] = `${containerDropped},${containerLifted}`;
+            } else {
+                order['מספרי מכולות'] = containerDropped || containerLifted || '';
+            }
+
+            // Ensure all headers expected by the Google Sheet are present, even if empty
+            // This is primarily for consistency if sending to Google Sheet,
+            // or for structure if you later process this data client-side.
+            const sheetHeaders = [
+                "תאריך הזמנה", "תעודה", "שם סוכן", "שם לקוח", "כתובת", "סוג פעולה", 
+                "ימים שעברו", "מספר מכולה ירדה", "מספר מכולה עלתה", "מספרי מכולות", 
+                "סטטוס", "הערות", "תאריך סיום צפוי", "הערות סיום", "תאריך סגירה", 
+                "ימים שעברו (עלתה)", "טלפון לקוח"
+            ];
+            const completeOrder = {};
+            sheetHeaders.forEach(header => {
+                completeOrder[header] = order[header] !== undefined ? order[header] : '';
+            });
+            
+            // Format dates back to YYYY-MM-DD string for the sheet if they were Date objects
+            if (completeOrder['תאריך הזמנה'] instanceof Date) {
+                completeOrder['תאריך הזמנה'] = completeOrder['תאריך הזמנה'].toISOString().split('T')[0];
+            }
+            if (completeOrder['תאריך סיום צפוי'] instanceof Date) {
+                completeOrder['תאריך סיום צפוי'] = completeOrder['תאריך סיום צפוי'].toISOString().split('T')[0];
+            }
+            if (completeOrder['תאריך סגירה'] instanceof Date) {
+                completeOrder['תאריך סגירה'] = completeOrder['תאריך סגירה'].toISOString().split('T')[0];
+            }
+            
+            await addNewOrderToSheet(completeOrder); // This sends to Google Sheet
+            
+            // If you want to update the local static data and re-render the app:
+            // const newOpForLocal = { ...completeOrder, 
+            //     'תאריך הזמנה': formatDate(completeOrder['תאריך הזמנה']),
+            //     'תאריך סיום צפוי': formatDate(completeOrder['תאריך סיום צפוי']),
+            //     'תאריך סגירה': formatDate(completeOrder['תאריך סגירה']),
+            // };
+            // allOperations.unshift(newOpForLocal); // Add to beginning
+            // allOperations.sort((a,b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
+            // renderDashboard();
+            // renderInventory();
+            // renderTreatmentBoard();
+
+            closeNewOrderModal();
+        };
+
+    </script>
+</body>
+</html>
