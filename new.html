@@ -286,8 +286,8 @@
         </div>
     </div>
 
-
-<script>
+    <!-- JavaScript code -->
+    <script>
         const fullTrackingDataRaw = `תאריך הזמנה,תעודה,שם סוכן,שם לקוח,כתובת,סוג פעולה,ימים שעברו,מספר מכולה ירדה,מספר מכולה עלתה,מספרי מכולות,סטטוס,הערות,תאריך סיום צפוי,הערות סיום,תאריך סגירה,ימים שעברו (עלתה),טלפון לקוח
 2025-07-24,6713571,אגבאריה/שארק,א.ערן אזולאי - אנקורים,אנקורים 2 רמת גן,החלפה,25,209,9,9,פתוח,רוצה כמה ימים,07/08/2025,,,,508860896
 2025-07-29,6713658,אגבאריה/שארק,"אורבר בנייה/ירמיהו ר""ג",ירמיהו 11 רמת גן,הורדה,20,31,,,פתוח,ביקש כמה ימים,12/08/2025,,,,508860896
@@ -441,7 +441,7 @@
             return Math.floor(diff / (1000 * 60 * 60 * 24));
         };
 
-        // Global functions for HTML onclick attributes
+        // Global functions for HTML onclick attributes (MUST BE GLOBAL)
         const showPage = (pageId) => {
             ['dashboard', 'inventory', 'treatment'].forEach(id => {
                 document.getElementById(`page-${id}`).classList.add('hidden');
@@ -451,7 +451,6 @@
             document.getElementById(`nav-${pageId}`).classList.add('active');
         };
 
-        // ... (rest of your JavaScript functions) ...
         const getCityFromAddress = (address) => {
             if (!address) return null;
             const israeliCities = [
@@ -529,9 +528,9 @@
         };
 
         const companyInfo = {
-            phoneNumber: '972508860896', // WhatsApp number for main shares, for company communication
-            companyPhone: '097602010', // General company phone number
-            companyName: 'ח.סבן' // Company name for greetings
+            phoneNumber: '972508860896', 
+            companyPhone: '097602010', 
+            companyName: 'ח.סבן' 
         };
 
         const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec'; 
@@ -635,7 +634,7 @@
                 (op['שם סוכן'] && op['שם סוכן'].toLowerCase().includes(searchTerm))
             );
 
-            filteredOps.slice(0, 100).forEach(op => { // Limit to 100 rows for performance
+            filteredOps.slice(0, 100).forEach(op => { 
                 const days = (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חריג') && op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
                 let statusText, statusClass;
 
@@ -645,7 +644,7 @@
                 } else if (op['סטטוס'] === 'סגור') {
                     statusText = 'סגור';
                     statusClass = 'status-gray';
-                } else { // 'פתוח'
+                } else { 
                     statusText = 'פעיל';
                     statusClass = 'status-green';
                 }
@@ -674,7 +673,6 @@
         };
 
         const renderCharts = () => {
-            // Agent Activity Chart
             const agentCounts = allOperations.reduce((acc, op) => {
                 const agent = op['שם סוכן'] || 'לא ידוע';
                 acc[agent] = (acc[agent] || 0) + 1;
@@ -686,7 +684,7 @@
                 data: {
                     labels: Object.keys(agentCounts).map(label => {
                         if (label.length > 16) {
-                            return label.match(/.{1,8}/g).join('\n');
+                            return label.match(/.{1,8}/g).join('\n'); 
                         }
                         return label;
                     }),
@@ -703,7 +701,7 @@
                         tooltip: {
                             callbacks: {
                                 title: function(context) {
-                                    return context[0].label.replace(/\n/g, ' ');
+                                    return context[0].label.replace(/\n/g, ' '); 
                                 }
                             }
                         }
@@ -711,7 +709,6 @@
                 }
             });
 
-            // Operations Timeline Chart
             const timelineCounts = allOperations.reduce((acc, op) => {
                 if (op['תאריך הזמנה'] && !isNaN(op['תאריך הזמנה'].getTime())) {
                     const month = op['תאריך הזמנה'].toISOString().slice(0, 7);
@@ -742,7 +739,7 @@
             inUseBody.innerHTML = '';
             availableBody.innerHTML = '';
 
-            const containerHistory = {};
+            const containerHistory = {}; 
 
             allOperations.forEach(op => {
                 const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
@@ -757,7 +754,7 @@
                 });
             });
 
-            const containerCurrentStatus = {};
+            const containerCurrentStatus = {}; 
 
             for (const containerNum in containerHistory) {
                 const history = containerHistory[containerNum].sort((a,b) => (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0) - (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0));
@@ -900,7 +897,7 @@
                     statusText = 'חריגה'; statusClass = 'status-red';
                  } else if (op['סטטוס'] === 'סגור') {
                     statusText = 'סגור'; statusClass = 'status-gray';
-                 } else { // 'פתוח'
+                 } else { 
                     statusText = 'פעיל'; statusClass = 'status-green';
                  }
                 const row = `
@@ -922,7 +919,6 @@
             document.getElementById('customer-history-modal').classList.remove('flex');
         };
 
-        // WhatsApp Messaging Logic
         const getSuggestedMessageIdForOrder = (order) => {
             const daysOverdue = order['תאריך הזמנה'] ? daysSince(order['תאריך הזמנה']) : 0;
             const orderDate = order['תאריך הזמנה'];
@@ -942,13 +938,10 @@
                 if (daysUntilDue <= 7 && daysUntilDue > 3) return 'approaching_due_7_days';
             }
 
-            // Check for new customer logic
-            // Find all operations for this customer to check if this is truly their first.
             if (order['סוג פעולה'] === 'הצבה' && orderDate && daysSinceOrder <= 30) {
                  const customerId = allOperations.find(op => op['טלפון לקוח'] === order['טלפון לקוח'])?.['לקוח'];
                  if (customerId) {
                      const customerOperations = allOperations.filter(op => op['לקוח'] === customerId);
-                     // If this is the only operation for this customer in the loaded data
                      if (customerOperations.length === 1 && customerOperations[0]['תעודה'] === order['תעודה']) {
                          return 'new_customer_welcome';
                      }
@@ -1109,7 +1102,7 @@
 
                 while (retries < maxRetries) {
                     try {
-                        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=logWhatsAppMessage&docId=${encodeURIComponent(docId)}&message=${encodeURIComponent(message)}`);
+                        const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=logWhatsAppMessage&docId=${encodeURIComponent(docId)}&message=${encodeURIComponent(message)}}`);
                         const data = await response.json();
                         if (data.success) {
                             alert('ההודעה נשלחה ותועדה בהצלחה!');
@@ -1158,4 +1151,3 @@
     </script>
 </body>
 </html>
-�
