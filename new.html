@@ -10,7 +10,7 @@
         - KPIs (Total containers, overdue, etc.): Goal=Inform -> Method=Dynamic text in Cards -> Interaction=None -> Justification=Quick, scannable overview.
         - All Operations List: Goal=Organize/Compare -> Method=Interactive HTML Table -> Interaction=Search, Filter, Sort -> Justification=Allows deep-diving into the full dataset.
         - Overdue Orders: Goal=Inform/Act -> Method=Kanban Board & Highlighted Table -> Interaction=Visual grouping, direct links to customer details -> Justification=Focuses attention on urgent tasks.
-        - Operations per Agent: Goal=Compare -> Method=Bar Chart (Chart.js Canvas) -> Interaction=Hover for details -> Justification=Clear visual comparison of agent performance.
+        - Operations per Agent: Goal=Inform/Compare -> Method=Bar Chart (Chart.js Canvas) -> Interaction=Hover for details -> Justification=Clear visual comparison of agent performance.
         - Operations over Time: Goal=Change -> Method=Line Chart (Chart.js Canvas) -> Interaction=Hover for details -> Justification=Shows trends and business activity patterns.
         - Container Status: Goal=Organize -> Method=Two distinct HTML tables (In Use/Available) -> Interaction=Click for history -> Justification=Clear separation of inventory status for operational planning.
     -->
@@ -396,8 +396,7 @@
 
         // Utility functions
         const parseFullTrackingCSV = (data) => {
-            // Assumes data is already parsed JSON from Google Apps Script
-            // and headers are consistent.
+            // This function is now mostly for historical name, as data is expected to be JSON array
             return data;
         };
 
@@ -456,7 +455,7 @@
         };
 
         const whatsappMessages = [
-            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! 🥳 לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
+            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! � לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
             { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** 🗓️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
             { id: 'approaching_due_3_days', text: 'שלום **[שם לקוח]**,\n\nתקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת ממש בקרוב, בעוד **3 ימים** ⚠️. אנא טפל בנושא כדי למנוע חריגות.\n\nאנו לרשותך לכל עזרה! 🙏', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏳' },
             { id: 'overdue_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להודיע לך על חריגה בימי שכירות של המכולה ([**מספר מכולה**]) ב-**[ימים שעברו] ימים** 🚨. נא ליצור קשר עם מחלקת הזמנות **[טלפון חברה]** או להשיב להודעה זו מה תרצה שנבצע (החלפה/הוצאה).', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '❗️' },
@@ -514,6 +513,7 @@
             companyName: 'ח.סבן' 
         };
 
+        // This is your Google Apps Script Web App URL. Make sure it's deployed correctly.
         const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec'; 
 
         let typingInterval;
@@ -533,15 +533,21 @@
                 }
                 const data = await response.json();
 
-                // Parse and sort the fetched data
-                allOperations = data
-                    .map(op => ({
-                        ...op,
-                        'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
-                        'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
-                        'תאריך סגירה': formatDate(op['תאריך סגירה']),
-                    }))
-                    .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
+                // FIX: Check if data is an array before calling .map()
+                if (Array.isArray(data)) {
+                    allOperations = data
+                        .map(op => ({
+                            ...op,
+                            'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
+                            'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
+                            'תאריך סגירה': formatDate(op['תאריך סגירה']),
+                        }))
+                        .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
+                } else {
+                    console.error("Received data is not an array:", data);
+                    showStatusMessage("שגיאה: הנתונים שהתקבלו מגיליון גוגל אינם בפורמט צפוי. בדוק את סקריפט ה-Apps Script שלך.", 'error');
+                    allOperations = []; // Initialize as empty array to prevent further errors
+                }
 
                 renderDashboard();
                 renderInventory();
@@ -872,7 +878,7 @@
             const board = document.getElementById('treatment-board');
             board.innerHTML = '';
             
-            const overdueOperations = allOperations.filter(op => op['סטטוס'] === 'חריג');
+            const overdueOperations = allOperations.filter(op => op['סטטוס'] === 'חורג');
             
             if (overdueOperations.length === 0) {
                 board.innerHTML = `<p class="text-center text-gray-600 col-span-full">אין לקוחות בחריגה כרגע. כל הכבוד! 🎉</p>`;
@@ -887,7 +893,7 @@
                 if (containerNumbersBrought.length > 0) {
                     containerDisplay += (containerDisplay ? ', ' : '') + `עלתה: ${containerNumbersBrought.join(', ')}`;
                 }
-                const containerNumbersForMsg = [...containerNumbersTaken, ...containerNumbersBrought].filter(Boolean).join(', ');
+                const containerNumbersForMsg = [...containerNumbersTaken, ...containersBrought].filter(Boolean).join(', ');
 
 
                 const card = `
@@ -913,7 +919,7 @@
         };
         
         const openModalByCustomerName = (customerName) => {
-            const customerOp = allOperations.find(op => op['שם לקוח'] === customerName && (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חריג'));
+            const customerOp = allOperations.find(op => op['שם לקוח'] === customerName && (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חורג'));
             if (customerOp) {
                 openModal(customerOp['לקוח']);
             }
@@ -939,9 +945,9 @@
             const historyTable = document.getElementById('modal-customer-history-table');
             historyTable.innerHTML = '';
             customerOps.forEach(op => {
-                 const days = (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חריג') && op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
+                 const days = (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חורג') && op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
                  let statusText, statusClass;
-                 if (op['סטטוס'] === 'חריג') {
+                 if (op['סטטוס'] === 'חורג') {
                     statusText = 'חריגה'; statusClass = 'status-red';
                  } else if (op['סטטוס'] === 'סגור') {
                     statusText = 'סגור'; statusClass = 'status-gray';
@@ -1016,7 +1022,7 @@
             whatsappDocIdInput.value = docId;
 
             const dummyOrderForSuggestion = {
-                'סטטוס': (daysOverdue > 10 ? 'חריג' : 'פתוח'), 
+                'סטטוס': (daysOverdue > 10 ? 'חורג' : 'פתוח'), 
                 'תאריך הזמנה': new Date(new Date().getTime() - daysOverdue * 24 * 60 * 60 * 1000), 
                 'תאריך סיום צפוי': expectedEndDateFormatted ? formatDate(expectedEndDateFormatted) : null,
                 'סוג פעולה': 'הצבה',
