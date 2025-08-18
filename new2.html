@@ -395,13 +395,11 @@
     <script>
         // Global state
         let allOperations = [];
+        let historicalOperations = []; // To store static data as historical
         let charts = {};
         let isLoadingData = false; // Added loading state
 
         // Utility functions
-        // This function is now mostly for historical name, as data is expected to be JSON array
-        const parseFullTrackingCSV = (data) => data; 
-
         const formatDate = (dateStr) => {
             if (!dateStr) return null;
             // Handle both YYYY-MM-DD and DD/MM/YYYY formats
@@ -473,7 +471,7 @@
             { id: 'service_feedback', text: 'שלום **[שם לקוח]**,\n\nאנו מקווים ששירותינו עונים על ציפיותיך. נשמח לקבל משוב על החוויה שלך עם מכולה מספר **[מספר מכולה]** כדי שנוכל להשתפר ולהעניק לך שירות טוב יותר. ⭐', category: 'משוב', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '📝' },
             { id: 'holiday_greetings', text: 'חג שמח, **[שם לקוח]**! 🎉\n\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה, בריאות והמון שמחה! 🥳', category: 'עונתי', placeholders: ['שם לקוח', 'שם החברה'], emoji: '🎁' },
             { id: 'special_offer', text: 'שלום **[שם לקוח]**,\n\nיש לנו חדשות מרגשות! 🎁 מבצע מיוחד למכולות חדשות/נוספות עבורך. אל תחמיץ! לפרטים נוספים, השב להודעה זו או התקשר: **[טלפון חברה]**.', category: 'שיווק', placeholders: ['שם לקוח', 'טלפון חברה'], emoji: '✨' },
-            { id: 'follow_up_issue', text: 'שלום **[שם לקוח]**,\n\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה **[תעודה]** 🛠️. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו כדי שנוכל להמשיך לטפל.', category: 'תמיכה', placeholders: ['שם לקוח', 'תעודה'], emoji: '✅' },
+            { id: 'follow_up_issue', text: 'שלום **[שם לקוח]**,\n\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה **[תעודה]** �️. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו כדי שנוכל להמשיך לטפל.', category: 'תמיכה', placeholders: ['שם לקוח', 'תעודה'], emoji: '✅' },
             { id: 'document_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת לשליחת המסמכים החסרים עבור הזמנה **[תעודה]** 📄. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול בהזמנה.\n\nתודה על שיתוף הפעולה!', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '📌' },
             { id: 'service_confirmation', text: 'שלום **[שם לקוח]**,\n\nהשירות שהוזמן (תעודה **[תעודה]**) אושר ויתבצע ב-**[תאריך סיום צפוי]** ✅. תודה שבחרת בנו ושיהיה יום נפלא!', category: 'אישור', placeholders: ['שם לקוח', 'תעודה', 'תאריך סיום צפוי'], emoji: '👍' },
             { id: 'service_delay', text: 'שלום **[שם לקוח]**,\n\nעקב נסיבות בלתי צפויות, ייתכן שיהיה עיכוב קל בטיפול בהזמנה **[תעודה]** ⏱️. אנו מתנצלים על אי הנוחות ונפעל לפתור זאת במהירות האפשרית.\n\nנודיע לך על כל עדכון! 🔜', category: 'מידע', placeholders: ['שם לקוח', 'תעודה'], emoji: '🚧' },
@@ -520,9 +518,6 @@
             companyName: 'ח.סבן' 
         };
 
-        // This is your Google Apps Script Web App URL. Make sure it's deployed correctly.
-        // If you switch back to using Google Sheet as data source, uncomment the fetchDataFromGoogleSheet call below
-        // and re-enable the API key. For now, we are using static data.
         const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzk03pVBEBzHIWkFj1OzqM0T5buH5cfNjD8njGza8AoKWulO1sPtiBrOpUZZItOd_gi/exec'; 
 
         let typingInterval;
@@ -567,7 +562,6 @@
         };
 
         // Raw data from the provided "טבלת פעולות מאוחדת" (CSV format parsed to array of objects)
-        // This data simulates a full dataset for the CRM, adding missing fields.
         const rawDataString = `
 תאריך,תעודה,שם לקוח,שם סוכן,סוג פעולה
 2025-06-01,6712645,בן ענבר-בי"ס ליידי ד,רמי/שארק,החלפה
@@ -779,92 +773,134 @@
 
         const rawParsedData = parseCSVString(rawDataString);
 
-        // Generate the full static data with simulated missing fields
-        const fullStaticData = rawParsedData.map(row => {
+        // Generate the full static data with simulated missing fields for historical purposes
+        historicalOperations = rawParsedData.map(row => {
             const actionType = row['סוג פעולה'].trim();
-            const containerNums = generateContainerNumbers(actionType);
+            const containerNums = generateContainerNumbers(actionType); // These will be consistent for static data
             const customerPhone = getCustomerPhone(row['שם לקוח']);
-            const orderDate = new Date(row['תאריך']); // For daysSince calculation
+            const orderDate = new Date(row['תאריך']); 
 
             let status = 'פתוח';
-            if (actionType === 'הוצאה' || actionType === 'פינוי במקום') { // Assume 'פינוי במקום' also closes an order
+            if (actionType === 'הוצאה' || actionType === 'פינוי במקום') { 
                 status = 'סגור';
             }
 
-            // Default dates for fields that might be empty or need simulation
             const defaultDate = orderDate && !isNaN(orderDate.getTime()) ? orderDate.toISOString().split('T')[0] : '';
-            // Simulate a future date if status is open, 14 days from order date
             const futureDate = orderDate && !isNaN(orderDate.getTime()) ? new Date(orderDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : ''; 
 
             return {
-                'תאריך הזמנה': row['תאריך'],
+                'תאריך הזמנה': row['תאריך'], // Stored as string, converted to Date obj later for calculations
                 'תעודה': row['תעודה'],
                 'שם סוכן': row['שם סוכן'],
                 'שם לקוח': row['שם לקוח'],
-                'כתובת': `${row['שם לקוח'].split('/')[0]} רחוב לדוגמה, עיר כלשהי`, // Simulate address
+                'כתובת': `${row['שם לקוח'].split('/')[0]} רחוב לדוגמה, עיר כלשהי`, 
                 'סוג פעולה': actionType,
-                'ימים שעברו': daysSince(orderDate), // Will be recalculated by the app based on actual current date
+                'ימים שעברו': daysSince(orderDate), 
                 'מספר מכולה ירדה': containerNums.dropped,
                 'מספר מכולה עלתה': containerNums.lifted,
                 'מספרי מכולות': containerNums.all,
-                'סטטוס': status, // Initial status based on action type. Dynamic overdue logic will override for display.
+                'סטטוס': status, 
                 'הערות': '',
-                'תאריך סיום צפוי': status === 'פתוח' ? futureDate : '', // Simulate expected end date for open orders
+                'תאריך סיום צפוי': status === 'פתוח' ? futureDate : '', 
                 'הערות סיום': '',
-                'תאריך סגירה': status === 'סגור' ? defaultDate : '', // If closed, set close date as order date
-                'ימים שעברו (עלתה)': '', // Not explicitly used in logic, but included for completeness
+                'תאריך סגירה': status === 'סגור' ? defaultDate : '', 
+                'ימים שעברו (עלתה)': '', 
                 'טלפון לקוח': customerPhone
             };
         });
+        console.log("Loaded static historical data:", historicalOperations);
+
+        // Function to merge historical data with live data from Google Sheet
+        const mergeData = (staticOps, liveOps) => {
+            const mergedMap = new Map();
+
+            // Add live data, prioritizing it
+            liveOps.forEach(op => {
+                const docId = String(op['תעודה']);
+                // Ensure dates are parsed to Date objects upon loading from sheet
+                mergedMap.set(docId, {
+                    ...op,
+                    'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
+                    'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
+                    'תאריך סגירה': formatDate(op['תאריך סגירה']),
+                });
+            });
+
+            // Add historical data if not already present in live data
+            staticOps.forEach(op => {
+                const docId = String(op['תעודה']);
+                if (!mergedMap.has(docId)) {
+                    mergedMap.set(docId, {
+                        ...op,
+                        // Ensure dates are parsed to Date objects for static data as well
+                        'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
+                        'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
+                        'תאריך סגירה': formatDate(op['תאריך סגירה']),
+                    });
+                }
+            });
+
+            // Convert map back to array and sort by date (descending)
+            return Array.from(mergedMap.values()).sort((a, b) => {
+                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                return dateB - dateA;
+            });
+        };
+
 
         // Function to fetch data from Google Sheet
-        // This function is now commented out as we are using static data.
-        // Uncomment it and related calls if you wish to revert to Google Sheets backend.
-        /*
         const fetchDataFromGoogleSheet = async () => {
             isLoadingData = true;
+            // You can add a visual loader here if needed
             // document.getElementById('loader').classList.remove('hidden'); 
 
-            try {
-                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getData`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            let liveData = [];
+            let retries = 0;
+            const maxRetries = 5;
+            const baseDelay = 1000;
+
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=getData`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const result = await response.json(); 
+
+                    if (result.success && Array.isArray(result.data)) {
+                        liveData = result.data;
+                        console.log("Fetched live data from Google Sheet:", liveData);
+                        break; // Exit retry loop on success
+                    } else {
+                        console.error("Received data is not an array or success is false:", result);
+                        showStatusMessage("שגיאה: הנתונים שהתקבלו מגיליון גוגל אינם בפורמט צפוי או שהייתה שגיאה בשרת: " + (result.message || 'אין הודעה ספציפית'), 'error');
+                        // No break here, allow retry for server errors potentially
+                    }
+                } catch (error) {
+                    console.error("Error fetching data from Google Sheet:", error);
+                    showStatusMessage("שגיאה בטעינת הנתונים מגיליון גוגל: " + error.message, 'error');
                 }
-                const result = await response.json(); 
-
-                if (result.success && Array.isArray(result.data)) {
-                    allOperations = result.data
-                        .map(op => ({
-                            ...op,
-                            'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
-                            'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
-                            'תאריך סגירה': formatDate(op['תאריך סגירה']),
-                        }))
-                        .sort((a, b) => {
-                            const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
-                            const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
-                            return dateB - dateA;
-                        });
-                    console.log("Fetched and processed data from Google Sheet:", allOperations); 
-                } else {
-                    console.error("Received data is not an array or success is false:", result);
-                    showStatusMessage("שגיאה: הנתונים שהתקבלו מגיליון גוגל אינם בפורמט צפוי או שהייתה שגיאה בשרת: " + (result.message || 'אין הודעה ספציפית'), 'error');
-                    allOperations = []; 
+                
+                if (retries < maxRetries - 1) { // Don't delay after the last retry attempt
+                    const delay = baseDelay * Math.pow(2, retries);
+                    console.warn(`API rate limit hit or network error. Retrying in ${delay / 1000} seconds... (attempt ${retries + 1})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
                 }
-
-                renderDashboard();
-                renderInventory();
-                renderTreatmentBoard();
-
-            } catch (error) {
-                console.error("Error fetching data from Google Sheet:", error);
-                showStatusMessage("שגיאה בטעינת הנתונים מגיליון גוגל: " + error.message, 'error');
-            } finally {
-                isLoadingData = false;
-                // document.getElementById('loader').classList.add('hidden');
+                retries++;
             }
+            
+            // Merge historical static data with live data
+            allOperations = mergeData(historicalOperations, liveData);
+            console.log("Merged operations data:", allOperations);
+
+            renderDashboard();
+            renderInventory();
+            renderTreatmentBoard();
+
+            isLoadingData = false;
+            // document.getElementById('loader').classList.add('hidden');
         };
-        */
 
         // Function to add new order to Google Sheet (still uses API as it's a write operation)
         const addNewOrderToSheet = async (orderData) => {
@@ -879,9 +915,8 @@
                 const result = await response.json();
                 if (result.success) {
                     showStatusMessage('ההזמנה נוספה בהצלחה לגיליון!', 'success');
-                    // If using static data, we'd update the allOperations array directly here
-                    // For now, it will only log to the sheet, not update the local static data automatically
-                    // To add to local static data: allOperations.unshift(orderData); renderAll();
+                    // After adding, re-fetch all data to ensure local state is updated with the new entry
+                    await fetchDataFromGoogleSheet(); 
                 } else {
                     showStatusMessage('שגיאה בהוספת ההזמנה: ' + result.message, 'error');
                 }
@@ -911,25 +946,16 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Assign static data for operations
-            allOperations = fullStaticData.map(op => ({
-                ...op,
-                // Convert relevant date strings to Date objects for calculations
-                'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
-                'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
-                'תאריך סגירה': formatDate(op['תאריך סגירה']),
-            })).sort((a, b) => {
-                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
-                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
-                return dateB - dateA;
-            });
-            console.log("Loaded static data:", allOperations);
-            renderDashboard(); // Initial render with static data
-            renderInventory();
-            renderTreatmentBoard();
+            // Initial load of historical data (static)
+            // Then, fetch live data and merge
+            loadAllData();
 
             document.getElementById('main-search').addEventListener('input', renderAllOperationsTable);
         });
+
+        const loadAllData = async () => {
+            await fetchDataFromGoogleSheet(); // This function now handles merging and rendering
+        };
 
         const getKPIs = () => {
             let totalOverdueCustomerNames = new Set(); // Using Set to count unique overdue customers
@@ -937,11 +963,11 @@
             let currentAvailableContainers = new Set();
 
             // To accurately track container status (in_use vs available), we need to process operations in chronological order.
-            // However, for KPIs, we need the CURRENT status of containers.
             // Let's create a map of container_number -> {status: 'in_use'/'available', lastOpDate, currentCustomerName, lastOpDocId}
             const containerHistoryForStatus = {};
 
             // Sort all operations by date to correctly determine latest container status
+            // Use a copy of allOperations to avoid modifying the original during sorting
             allOperations.slice().sort((a, b) => {
                 const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
                 const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
@@ -1156,7 +1182,7 @@
 
                 // A container is 'in_use' if it was dropped/placed and not yet lifted/removed
                 containersDropped.forEach(containerNum => {
-                    containerCurrentStatus[containerNum] = {
+                    containerHistoryForStatus[containerNum] = {
                         status: 'in_use',
                         customerName: op['שם לקוח'],
                         lastActionDate: op['תאריך הזמנה'],
@@ -1166,7 +1192,7 @@
 
                 // A container is 'available' if it was lifted/removed
                 containersLifted.forEach(containerNum => {
-                    containerCurrentStatus[containerNum] = {
+                    containerHistoryForStatus[containerNum] = {
                         status: 'available',
                         lastCustomerName: op['שם לקוח'], // The customer it was removed from
                         lastActionDate: op['תאריך הזמנה'],
@@ -1511,7 +1537,6 @@
             closeModalWhatsApp();
 
             // The following block is for logging to Google Sheet via Apps Script.
-            // If you are using only static data and don't need logging, you can remove this.
             if (docId) {
                 let retries = 0;
                 const maxRetries = 5;
@@ -1616,8 +1641,6 @@
             }
 
             // Ensure all headers expected by the Google Sheet are present, even if empty
-            // This is primarily for consistency if sending to Google Sheet,
-            // or for structure if you later process this data client-side.
             const sheetHeaders = [
                 "תאריך הזמנה", "תעודה", "שם סוכן", "שם לקוח", "כתובת", "סוג פעולה", 
                 "ימים שעברו", "מספר מכולה ירדה", "מספר מכולה עלתה", "מספרי מכולות", 
@@ -1640,19 +1663,7 @@
                 completeOrder['תאריך סגירה'] = completeOrder['תאריך סגירה'].toISOString().split('T')[0];
             }
             
-            await addNewOrderToSheet(completeOrder); // This sends to Google Sheet
-            
-            // If you want to update the local static data and re-render the app:
-            // const newOpForLocal = { ...completeOrder, 
-            //     'תאריך הזמנה': formatDate(completeOrder['תאריך הזמנה']),
-            //     'תאריך סיום צפוי': formatDate(completeOrder['תאריך סיום צפוי']),
-            //     'תאריך סגירה': formatDate(completeOrder['תאריך סגירה']),
-            // };
-            // allOperations.unshift(newOpForLocal); // Add to beginning
-            // allOperations.sort((a,b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
-            // renderDashboard();
-            // renderInventory();
-            // renderTreatmentBoard();
+            await addNewOrderToSheet(completeOrder); 
 
             closeNewOrderModal();
         };
