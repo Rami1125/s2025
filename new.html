@@ -395,10 +395,8 @@
         let isLoadingData = false; // Added loading state
 
         // Utility functions
-        const parseFullTrackingCSV = (data) => {
-            // This function is now mostly for historical name, as data is expected to be JSON array
-            return data;
-        };
+        // This function is now mostly for historical name, as data is expected to be JSON array
+        const parseFullTrackingCSV = (data) => data; 
 
         const formatDate = (dateStr) => {
             if (!dateStr) return null;
@@ -409,7 +407,7 @@
             }
             if (dateStr.includes('/') && dateStr.split('/').length === 3) {
                 const parts = dateStr.split('/');
-                const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); // Assumes DD/MM/YYYY
                 return isNaN(date.getTime()) ? null : date;
             }
             return null;
@@ -417,7 +415,12 @@
 
         const daysSince = (date) => {
             if (!date || isNaN(date.getTime())) return 0;
-            const diff = new Date() - date;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today to start of day
+            const opDate = new Date(date);
+            opDate.setHours(0, 0, 0, 0); // Normalize opDate to start of day
+
+            const diff = today.getTime() - opDate.getTime();
             return Math.floor(diff / (1000 * 60 * 60 * 24));
         };
 
@@ -492,7 +495,7 @@
             'רעננה': {
                 id: 'raanana_permit',
                 text: 'הנחיה חשובה לתושבי רעננה:\nברעננה, חל איסור מוחלט להשאיר מכולות פסולת בניין במקום ציבורי (ברחוב) בסופי שבוע ובחגים. יש לדאוג להזמין פינוי לפני כניסת השבת/חג. קנסות יינתנו למפרים. אנא הקפד על הנחיות אלו.\n\nמידע נוסף: https://www.raanana.muni.il/pages/%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9F',
-                link: 'https://www.raanana.muni.il/pages/%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9F',
+                link: 'https://www.raanana.muni.il/pages/%D7%A4%D7%A1%D7%95%D7%9C%D7%AA-%D7%91%D7%A0%D7%99%D7%99%D7%9A',
                 category: 'היתרים עירוניים',
                 placeholders: [],
                 emoji: '🚫'
@@ -538,11 +541,21 @@
                     allOperations = result.data
                         .map(op => ({
                             ...op,
+                            // Convert relevant date strings to Date objects for calculations
                             'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
                             'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
                             'תאריך סגירה': formatDate(op['תאריך סגירה']),
                         }))
-                        .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
+                        .sort((a, b) => {
+                            // Sort by 'תאריך הזמנה' descending, handle null dates
+                            const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                            const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                            return dateB - dateA;
+                        });
+
+                    // Log raw data for debugging purposes
+                    console.log("Fetched and processed data:", allOperations); 
+
                 } else {
                     console.error("Received data is not an array or success is false:", result);
                     showStatusMessage("שגיאה: הנתונים שהתקבלו מגיליון גוגל אינם בפורמט צפוי או שהייתה שגיאה בשרת: " + (result.message || 'אין הודעה ספציפית'), 'error');
@@ -614,8 +627,10 @@
         const getKPIs = () => {
             let activeContainerLocations = {}; 
             let totalOverdueCustomerIds = new Set(); 
+            let currentlyActiveContainers = new Set(); // To count unique active containers
 
             const detailedContainerStatus = {}; 
+            // Sort data by date ascending to get the latest status for each container
             allOperations.slice().sort((a,b) => (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0) - (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0)).forEach(op => {
                 const opDate = op['תאריך הזמנה'];
                 if (!opDate) return;
@@ -629,7 +644,7 @@
                         customerId: op['לקוח'],
                         customerName: op['שם לקוח'],
                         lastActionDate: opDate,
-                        latestOperation: op
+                        latestOperation: op // Store the entire operation object
                     };
                 });
 
@@ -638,7 +653,7 @@
                         status: 'available',
                         lastCustomerName: op['שם לקוח'],
                         lastActionDate: opDate,
-                        latestOperation: op
+                        latestOperation: op // Store the entire operation object
                     };
                 });
             });
@@ -650,7 +665,9 @@
                 const info = detailedContainerStatus[containerNum];
                 if (info.status === 'in_use') {
                     currentActiveContainersCount++;
-                    if (info.latestOperation && info.latestOperation['סטטוס'] === 'חורג') {
+                    // Dynamic overdue check based on days in rental
+                    const daysInRental = daysSince(info.lastActionDate);
+                    if (daysInRental >= 10) {
                         totalOverdueCustomerIds.add(info.customerId);
                     }
                 } else if (info.status === 'available') {
@@ -685,22 +702,25 @@
             const filteredOps = allOperations.filter(op => 
                 (op['שם לקוח'] && op['שם לקוח'].toLowerCase().includes(searchTerm)) ||
                 (op['תעודה'] && String(op['תעודה']).toLowerCase().includes(searchTerm)) || // Ensure תעודה is string
-                (op['שם סוכן'] && op['שם סוכן'].toLowerCase().includes(searchTerm))
+                (op['שם סוכן'] && op['שם סוכן'].toLowerCase().includes(searchTerm)) ||
+                (String(op['מספר מכולה ירדה'] || '').toLowerCase().includes(searchTerm)) ||
+                (String(op['מספר מכולה עלתה'] || '').toLowerCase().includes(searchTerm))
             );
 
             filteredOps.slice(0, 100).forEach(op => { 
-                const days = (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חריג') && op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
-                let statusText, statusClass;
+                const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
+                let displayStatusText, displayStatusClass;
 
-                if (op['סטטוס'] === 'חריג') {
-                    statusText = 'חריגה';
-                    statusClass = 'status-red';
-                } else if (op['סטטוס'] === 'סגור') {
-                    statusText = 'סגור';
-                    statusClass = 'status-gray';
+                // Determine status dynamically for display
+                if (op['סטטוס'] === 'סגור') {
+                    displayStatusText = 'סגור';
+                    displayStatusClass = 'status-gray';
+                } else if (days !== '-' && days >= 10) { // If it's an active order and days in rental >= 10
+                    displayStatusText = 'חריגה';
+                    displayStatusClass = 'status-red';
                 } else { 
-                    statusText = 'פעיל';
-                    statusClass = 'status-green';
+                    displayStatusText = 'פעיל';
+                    displayStatusClass = 'status-green';
                 }
 
                 const row = `
@@ -711,12 +731,12 @@
                         <td class="py-3 px-4">${op['שם סוכן']}</td>
                         <td class="py-3 px-4">${op['סוג פעולה']}</td>
                         <td class="py-3 px-4">${days}</td>
-                        <td class="py-3 px-4"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td class="py-3 px-4"><span class="status-badge ${displayStatusClass}">${displayStatusText}</span></td>
                         <td class="py-3 px-4">
                             <button onclick="openWhatsAppModal(event, '${op['טלפון לקוח']}', '${op['שם לקוח']}', '${op['תעודה']}', ${days}, '${op['מספר מכולה ירדה'] || op['מספר מכולה עלתה'] || ''}', '${op['תאריך סיום צפוי'] ? op['תאריך סיום צפוי'].toLocaleDateString('he-IL') : ''}', '${op['כתובת']}')" class="text-green-500 hover:text-green-600 focus:outline-none">
                                 <i class="fab fa-whatsapp text-xl"></i>
                             </button>
-                            <button onclick="openModal('${op['לקוח']}')" class="text-blue-600 hover:text-blue-700 ml-2 focus:outline-none">
+                            <button onclick="openModal('${op['תעודה']}')" class="text-blue-600 hover:text-blue-700 ml-2 focus:outline-none">
                                 <i class="fas fa-eye text-xl"></i>
                             </button>
                         </td>
@@ -732,6 +752,7 @@
                 acc[agent] = (acc[agent] || 0) + 1;
                 return acc;
             }, {});
+            // Destroy existing chart if it exists to prevent rendering issues
             if (charts.agent) charts.agent.destroy();
             charts.agent = new Chart(document.getElementById('agentActivityChart'), {
                 type: 'bar',
@@ -759,6 +780,11 @@
                                 }
                             }
                         }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
             });
@@ -771,7 +797,8 @@
                 return acc;
             }, {});
             const sortedTimeline = Object.entries(timelineCounts).sort((a, b) => a[0].localeCompare(b[0]));
-             if (charts.timeline) charts.timeline.destroy();
+            // Destroy existing chart if it exists
+            if (charts.timeline) charts.timeline.destroy();
             charts.timeline = new Chart(document.getElementById('operationsTimelineChart'), {
                 type: 'line',
                 data: {
@@ -780,10 +807,19 @@
                         label: 'כמות פעולות חודשית',
                         data: sortedTimeline.map(e => e[1]),
                         borderColor: '#6d28d9',
-                        tension: 0.1
+                        tension: 0.1,
+                        fill: false
                     }]
                 },
-                 options: { responsive: true, maintainAspectRatio: false }
+                 options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
             });
         };
         
@@ -793,55 +829,36 @@
             inUseBody.innerHTML = '';
             availableBody.innerHTML = '';
 
-            const containerHistory = {}; 
-
-            allOperations.forEach(op => {
-                const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const allRelatedContainers = [...new Set([...containersTaken, ...containersBrought])];
-
-                allRelatedContainers.forEach(containerNum => {
-                    if (!containerHistory[containerNum]) {
-                        containerHistory[containerNum] = [];
-                    }
-                    containerHistory[containerNum].push(op);
-                });
-            });
-
             const containerCurrentStatus = {}; 
 
-            for (const containerNum in containerHistory) {
-                const history = containerHistory[containerNum].sort((a,b) => (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0) - (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0));
-                let currentStatus = { status: 'unknown', lastActionDate: null, customerId: null, customerName: null, latestOperation: null };
+            // Determine the latest status for each container based on all operations
+            allOperations.slice().sort((a, b) => {
+                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                return dateA - dateB; // Sort ascending to get the latest state
+            }).forEach(op => {
+                const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
 
-                history.forEach(op => {
-                    const opDate = op['תאריך הזמנה'];
-                    if (!opDate) return;
-
-                    const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                    const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-
-                    if (opDate && (!currentStatus.lastActionDate || opDate >= currentStatus.lastActionDate)) {
-                        if (containersTaken.includes(containerNum)) {
-                            currentStatus = {
-                                status: 'in_use',
-                                customerId: op['לקוח'],
-                                customerName: op['שם לקוח'],
-                                lastActionDate: opDate,
-                                latestOperation: op
-                            };
-                        } else if (containersBrought.includes(containerNum)) {
-                            currentStatus = {
-                                status: 'available',
-                                lastCustomerName: op['שם לקוח'],
-                                lastActionDate: opDate,
-                                latestOperation: op
-                            };
-                        }
-                    }
+                containersTaken.forEach(containerNum => {
+                    containerCurrentStatus[containerNum] = {
+                        status: 'in_use',
+                        customerName: op['שם לקוח'],
+                        customerId: op['לקוח'], // Assuming 'לקוח' is the customer ID
+                        lastActionDate: op['תאריך הזמנה'],
+                        latestOperationDocId: op['תעודה'] // Store doc ID for history link
+                    };
                 });
-                containerCurrentStatus[containerNum] = currentStatus;
-            }
+
+                containersBrought.forEach(containerNum => {
+                    containerCurrentStatus[containerNum] = {
+                        status: 'available',
+                        lastCustomerName: op['שם לקוח'],
+                        lastActionDate: op['תאריך הזמנה'],
+                        latestOperationDocId: op['תעודה'] // Store doc ID for history link
+                    };
+                });
+            });
             
             const uniqueContainersSorted = Object.keys(containerCurrentStatus).sort((a,b) => parseInt(a) - parseInt(b));
 
@@ -854,8 +871,8 @@
                             <td class="py-3 px-4">${containerNum}</td>
                             <td class="py-3 px-4 font-semibold">${statusData.customerName}</td>
                             <td class="py-3 px-4">${statusData.lastActionDate ? statusData.lastActionDate.toLocaleDateString('he-IL') : ''}</td>
-                            <td class="py-3 px-4 ${days > 10 ? 'text-red-600 font-bold' : ''}">${days}</td>
-                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.customerId}')">צפה</button></td>
+                            <td class="py-3 px-4 ${days >= 10 ? 'text-red-600 font-bold' : ''}">${days}</td>
+                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.latestOperationDocId}')">צפה</button></td>
                         </tr>`;
                     inUseBody.innerHTML += row;
                 } else if (statusData.status === 'available') {
@@ -864,7 +881,7 @@
                             <td class="py-3 px-4">${containerNum}</td>
                             <td class="py-3 px-4">${statusData.lastActionDate ? statusData.lastActionDate.toLocaleDateString('he-IL') : ''}</td>
                             <td class="py-3 px-4">${statusData.lastCustomerName || 'לא ידוע'}</td>
-                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.latestOperation['לקוח']}')">צפה</button></td>
+                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.latestOperationDocId}')">צפה</button></td>
                         </tr>`;
                     availableBody.innerHTML += row;
                 }
@@ -878,7 +895,11 @@
             const board = document.getElementById('treatment-board');
             board.innerHTML = '';
             
-            const overdueOperations = allOperations.filter(op => op['סטטוס'] === 'חורג');
+            // Filter operations that are 'פתוח' (active) AND overdue (>= 10 days)
+            const overdueOperations = allOperations.filter(op => {
+                const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : -1; // -1 to handle invalid dates
+                return op['סטטוס'] === 'פתוח' && days >= 10;
+            });
             
             if (overdueOperations.length === 0) {
                 board.innerHTML = `<p class="text-center text-gray-600 col-span-full">אין לקוחות בחריגה כרגע. כל הכבוד! 🎉</p>`;
@@ -887,13 +908,13 @@
 
             overdueOperations.forEach(op => {
                 const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
-                const containerNumbersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containerNumbersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containerDisplay = containerNumbersTaken.length > 0 ? `ירדה: ${containerNumbersTaken.join(', ')}` : '';
-                if (containerNumbersBrought.length > 0) {
-                    containerDisplay += (containerDisplay ? ', ' : '') + `עלתה: ${containerNumbersBrought.join(', ')}`;
+                const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containerDisplay = containersTaken.length > 0 ? `ירדה: ${containersTaken.join(', ')}` : '';
+                if (containersBrought.length > 0) {
+                    containerDisplay += (containerDisplay ? ', ' : '') + `עלתה: ${containersBrought.join(', ')}`;
                 }
-                const containerNumbersForMsg = [...containerNumbersTaken, ...containersBrought].filter(Boolean).join(', ');
+                const containerNumbersForMsg = [...containersTaken, ...containersBrought].filter(Boolean).join(', ');
 
 
                 const card = `
@@ -907,7 +928,7 @@
                             <span class="font-bold text-xl text-red-600">${days} ימים חריגה</span>
                         </div>
                         <div class="mt-4 flex justify-between items-center">
-                            <button class="px-3 py-1 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm" onclick="openModal('${op['לקוח']}')">פרטי לקוח</button>
+                            <button class="px-3 py-1 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm" onclick="openModal('${op['תעודה']}')">פרטי לקוח</button>
                             <button onclick="openWhatsAppModal(event, '${op['טלפון לקוח']}', '${op['שם לקוח']}', '${op['תעודה']}', ${days}, '${containerNumbersForMsg}', '${op['תאריך סיום צפוי'] ? op['תאריך סיום צפוי'].toLocaleDateString('he-IL') : ''}', '${op['כתובת']}')" class="text-green-500 hover:text-green-600 focus:outline-none">
                                 <i class="fab fa-whatsapp text-2xl"></i>
                             </button>
@@ -918,19 +939,23 @@
             });
         };
         
-        const openModalByCustomerName = (customerName) => {
-            const customerOp = allOperations.find(op => op['שם לקוח'] === customerName && (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חורג'));
-            if (customerOp) {
-                openModal(customerOp['לקוח']);
+        // Changed openModal to accept docId instead of customerId, for more precise history
+        const openModal = (docId) => {
+            const customerOp = allOperations.find(op => String(op['תעודה']) === String(docId));
+            if (!customerOp) {
+                showStatusMessage('לא נמצאה הזמנה עבור תעודה זו.', 'error');
+                return;
             }
-        };
 
-        const openModal = (customerId) => {
-            const customerOps = allOperations.filter(op => op['לקוח'] === customerId);
-            if (customerOps.length === 0) return;
+            // Find all operations for this customer name
+            const customerOps = allOperations.filter(op => op['שם לקוח'] === customerOp['שם לקוח'])
+                                            .sort((a, b) => {
+                                                const dateA = a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0;
+                                                const dateB = b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0;
+                                                return dateB - dateA; // Sort descending for latest at top
+                                            });
 
-            const customerName = customerOps[0]['שם לקוח'];
-            document.getElementById('modal-customer-name').textContent = customerName;
+            document.getElementById('modal-customer-name').textContent = customerOp['שם לקוח'];
 
             const totalOps = customerOps.length;
             const totalPlacements = customerOps.filter(op => op['סוג פעולה'] === 'הצבה').length;
@@ -945,21 +970,21 @@
             const historyTable = document.getElementById('modal-customer-history-table');
             historyTable.innerHTML = '';
             customerOps.forEach(op => {
-                 const days = (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חורג') && op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
-                 let statusText, statusClass;
-                 if (op['סטטוס'] === 'חורג') {
-                    statusText = 'חריגה'; statusClass = 'status-red';
-                 } else if (op['סטטוס'] === 'סגור') {
-                    statusText = 'סגור'; statusClass = 'status-gray';
+                 const days = op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : '-';
+                 let displayStatusText, displayStatusClass;
+                 if (op['סטטוס'] === 'סגור') {
+                    displayStatusText = 'סגור'; displayStatusClass = 'status-gray';
+                 } else if (days !== '-' && days >= 10) { 
+                    displayStatusText = 'חריגה'; displayStatusClass = 'status-red';
                  } else { 
-                    statusText = 'פעיל'; statusClass = 'status-green';
+                    displayStatusText = 'פעיל'; displayStatusClass = 'status-green';
                  }
                 const row = `
                     <tr>
                         <td class="py-2 px-3">${op['תאריך הזמנה'] ? op['תאריך הזמנה'].toLocaleDateString('he-IL') : ''}</td>
                         <td class="py-2 px-3">${op['תעודה']}</td>
                         <td class="py-2 px-3">${op['סוג פעולה']}</td>
-                        <td class="py-2 px-3"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td class="py-2 px-3"><span class="status-badge ${displayStatusClass}">${displayStatusText}</span></td>
                     </tr>`;
                 historyTable.innerHTML += row;
             });
@@ -974,32 +999,32 @@
         };
 
         const getSuggestedMessageIdForOrder = (order) => {
-            const daysOverdue = order['תאריך הזמנה'] ? daysSince(order['תאריך הזמנה']) : 0;
-            const orderDate = order['תאריך הזמנה'];
-            const today = new Date();
-            const daysSinceOrder = orderDate ? Math.floor((today - orderDate) / (1000 * 60 * 60 * 24)) : 0;
-
-            if (order['סטטוס'] === 'חריג') {
-                if (daysOverdue <= 7) return 'overdue_7_days';
-                if (daysOverdue <= 30) return 'overdue_30_days';
+            const daysInRental = order['תאריך הזמנה'] ? daysSince(order['תאריך הזמנה']) : 0;
+            
+            if (order['סטטוס'] === 'חורג' || daysInRental >= 10) { // Prioritize overdue status
+                if (daysInRental <= 7) return 'overdue_7_days'; // If already overdue, but just started
+                if (daysInRental <= 30) return 'overdue_30_days';
                 return 'overdue_long';
             }
             
             if (order['סטטוס'] === 'פתוח' && order['תאריך סיום צפוי'] && !isNaN(order['תאריך סיום צפוי'].getTime())) {
                 const expectedEndDate = order['תאריך סיום צפוי'];
-                const daysUntilDue = Math.floor((expectedEndDate - today) / (1000 * 60 * 60 * 24));
-                if (daysUntilDue <= 3 && daysUntilDue >= 0) return 'approaching_due_3_days';
-                if (daysUntilDue <= 7 && daysUntilDue > 3) return 'approaching_due_7_days';
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const daysUntilDue = Math.floor((expectedEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                
+                if (daysUntilDue >= 0 && daysUntilDue <= 3) return 'approaching_due_3_days';
+                if (daysUntilDue > 3 && daysUntilDue <= 7) return 'approaching_due_7_days';
             }
 
-            if (order['סוג פעולה'] === 'הצבה' && orderDate && daysSinceOrder <= 30) {
-                 const customerId = allOperations.find(op => op['טלפון לקוח'] === order['טלפון לקוח'])?.['לקוח'];
-                 if (customerId) {
-                     const customerOperations = allOperations.filter(op => op['לקוח'] === customerId);
-                     if (customerOperations.length === 1 && String(customerOperations[0]['תעודה']) === String(order['תעודה'])) { // Ensure comparison is string to string
-                         return 'new_customer_welcome';
-                     }
-                 }
+            // Check if it's a relatively new placement for a new customer
+            if (order['סוג פעולה'] === 'הצבה' && daysInRental <= 7) { // within first week of placement
+                // Count how many orders this customer has in total
+                const customerOrders = allOperations.filter(op => op['שם לקוח'] === order['שם לקוח']);
+                // If this is their first or second order, suggest welcome
+                if (customerOrders.length <= 2 && String(customerOrders[0]['תעודה']) === String(order['תעודה'])) {
+                    return 'new_customer_welcome';
+                }
             }
             
             const customerCity = getCityFromAddress(order['כתובת']);
@@ -1007,7 +1032,7 @@
                 return `city_guideline_${customerCity}`;
             }
 
-            return 'general_inquiry';
+            return 'general_inquiry'; // Default fallback
         };
 
         const openWhatsAppModal = (event, phoneNumber, customerName, docId, daysOverdue, containerNum, expectedEndDateFormatted, customerAddress) => {
@@ -1021,14 +1046,19 @@
             phoneInput.value = phoneNumber.startsWith('972') ? phoneNumber : `972${phoneNumber.substring(1)}`;
             whatsappDocIdInput.value = docId;
 
+            // Find the full operation object to pass to getSuggestedMessageIdForOrder
+            const fullOrderOp = allOperations.find(op => String(op['תעודה']) === String(docId));
+            
+            // Create a dummy order object with parsed dates and calculated days for suggestion logic
             const dummyOrderForSuggestion = {
-                'סטטוס': (daysOverdue > 10 ? 'חורג' : 'פתוח'), 
-                'תאריך הזמנה': new Date(new Date().getTime() - daysOverdue * 24 * 60 * 60 * 1000), 
-                'תאריך סיום צפוי': expectedEndDateFormatted ? formatDate(expectedEndDateFormatted) : null,
-                'סוג פעולה': 'הצבה',
+                'סטטוס': fullOrderOp ? fullOrderOp['סטטוס'] : 'פתוח', // Use actual status from data if available
+                'תאריך הזמנה': fullOrderOp ? fullOrderOp['תאריך הזמנה'] : new Date(new Date().getTime() - daysOverdue * 24 * 60 * 60 * 1000), 
+                'תאריך סיום צפוי': fullOrderOp ? fullOrderOp['תאריך סיום צפוי'] : (expectedEndDateFormatted ? formatDate(expectedEndDateFormatted) : null),
+                'סוג פעולה': fullOrderOp ? fullOrderOp['סוג פעולה'] : '',
                 'טלפון לקוח': phoneNumber,
                 'כתובת': customerAddress,
-                'תעודה': docId
+                'תעודה': docId,
+                'שם לקוח': customerName // Ensure customerName is passed for new customer check
             };
             const suggestedMessageId = getSuggestedMessageIdForOrder(dummyOrderForSuggestion);
 
@@ -1207,7 +1237,11 @@
             document.getElementById('new-order-modal').classList.remove('hidden');
             document.getElementById('new-order-modal').classList.add('flex');
             // Pre-fill some fields if desired, e.g., current date
-            document.getElementById('new-order-date').valueAsDate = new Date();
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('new-order-date').value = `${yyyy}-${mm}-${dd}`;
             document.getElementById('new-order-status').value = 'פתוח'; // Default status
         };
 
@@ -1219,6 +1253,10 @@
 
         const submitNewOrder = async () => {
             const form = document.getElementById('new-order-form');
+            if (!form.checkValidity()) { // Basic HTML5 form validation
+                form.reportValidity();
+                return;
+            }
             const formData = new FormData(form);
             const order = {};
             // Collect all form data
@@ -1227,14 +1265,18 @@
             });
 
             // Calculate 'ימים שעברו' if 'תאריך הזמנה' is provided
-            const orderDateObj = order['תאריך הזמנה'] ? new Date(order['תאריך הזמנה']) : null;
+            const orderDateObj = order['תאריך הזמנה'] ? formatDate(order['תאריך הזמנה']) : null;
             order['ימים שעברו'] = orderDateObj && !isNaN(orderDateObj.getTime()) ? daysSince(orderDateObj) : '';
 
             // Combine container numbers for 'מספרי מכולות' if not explicitly provided
-            order['מספרי מכולות'] = order['מספרי מכולות'] || 
-                                     `${order['מספר מכולה ירדה'] || ''},${order['מספר מכולה עלתה'] || ''}`
-                                     .replace(/^,|,$/g, '')
-                                     .replace(/,,/g, ',');
+            // Ensure to handle cases where one or both might be empty
+            const containerDropped = order['מספר מכולה ירדה'] || '';
+            const containerLifted = order['מספר מכולה עלתה'] || '';
+            if (containerDropped && containerLifted) {
+                order['מספרי מכולות'] = `${containerDropped},${containerLifted}`;
+            } else {
+                order['מספרי מכולות'] = containerDropped || containerLifted || '';
+            }
 
             // Ensure all headers expected by the Google Sheet are present, even if empty
             const sheetHeaders = [
@@ -1248,7 +1290,9 @@
                 completeOrder[header] = order[header] !== undefined ? order[header] : '';
             });
             
-            // Convert date objects back to YYYY-MM-DD string format for the sheet
+            // Format dates back to YYYY-MM-DD string for the sheet if they were Date objects
+            // The form input for date already returns YYYY-MM-DD string, so this might not be strictly needed for those fields
+            // But good for consistency if values came from other sources
             if (completeOrder['תאריך הזמנה'] instanceof Date) {
                 completeOrder['תאריך הזמנה'] = completeOrder['תאריך הזמנה'].toISOString().split('T')[0];
             }
