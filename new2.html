@@ -27,11 +27,22 @@
         .nav-tab-btn {
             transition: all 0.3s ease;
             border-bottom: 4px solid transparent;
+            position: relative; /* For the artistic effect */
+            overflow: hidden; /* To hide overflow from pseudo-element */
         }
         .nav-tab-btn.active {
             border-bottom-color: #8b5cf6; /* violet-500 */
             color: #6d28d9; /* violet-700 */
         }
+        /* Artistic hover effect */
+        .nav-tab-btn:not(.active):hover {
+            color: #6d28d9; /* Darker violet on hover */
+            transform: translateY(-2px); /* Slight lift */
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3); /* Subtle violet shadow */
+            background-color: rgba(139, 92, 246, 0.05); /* Very light violet background */
+            border-radius: 0.5rem; /* Soften corners on hover */
+        }
+
         .kpi-card {
             background-color: white;
             border-radius: 0.75rem;
@@ -76,7 +87,7 @@
         /* Custom styles for larger and bolder table text */
         .table-large-text td { 
             font-size: 1.1rem; 
-            font-weight: 600; 
+            font-weight: 700; /* Increased boldness */
         }
         /* Typing effect cursor */
         .typing-effect-cursor {
@@ -171,14 +182,14 @@
                         <table class="min-w-full bg-white">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="py-3 px-4 text-right font-bold">תאריך</th>
-                                    <th class="py-3 px-4 text-right font-bold">תעודה</th>
-                                    <th class="py-3 px-4 text-right font-bold">שם לקוח</th>
-                                    <th class="py-3 px-4 text-right font-bold">שם סוכן</th>
-                                    <th class="py-3 px-4 text-right font-bold">סוג פעולה</th>
-                                    <th class="py-3 px-4 text-right font-bold">ימים בשכירות</th>
-                                    <th class="py-3 px-4 text-right font-bold">סטטוס</th>
-                                    <th class="py-3 px-4 text-right font-bold">פעולות</th>
+                                    <th class="py-3 px-4 text-right font-bold">תאריך 📅</th>
+                                    <th class="py-3 px-4 text-right font-bold">תעודה 📄</th>
+                                    <th class="py-3 px-4 text-right font-bold">שם לקוח 👤</th>
+                                    <th class="py-3 px-4 text-right font-bold">שם סוכן 👷</th>
+                                    <th class="py-3 px-4 text-right font-bold">סוג פעולה 📦</th>
+                                    <th class="py-3 px-4 text-right font-bold">ימים בשכירות ⏳</th>
+                                    <th class="py-3 px-4 text-right font-bold">סטטוס ✅</th>
+                                    <th class="py-3 px-4 text-right font-bold">פעולות 🛠️</th>
                                 </tr>
                             </thead>
                             <tbody id="all-operations-table" class="table-large-text">
@@ -197,11 +208,11 @@
                         <table class="min-w-full bg-white">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="py-3 px-4 text-right font-bold">מספר מכולה</th>
-                                    <th class="py-3 px-4 text-right font-bold">לקוח נוכחי</th>
-                                    <th class="py-3 px-4 text-right font-bold">תאריך הצבה</th>
-                                    <th class="py-3 px-4 text-right font-bold">ימים באתר</th>
-                                    <th class="py-3 px-4 text-right font-bold">היסטוריה</th>
+                                    <th class="py-3 px-4 text-right font-bold">מספר מכולה 🔢</th>
+                                    <th class="py-3 px-4 text-right font-bold">לקוח נוכחי 👤</th>
+                                    <th class="py-3 px-4 text-right font-bold">תאריך הצבה 🗓️</th>
+                                    <th class="py-3 px-4 text-right font-bold">ימים באתר ⏳</th>
+                                    <th class="py-3 px-4 text-right font-bold">היסטוריה 📜</th>
                                 </tr>
                             </thead>
                             <tbody id="in-use-containers-table" class="table-large-text">
@@ -216,10 +227,10 @@
                         <table class="min-w-full bg-white">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="py-3 px-4 text-right font-bold">מספר מכולה</th>
-                                    <th class="py-3 px-4 text-right font-bold">תאריך חזרה למלאי</th>
-                                    <th class="py-3 px-4 text-right font-bold">לקוח אחרון</th>
-                                    <th class="py-3 px-4 text-right font-bold">היסטוריה</th>
+                                    <th class="py-3 px-4 text-right font-bold">מספר מכולה 🔢</th>
+                                    <th class="py-3 px-4 text-right font-bold">תאריך חזרה למלאי 🗓️</th>
+                                    <th class="py-3 px-4 text-right font-bold">לקוח אחרון 👤</th>
+                                    <th class="py-3 px-4 text-right font-bold">היסטוריה 📜</th>
                                 </tr>
                             </thead>
                             <tbody id="available-containers-table" class="table-large-text">
@@ -259,10 +270,10 @@
                     <table class="min-w-full">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="py-2 px-3 text-right">תאריך</th>
-                                <th class="py-2 px-3 text-right">תעודה</th>
-                                <th class="py-2 px-3 text-right">פעולה</th>
-                                <th class="py-2 px-3 text-right">סטטוס</th>
+                                <th class="py-2 px-3 text-right">תאריך 📅</th>
+                                <th class="py-2 px-3 text-right">תעודה 📄</th>
+                                <th class="py-2 px-3 text-right">פעולה 📦</th>
+                                <th class="py-2 px-3 text-right">סטטוס ✅</th>
                             </tr>
                         </thead>
                         <tbody id="modal-customer-history-table" class="table-large-text"></tbody>
@@ -347,7 +358,6 @@
                             <option value="">בחר פעולה</option>
                             <option value="הצבה">הצבה</option>
                             <option value="החלפה">החלפה</option>
-                            <option value="הורדה">הורדה</option>
                             <option value="הוצאה">הוצאה</option>
                             <option value="הזזה">הזזה</option>
                             <option value="פינוי במקום">פינוי במקום</option>
@@ -460,7 +470,7 @@
         };
 
         const whatsappMessages = [
-            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! 🥳 לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
+            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! � לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
             { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** 🗓️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
             { id: 'approaching_due_3_days', text: 'שלום **[שם לקוח]**,\n\nתקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת ממש בקרוב, בעוד **3 ימים** ⚠️. אנא טפל בנושא כדי למנוע חריגות.\n\nאנו לרשותך לכל עזרה! 🙏', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏳' },
             { id: 'overdue_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להודיע לך על חריגה בימי שכירות של המכולה ([**מספר מכולה**]) ב-**[ימים שעברו] ימים** 🚨. נא ליצור קשר עם מחלקת הזמנות **[טלפון חברה]** או להשיב להודעה זו מה תרצה שנבצע (החלפה/הוצאה).', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '❗️' },
@@ -471,7 +481,7 @@
             { id: 'service_feedback', text: 'שלום **[שם לקוח]**,\n\nאנו מקווים ששירותינו עונים על ציפיותיך. נשמח לקבל משוב על החוויה שלך עם מכולה מספר **[מספר מכולה]** כדי שנוכל להשתפר ולהעניק לך שירות טוב יותר. ⭐', category: 'משוב', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '📝' },
             { id: 'holiday_greetings', text: 'חג שמח, **[שם לקוח]**! 🎉\n\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה, בריאות והמון שמחה! 🥳', category: 'עונתי', placeholders: ['שם לקוח', 'שם החברה'], emoji: '🎁' },
             { id: 'special_offer', text: 'שלום **[שם לקוח]**,\n\nיש לנו חדשות מרגשות! 🎁 מבצע מיוחד למכולות חדשות/נוספות עבורך. אל תחמיץ! לפרטים נוספים, השב להודעה זו או התקשר: **[טלפון חברה]**.', category: 'שיווק', placeholders: ['שם לקוח', 'טלפון חברה'], emoji: '✨' },
-            { id: 'follow_up_issue', text: 'שלום **[שם לקוח]**,\n\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה **[תעודה]** �️. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו כדי שנוכל להמשיך לטפל.', category: 'תמיכה', placeholders: ['שם לקוח', 'תעודה'], emoji: '✅' },
+            { id: 'follow_up_issue', text: 'שלום **[שם לקוח]**,\n\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה **[תעודה]** 🛠️. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו כדי שנוכל להמשיך לטפל.', category: 'תמיכה', placeholders: ['שם לקוח', 'תעודה'], emoji: '✅' },
             { id: 'document_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת לשליחת המסמכים החסרים עבור הזמנה **[תעודה]** 📄. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול בהזמנה.\n\nתודה על שיתוף הפעולה!', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '📌' },
             { id: 'service_confirmation', text: 'שלום **[שם לקוח]**,\n\nהשירות שהוזמן (תעודה **[תעודה]**) אושר ויתבצע ב-**[תאריך סיום צפוי]** ✅. תודה שבחרת בנו ושיהיה יום נפלא!', category: 'אישור', placeholders: ['שם לקוח', 'תעודה', 'תאריך סיום צפוי'], emoji: '👍' },
             { id: 'service_delay', text: 'שלום **[שם לקוח]**,\n\nעקב נסיבות בלתי צפויות, ייתכן שיהיה עיכוב קל בטיפול בהזמנה **[תעודה]** ⏱️. אנו מתנצלים על אי הנוחות ונפעל לפתור זאת במהירות האפשרית.\n\nנודיע לך על כל עדכון! 🔜', category: 'מידע', placeholders: ['שם לקוח', 'תעודה'], emoji: '🚧' },
@@ -775,7 +785,16 @@
 
         // Generate the full static data with simulated missing fields for historical purposes
         historicalOperations = rawParsedData.map(row => {
-            const actionType = row['סוג פעולה'].trim();
+            let actionType = row['סוג פעולה'].trim();
+            // Apply the user's mapping for historical data
+            if (actionType === 'הורדה') {
+                actionType = 'הצבה';
+            } else if (actionType === 'העלאה') {
+                actionType = 'הוצאה';
+            } else if (actionType === 'החalפה') { // Handle possible typo in static data
+                actionType = 'החלפה';
+            }
+
             const containerNums = generateContainerNumbers(actionType); // These will be consistent for static data
             const customerPhone = getCustomerPhone(row['שם לקוח']);
             const orderDate = new Date(row['תאריך']); 
@@ -817,7 +836,15 @@
             // Add live data, prioritizing it
             liveOps.forEach(op => {
                 const docId = String(op['תעודה']);
-                // Ensure dates are parsed to Date objects upon loading from sheet
+                 // Apply the user's mapping for live data from sheet
+                let normalizedActionType = op['סוג פעולה'].trim();
+                if (normalizedActionType === 'הורדה') {
+                    normalizedActionType = 'הצבה';
+                } else if (normalizedActionType === 'העלאה') {
+                    normalizedActionType = 'הוצאה';
+                }
+                op['סוג פעולה'] = normalizedActionType; // Update the operation object
+
                 mergedMap.set(docId, {
                     ...op,
                     'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
@@ -832,7 +859,6 @@
                 if (!mergedMap.has(docId)) {
                     mergedMap.set(docId, {
                         ...op,
-                        // Ensure dates are parsed to Date objects for static data as well
                         'תאריך הזמנה': formatDate(op['תאריך הזמנה']),
                         'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
                         'תאריך סגירה': formatDate(op['תאריך סגירה']),
@@ -1671,3 +1697,4 @@
     </script>
 </body>
 </html>
+�
