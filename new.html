@@ -641,8 +641,7 @@
                 containersTaken.forEach(containerNum => {
                     detailedContainerStatus[containerNum] = {
                         status: 'in_use',
-                        customerId: op['לקוח'],
-                        customerName: op['שם לקוח'],
+                        customerName: op['שם לקוח'], // Use customer name for identifier
                         lastActionDate: opDate,
                         latestOperation: op // Store the entire operation object
                     };
@@ -668,7 +667,7 @@
                     // Dynamic overdue check based on days in rental
                     const daysInRental = daysSince(info.lastActionDate);
                     if (daysInRental >= 10) {
-                        totalOverdueCustomerIds.add(info.customerId);
+                        totalOverdueCustomerIds.add(info.customerName); // Use customer name for overdue tracking
                     }
                 } else if (info.status === 'available') {
                     currentAvailableContainersCount++;
@@ -844,7 +843,7 @@
                     containerCurrentStatus[containerNum] = {
                         status: 'in_use',
                         customerName: op['שם לקוח'],
-                        customerId: op['לקוח'], // Assuming 'לקוח' is the customer ID
+                        // customerId: op['לקוח'], // No longer using 'לקוח' if it's not a sheet column
                         lastActionDate: op['תאריך הזמנה'],
                         latestOperationDocId: op['תעודה'] // Store doc ID for history link
                     };
