@@ -287,7 +287,7 @@
     </div>
 
 
-    <script>
+<script>
         const fullTrackingDataRaw = `תאריך הזמנה,תעודה,שם סוכן,שם לקוח,כתובת,סוג פעולה,ימים שעברו,מספר מכולה ירדה,מספר מכולה עלתה,מספרי מכולות,סטטוס,הערות,תאריך סיום צפוי,הערות סיום,תאריך סגירה,ימים שעברו (עלתה),טלפון לקוח
 2025-07-24,6713571,אגבאריה/שארק,א.ערן אזולאי - אנקורים,אנקורים 2 רמת גן,החלפה,25,209,9,9,פתוח,רוצה כמה ימים,07/08/2025,,,,508860896
 2025-07-29,6713658,אגבאריה/שארק,"אורבר בנייה/ירמיהו ר""ג",ירמיהו 11 רמת גן,הורדה,20,31,,,פתוח,ביקש כמה ימים,12/08/2025,,,,508860896
@@ -359,7 +359,7 @@
 2025-06-12,6712778,מוחמד/שארק,פינוי פסולת בשרון בע,החרש 10 הוד השרון,החלפה,67,14,12,12,פתוח,,26/06/2025,,,,508860896
 2025-06-12,6712774,מוחמד/שארק,שחר שאול תכנון/כללי,גלגל המזלות הוד השרון,החלפה,67,21,10,10,פתוח,,26/06/2025,,,,508860896
 2025-06-12,6712766,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,החלפה,67,15,24,24,פתוח,,26/06/2025,,,,508860896
-2025-06-11,6712760,מוחמד/שארק,"מ.צ שחיבר בניה בע""מ",החרוב 25 הוד השרון,הורדה,68,60,,,פתוח,,25/06/2025,,,,508860896
+2025-06-11,6712760,מוחמד/שארק,"מ.צ שחיבר בניה בע""מ",הורדה,68,60,,,פתוח,,25/06/2025,,,,508860896
 2025-06-11,6712755,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,הורדה,68,24,,,פתוח,,25/06/2025,,,,508860896
 2025-06-11,6712750,מוחמד/שארק,הכל מבראשית/אוניברסי,שער 14 תל אביב,הורדה,68,15,,,פתוח,,25/06/2025,,,,508860896
 2025-06-10,6712744,מוחמד/שארק,אוהד טל,השקד 15 הוד השרון,החלפה,69,12,25,25,פתוח,,24/06/2025,,,,508860896
@@ -379,7 +379,6 @@
 2025-06-01,6712645,רמי/שארק,בן ענבר-בי""ס ליידי ד,בית לידי ד הוד השרון,החלפה,78,47,25,25,פתוח,,15/06/2025,,,,508860896
 `;
         
-        // Global state
         let allOperations = [];
         let charts = {};
 
@@ -425,11 +424,13 @@
             const parts = dateStr.split('/');
             // Check for YYYY-MM-DD format first (from 'תאריך הזמנה' column)
             if (dateStr.includes('-') && parts.length === 1) {
-                return new Date(dateStr);
+                const date = new Date(dateStr);
+                return isNaN(date.getTime()) ? null : date;
             }
             // Assume DD/MM/YYYY if '/' is present
             if (parts.length === 3) {
-                return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                return isNaN(date.getTime()) ? null : date;
             }
             return null;
         };
@@ -440,24 +441,7 @@
             return Math.floor(diff / (1000 * 60 * 60 * 24));
         };
 
-        // Main App Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            allOperations = parseFullTrackingCSV(fullTrackingDataRaw)
-                .map(op => ({
-                    ...op,
-                    'תאריך הזמנה': formatDate(op['תאריך הזמנה']), // Convert to Date object
-                    'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
-                    'תאריך סגירה': formatDate(op['תאריך סגירה']),
-                }))
-                .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0)); // Sort by date descending, handle null dates
-
-            renderDashboard();
-            renderInventory();
-            renderTreatmentBoard();
-
-            document.getElementById('main-search').addEventListener('input', renderAllOperationsTable);
-        });
-
+        // Global functions for HTML onclick attributes
         const showPage = (pageId) => {
             ['dashboard', 'inventory', 'treatment'].forEach(id => {
                 document.getElementById(`page-${id}`).classList.add('hidden');
@@ -467,391 +451,30 @@
             document.getElementById(`nav-${pageId}`).classList.add('active');
         };
 
-        const getKPIs = () => {
-            let activeContainerLocations = {}; // customer_id -> { name, lastPlacementDate }
-            let totalOverdueCustomers = new Set();
-            let totalOperations = allOperations.length;
+        // ... (rest of your JavaScript functions) ...
+        const getCityFromAddress = (address) => {
+            if (!address) return null;
+            const israeliCities = [
+                "תל אביב", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "באר שבע",
+                "נתניה", "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "הרצליה",
+                "כפר סבא", "חדרה", "בית שמש", "מודיעין-מכבים-רעות", "לוד", "רמלה", "רעננה",
+                "נהריה", "קריית גת", "אילת", "עכו", "צפת", "טבריה", "נצרת", "אום אל-פאחם",
+                "בני ציון", "אבן יהודה", "אור יהודה", "אור עקיבא", "אריאל", "אשקלון", "באקה אל-גרבייה",
+                "גבעתיים", "דימונה", "הוד השרון", "זכרון יעקב", "יבנה", "יהוד-מונוסון", "יוקנעם עילית",
+                "כוכב יאיר", "כפר יונה", "כפר קאסם", "כרמיאל", "מגדל העמק", "מכבים", "מעלה אדומים",
+                "מצפה רמון", "נהריה", "נס ציונה", "נשר", "עפולה", "ערד", "פרדס חנה-כרכור",
+                "קריית אונו", "קריית ביאליק", "קריית ים", "קריית מוצקין", "קריית שמונה",
+                "שוהם", "שדרות", "רמת השרון"
+            ].sort((a,b) => b.length - a.length);
 
-            const now = new Date();
-
-            allOperations.forEach(op => {
-                const customerId = op['לקוח'];
-                const actionType = op['סוג פעולה'];
-                const orderDate = op['תאריך הזמנה'];
-                const status = op['סטטוס']; // This status comes directly from the CSV
-                const daysPassedCurrent = daysSince(orderDate);
-
-                if (!orderDate) return; // Skip operations with invalid dates
-
-                const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-
-                if (actionType === 'הצבה' || (actionType === 'החלפה' && containersTaken.length > 0)) {
-                    // For placement or replacement (container taken), mark containers as active
-                    containersTaken.forEach(containerNum => {
-                        if (!activeContainerLocations[containerNum] || orderDate > activeContainerLocations[containerNum].lastActionDate) {
-                             activeContainerLocations[containerNum] = {
-                                status: 'in_use',
-                                customerId: customerId,
-                                customerName: op['שם לקוח'],
-                                lastActionDate: orderDate,
-                                currentOperation: op
-                            };
-                        }
-                    });
-                }
-                
-                if (actionType === 'הוצאה' || (actionType === 'החלפה' && containersBrought.length > 0)) {
-                    // For removal or replacement (container brought), mark containers as available
-                    containersBrought.forEach(containerNum => {
-                        if (!activeContainerLocations[containerNum] || orderDate > activeContainerLocations[containerNum].lastActionDate) {
-                            activeContainerLocations[containerNum] = {
-                                status: 'available',
-                                lastCustomerName: op['שם לקוח'],
-                                lastActionDate: orderDate,
-                                currentOperation: op
-                            };
-                        }
-                    });
-                }
-            });
-
-            let currentActiveContainersCount = 0;
-            let currentAvailableContainersCount = 0;
-
-            for (const containerNum in activeContainerLocations) {
-                const info = activeContainerLocations[containerNum];
-                if (info.status === 'in_use') {
-                    currentActiveContainersCount++;
-                    const daysSincePlacement = daysSince(info.lastActionDate);
-                    // Using the 'סטטוס' column from the CSV directly, assuming it's reliable for overdue
-                    if (info.currentOperation['סטטוס'] === 'חורג') {
-                        totalOverdueCustomers.add(info.customerId);
-                    }
-                } else if (info.status === 'available') {
-                    currentAvailableContainersCount++;
+            for (const city of israeliCities) {
+                if (address.includes(city)) {
+                    return city;
                 }
             }
-
-
-            return {
-                activeContainers: currentActiveContainersCount,
-                overdueCustomers: Array.from(totalOverdueCustomers).length,
-                availableContainers: currentAvailableContainersCount,
-                totalOperations: totalOperations,
-            };
+            return null;
         };
 
-        const renderDashboard = () => {
-            const { activeContainers, overdueCustomers, availableContainers, totalOperations } = getKPIs();
-            document.getElementById('kpi-active-containers').textContent = activeContainers;
-            document.getElementById('kpi-overdue-customers').textContent = overdueCustomers;
-            document.getElementById('kpi-available-containers').textContent = availableContainers;
-            document.getElementById('kpi-total-operations').textContent = totalOperations;
-            
-            renderAllOperationsTable();
-            renderCharts();
-        };
-
-        const renderAllOperationsTable = () => {
-            const searchTerm = document.getElementById('main-search').value.toLowerCase();
-            const tableBody = document.getElementById('all-operations-table');
-            tableBody.innerHTML = '';
-            
-            const filteredOps = allOperations.filter(op => 
-                (op['שם לקוח'] && op['שם לקוח'].toLowerCase().includes(searchTerm)) ||
-                (op['תעודה'] && op['תעודה'].toLowerCase().includes(searchTerm)) ||
-                (op['שם סוכן'] && op['שם סוכן'].toLowerCase().includes(searchTerm))
-            );
-
-            filteredOps.slice(0, 100).forEach(op => { // Limit to 100 rows for performance
-                const days = (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חורג') ? daysSince(op['תאריך הזמנה']) : '-';
-                let statusText, statusClass;
-
-                if (op['סטטוס'] === 'חורג') {
-                    statusText = 'חריגה';
-                    statusClass = 'status-red';
-                } else if (op['סטטוס'] === 'סגור') {
-                    statusText = 'סגור';
-                    statusClass = 'status-gray';
-                } else { // 'פתוח'
-                    statusText = 'פעיל';
-                    statusClass = 'status-green';
-                }
-
-                const row = `
-                    <tr class="hover:bg-gray-50 cursor-pointer">
-                        <td class="py-3 px-4">${op['מתאריך']}</td>
-                        <td class="py-3 px-4">${op['תעודה']}</td>
-                        <td class="py-3 px-4 font-semibold text-gray-700">${op['שם לקוח']}</td>
-                        <td class="py-3 px-4">${op['שם סוכן']}</td>
-                        <td class="py-3 px-4">${op['סוג פעולה']}</td>
-                        <td class="py-3 px-4">${days}</td>
-                        <td class="py-3 px-4"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        <td class="py-3 px-4">
-                            <button onclick="openWhatsAppModal(event, '${op['טלפון לקוח']}', '${op['שם לקוח']}', '${op['תעודה']}', ${days}, '${op['מספר מכולה ירדה'] || op['מספר מכולה עלתה'] || ''}', '${op['תאריך סיום צפוי'] ? op['תאריך סיום צפוי'].toLocaleDateString('he-IL') : ''}', '${op['כתובת']}')" class="text-green-500 hover:text-green-600 focus:outline-none">
-                                <i class="fab fa-whatsapp text-xl"></i>
-                            </button>
-                            <button onclick="openModal('${op['לקוח']}')" class="text-blue-600 hover:text-blue-700 ml-2 focus:outline-none">
-                                <i class="fas fa-eye text-xl"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        };
-
-        const renderCharts = () => {
-            // Agent Activity Chart
-            const agentCounts = allOperations.reduce((acc, op) => {
-                const agent = op['שם סוכן'] || 'לא ידוע';
-                acc[agent] = (acc[agent] || 0) + 1;
-                return acc;
-            }, {});
-            if (charts.agent) charts.agent.destroy();
-            charts.agent = new Chart(document.getElementById('agentActivityChart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(agentCounts).map(label => {
-                        // Wrap labels longer than 16 characters
-                        if (label.length > 16) {
-                            return label.match(/.{1,8}/g).join('\n'); // Wrap every 8 chars
-                        }
-                        return label;
-                    }),
-                    datasets: [{
-                        label: 'מספר פעולות',
-                        data: Object.values(agentCounts),
-                        backgroundColor: '#8b5cf6',
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                     plugins: {
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    return context[0].label.replace(/\n/g, ' '); // Un-wrap label for tooltip
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Operations Timeline Chart
-            const timelineCounts = allOperations.reduce((acc, op) => {
-                if (op['תאריך הזמנה'] && !isNaN(op['תאריך הזמנה'].getTime())) {
-                    const month = op['תאריך הזמנה'].toISOString().slice(0, 7);
-                    acc[month] = (acc[month] || 0) + 1;
-                }
-                return acc;
-            }, {});
-            const sortedTimeline = Object.entries(timelineCounts).sort((a, b) => a[0].localeCompare(b[0]));
-             if (charts.timeline) charts.timeline.destroy();
-            charts.timeline = new Chart(document.getElementById('operationsTimelineChart'), {
-                type: 'line',
-                data: {
-                    labels: sortedTimeline.map(e => e[0]),
-                    datasets: [{
-                        label: 'כמות פעולות חודשית',
-                        data: sortedTimeline.map(e => e[1]),
-                        borderColor: '#6d28d9',
-                        tension: 0.1
-                    }]
-                },
-                 options: { responsive: true, maintainAspectRatio: false }
-            });
-        };
-        
-        const renderInventory = () => {
-            const inUseBody = document.getElementById('in-use-containers-table');
-            const availableBody = document.getElementById('available-containers-table');
-            inUseBody.innerHTML = '';
-            availableBody.innerHTML = '';
-
-            const containerHistory = {}; // containerNum -> [{op1}, {op2}, ...] sorted by date
-
-            allOperations.forEach(op => {
-                const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const allRelatedContainers = [...new Set([...containersTaken, ...containersBrought])];
-
-                allRelatedContainers.forEach(containerNum => {
-                    if (!containerHistory[containerNum]) {
-                        containerHistory[containerNum] = [];
-                    }
-                    containerHistory[containerNum].push(op);
-                });
-            });
-
-            const containerCurrentStatus = {}; // containerNum -> { status: 'in_use'/'available', customerId: '...', customerName: '...', lastActionDate: Date, latestOperation: {} }
-
-            for (const containerNum in containerHistory) {
-                const history = containerHistory[containerNum].sort((a,b) => a['תאריך הזמנה'] - b['תאריך הזמנה']);
-                let currentStatus = { status: 'unknown', lastActionDate: null, customerId: null, customerName: null, latestOperation: null };
-
-                history.forEach(op => {
-                    const opDate = op['תאריך הזמנה'];
-                    const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                    const containersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-
-                    if (opDate && (!currentStatus.lastActionDate || opDate >= currentStatus.lastActionDate)) {
-                        if (containersTaken.includes(containerNum)) {
-                            currentStatus = {
-                                status: 'in_use',
-                                customerId: op['לקוח'],
-                                customerName: op['שם לקוח'],
-                                lastActionDate: opDate,
-                                latestOperation: op
-                            };
-                        } else if (containersBrought.includes(containerNum)) {
-                            currentStatus = {
-                                status: 'available',
-                                lastCustomerName: op['שם לקוח'],
-                                lastActionDate: opDate,
-                                latestOperation: op
-                            };
-                        }
-                    }
-                });
-                containerCurrentStatus[containerNum] = currentStatus;
-            }
-            
-            // Now, populate tables based on the final determined status for each unique container
-            const uniqueContainersSorted = Object.keys(containerCurrentStatus).sort((a,b) => parseInt(a) - parseInt(b));
-
-            uniqueContainersSorted.forEach(containerNum => {
-                const statusData = containerCurrentStatus[containerNum];
-                if (statusData.status === 'in_use') {
-                    const days = daysSince(statusData.lastActionDate);
-                    const row = `
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-4">${containerNum}</td>
-                            <td class="py-3 px-4 font-semibold">${statusData.customerName}</td>
-                            <td class="py-3 px-4">${statusData.lastActionDate.toLocaleDateString('he-IL')}</td>
-                            <td class="py-3 px-4 ${days > 10 ? 'text-red-600 font-bold' : ''}">${days}</td>
-                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.customerId}')">צפה</button></td>
-                        </tr>`;
-                    inUseBody.innerHTML += row;
-                } else if (statusData.status === 'available') {
-                    const row = `
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-4">${containerNum}</td>
-                            <td class="py-3 px-4">${statusData.lastActionDate ? statusData.lastActionDate.toLocaleDateString('he-IL') : ''}</td>
-                            <td class="py-3 px-4">${statusData.lastCustomerName || 'לא ידוע'}</td>
-                            <td class="py-3 px-4"><button class="text-blue-600 hover:underline" onclick="openModal('${statusData.latestOperation['לקוח']}')">צפה</button></td>
-                        </tr>`;
-                    availableBody.innerHTML += row;
-                }
-            });
-
-            document.getElementById('kpi-active-containers').textContent = inUseBody.rows.length;
-            document.getElementById('kpi-available-containers').textContent = availableBody.rows.length;
-        };
-
-        const renderTreatmentBoard = () => {
-            const board = document.getElementById('treatment-board');
-            board.innerHTML = '';
-            
-            const overdueOperations = allOperations.filter(op => op['סטטוס'] === 'חריג');
-            
-            if (overdueOperations.length === 0) {
-                board.innerHTML = `<p class="text-center text-gray-600 col-span-full">אין לקוחות בחריגה כרגע. כל הכבוד! 🎉</p>`;
-                return;
-            }
-
-            overdueOperations.forEach(op => {
-                const days = daysSince(op['תאריך הזמנה']);
-                const containerNumbersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containerNumbersBrought = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containerDisplay = containerNumbersTaken.length > 0 ? `ירדה: ${containerNumbersTaken.join(', ')}` : '';
-                if (containerNumbersBrought.length > 0) {
-                    containerDisplay += (containerDisplay ? ', ' : '') + `עלתה: ${containerNumbersBrought.join(', ')}`;
-                }
-                const containerNumbersForMsg = [...containerNumbersTaken, ...containerNumbersBrought].join(', ');
-
-
-                const card = `
-                    <div class="kpi-card bg-white border-l-4 border-red-500">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-bold text-lg">${op['שם לקוח']}</h4>
-                                <p class="text-sm text-gray-500">תעודה: ${op['תעודה']}</p>
-                                <p class="text-sm text-gray-500">מכולה: ${containerDisplay || 'לא צוין'}</p>
-                            </div>
-                            <span class="font-bold text-xl text-red-600">${days} ימים חריגה</span>
-                        </div>
-                        <div class="mt-4 flex justify-between items-center">
-                            <button class="px-3 py-1 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm" onclick="openModal('${op['לקוח']}')">פרטי לקוח</button>
-                            <button onclick="openWhatsAppModal(event, '${op['טלפון לקוח']}', '${op['שם לקוח']}', '${op['תעודה']}', ${days}, '${containerNumbersForMsg}', '${op['תאריך סיום צפוי'] ? op['תאריך סיום צפוי'].toLocaleDateString('he-IL') : ''}', '${op['כתובת']}')" class="text-green-500 hover:text-green-600 focus:outline-none">
-                                <i class="fab fa-whatsapp text-2xl"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                board.innerHTML += card;
-            });
-        };
-        
-        const openModalByCustomerName = (customerName) => {
-            const customerOp = allOperations.find(op => op['שם לקוח'] === customerName && (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חריג'));
-            if (customerOp) {
-                openModal(customerOp['לקוח']);
-            }
-        };
-
-        const openModal = (customerId) => {
-            const customerOps = allOperations.filter(op => op['לקוח'] === customerId);
-            if (customerOps.length === 0) return;
-
-            const customerName = customerOps[0]['שם לקוח'];
-            document.getElementById('modal-customer-name').textContent = customerName;
-
-            const totalOps = customerOps.length;
-            const totalPlacements = customerOps.filter(op => op['סוג פעולה'] === 'הצבה').length;
-            const totalRemovals = customerOps.filter(op => op['סוג פעולה'] === 'הוצאה').length;
-            
-            document.getElementById('modal-customer-summary').innerHTML = `
-                <div class="text-center"><p class="text-2xl font-bold">${totalOps}</p><p class="text-sm text-gray-500">סה"כ פעולות</p></div>
-                <div class="text-center"><p class="text-2xl font-bold">${totalPlacements}</p><p class="text-sm text-gray-500">הצבות</p></div>
-                <div class="text-center"><p class="text-2xl font-bold">${totalRemovals}</p><p class="text-sm text-gray-500">הוצאות</p></div>
-            `;
-
-            const historyTable = document.getElementById('modal-customer-history-table');
-            historyTable.innerHTML = '';
-            customerOps.forEach(op => {
-                 const days = (op['סטטוס'] === 'פתוח' || op['סטטוס'] === 'חריג') ? daysSince(op['תאריך הזמנה']) : '-';
-                 let statusText, statusClass;
-                 if (op['סטטוס'] === 'חריג') {
-                    statusText = 'חריגה'; statusClass = 'status-red';
-                 } else if (op['סטטוס'] === 'סגור') {
-                    statusText = 'סגור'; statusClass = 'status-gray';
-                 } else { // 'פתוח'
-                    statusText = 'פעיל'; statusClass = 'status-green';
-                 }
-                const row = `
-                    <tr>
-                        <td class="py-2 px-3">${op['מתאריך']}</td>
-                        <td class="py-2 px-3">${op['תעודה']}</td>
-                        <td class="py-2 px-3">${op['סוג פעולה']}</td>
-                        <td class="py-2 px-3"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    </tr>`;
-                historyTable.innerHTML += row;
-            });
-
-            document.getElementById('customer-history-modal').classList.remove('hidden');
-            document.getElementById('customer-history-modal').classList.add('flex');
-        };
-
-        const closeModal = () => {
-            document.getElementById('customer-history-modal').classList.add('hidden');
-            document.getElementById('customer-history-modal').classList.remove('flex');
-        };
-
-        // WhatsApp Messaging Logic
         const whatsappMessages = [
             { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! 🥳 לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
             { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** 🗓️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
@@ -862,7 +485,7 @@
             { id: 'general_inquiry', text: 'שלום **[שם לקוח]**,\n\nאיך אנחנו יכולים לעזור לך היום? 🤔 אם יש לך שאלות, בקשות או תזכורות, אל תהסס לפנות אלינו. אנחנו כאן בשבילך! ✨', category: 'כללי', placeholders: ['שם לקוח'], emoji: '💬' },
             { id: 'payment_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת ידידותית לגבי תשלום חשבונית מספר **[תעודה]** 💰. אנו מודים לך על תשומת הלב המהירה ועל המשך שיתוף הפעולה.', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '💲' },
             { id: 'service_feedback', text: 'שלום **[שם לקוח]**,\n\nאנו מקווים ששירותינו עונים על ציפיותיך. נשמח לקבל משוב על החוויה שלך עם מכולה מספר **[מספר מכולה]** כדי שנוכל להשתפר ולהעניק לך שירות טוב יותר. ⭐', category: 'משוב', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '📝' },
-            { id: 'holiday_greetings', text: 'חג שמח, **[שם לקוח]**! �\n\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה, בריאות והמון שמחה! 🥳', category: 'עונתי', placeholders: ['שם לקוח', 'שם החברה'], emoji: '🎁' },
+            { id: 'holiday_greetings', text: 'חג שמח, **[שם לקוח]**! 🎉\n\nצוות [שם החברה] מאחל לך ולמשפחתך חג שמח, מלא שלווה, בריאות והמון שמחה! 🥳', category: 'עונתי', placeholders: ['שם לקוח', 'שם החברה'], emoji: '🎁' },
             { id: 'special_offer', text: 'שלום **[שם לקוח]**,\n\nיש לנו חדשות מרגשות! 🎁 מבצע מיוחד למכולות חדשות/נוספות עבורך. אל תחמיץ! לפרטים נוספים, השב להודעה זו או התקשר: **[טלפון חברה]**.', category: 'שיווק', placeholders: ['שם לקוח', 'טלפון חברה'], emoji: '✨' },
             { id: 'follow_up_issue', text: 'שלום **[שם לקוח]**,\n\nאנחנו חוזרים אליך לגבי הנושא שדיווחת עליו בתעודה **[תעודה]** 🛠️. האם הבעיה נפתרה לשביעות רצונך? אם לא, אנא הודע לנו כדי שנוכל להמשיך לטפל.', category: 'תמיכה', placeholders: ['שם לקוח', 'תעודה'], emoji: '✅' },
             { id: 'document_reminder', text: 'שלום **[שם לקוח]**,\n\nתזכורת לשליחת המסמכים החסרים עבור הזמנה **[תעודה]** 📄. אנא שלח אותם בהקדם כדי שנוכל להשלים את הטיפול בהזמנה.\n\nתודה על שיתוף הפעולה!', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה'], emoji: '📌' },
@@ -878,7 +501,6 @@
             { id: 'pending_order_reminder', text: 'שלום **[שם לקוח]**,\n\n**בטיפול:** הזמנה **[תעודה]** של לקוח **[שם לקוח]** מסומנת "בטיפול" ולא עודכנה **[ימים שעברו]** ימים. דורש בדיקה! ⚠️', category: 'תזכורות', placeholders: ['שם לקוח', 'תעודה', 'ימים שעברו'], emoji: '⚠️' }
         ];
 
-        // Simulated city guidelines data (in a real app, this would come from a database)
         const cityGuidelines = {
             'הרצליה': {
                 id: 'herzliya_permit',
@@ -918,16 +540,15 @@
         let currentMessageFullText = '';
         let typingIndex = 0;
 
-        // Main App Logic
         document.addEventListener('DOMContentLoaded', () => {
             allOperations = parseFullTrackingCSV(fullTrackingDataRaw)
                 .map(op => ({
                     ...op,
-                    'תאריך הזמנה': formatDate(op['תאריך הזמנה']), // Convert to Date object
+                    'תאריך הזמנה': formatDate(op['תאריך הזמנה']), 
                     'תאריך סיום צפוי': formatDate(op['תאריך סיום צפוי']),
                     'תאריך סגירה': formatDate(op['תאריך סגירה']),
                 }))
-                .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0)); // Sort by date descending, handle null dates
+                .sort((a, b) => (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0) - (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0));
 
             renderDashboard();
             renderInventory();
@@ -936,21 +557,11 @@
             document.getElementById('main-search').addEventListener('input', renderAllOperationsTable);
         });
 
-        const showPage = (pageId) => {
-            ['dashboard', 'inventory', 'treatment'].forEach(id => {
-                document.getElementById(`page-${id}`).classList.add('hidden');
-                document.getElementById(`nav-${id}`).classList.remove('active');
-            });
-            document.getElementById(`page-${pageId}`).classList.remove('hidden');
-            document.getElementById(`nav-${pageId}`).classList.add('active');
-        };
-
         const getKPIs = () => {
-            let activeContainerLocations = {}; // containerNum -> { status: 'in_use'/'available', customerId: '...', customerName: '...', lastActionDate: Date, currentOperation: {} }
-            let totalOverdueCustomerIds = new Set(); // Use Set to count unique overdue customers
+            let activeContainerLocations = {}; 
+            let totalOverdueCustomerIds = new Set(); 
 
-            // Re-evaluating container statuses based on all historical data
-            const detailedContainerStatus = {}; // {containerId: {latestAction: {op}, status: 'in_use'/'available', customerId: '...'}}
+            const detailedContainerStatus = {}; 
             allOperations.slice().sort((a,b) => (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0) - (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0)).forEach(op => {
                 const opDate = op['תאריך הזמנה'];
                 if (!opDate) return;
@@ -986,7 +597,6 @@
                 if (info.status === 'in_use') {
                     currentActiveContainersCount++;
                     const daysSincePlacement = daysSince(info.lastActionDate);
-                    // Check if the actual operation status (from CSV) is 'חריג'
                     if (info.latestOperation && info.latestOperation['סטטוס'] === 'חריג') {
                         totalOverdueCustomerIds.add(info.customerId);
                     }
@@ -1075,9 +685,8 @@
                 type: 'bar',
                 data: {
                     labels: Object.keys(agentCounts).map(label => {
-                        // Wrap labels longer than 16 characters
                         if (label.length > 16) {
-                            return label.match(/.{1,8}/g).join('\n'); // Wrap every 8 chars
+                            return label.match(/.{1,8}/g).join('\n');
                         }
                         return label;
                     }),
@@ -1094,7 +703,7 @@
                         tooltip: {
                             callbacks: {
                                 title: function(context) {
-                                    return context[0].label.replace(/\n/g, ' '); // Un-wrap label for tooltip
+                                    return context[0].label.replace(/\n/g, ' ');
                                 }
                             }
                         }
@@ -1133,7 +742,7 @@
             inUseBody.innerHTML = '';
             availableBody.innerHTML = '';
 
-            const containerHistory = {}; // containerNum -> [{op1}, {op2}, ...] sorted by date
+            const containerHistory = {};
 
             allOperations.forEach(op => {
                 const containersTaken = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
@@ -1148,7 +757,7 @@
                 });
             });
 
-            const containerCurrentStatus = {}; // containerNum -> { status: 'in_use'/'available', customerId: '...', customerName: '...', lastActionDate: Date, latestOperation: {} }
+            const containerCurrentStatus = {};
 
             for (const containerNum in containerHistory) {
                 const history = containerHistory[containerNum].sort((a,b) => (a['תאריך הזמנה'] ? a['תאריך הזמנה'].getTime() : 0) - (b['תאריך הזמנה'] ? b['תאריך הזמנה'].getTime() : 0));
@@ -1183,7 +792,6 @@
                 containerCurrentStatus[containerNum] = currentStatus;
             }
             
-            // Now, populate tables based on the final determined status for each unique container
             const uniqueContainersSorted = Object.keys(containerCurrentStatus).sort((a,b) => parseInt(a) - parseInt(b));
 
             uniqueContainersSorted.forEach(containerNum => {
@@ -1315,29 +923,6 @@
         };
 
         // WhatsApp Messaging Logic
-        const getCityFromAddress = (address) => {
-            if (!address) return null;
-            const israeliCities = [
-                "תל אביב", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "באר שבע",
-                "נתניה", "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "הרצליה",
-                "כפר סבא", "חדרה", "בית שמש", "מודיעין-מכבים-רעות", "לוד", "רמלה", "רעננה",
-                "נהריה", "קריית גת", "אילת", "עכו", "צפת", "טבריה", "נצרת", "אום אל-פאחם",
-                "בני ציון", "אבן יהודה", "אור יהודה", "אור עקיבא", "אריאל", "אשקלון", "באקה אל-גרבייה",
-                "גבעתיים", "דימונה", "הוד השרון", "זכרון יעקב", "יבנה", "יהוד-מונוסון", "יוקנעם עילית",
-                "כוכב יאיר", "כפר יונה", "כפר קאסם", "כרמיאל", "מגדל העמק", "מכבים", "מעלה אדומים",
-                "מצפה רמון", "נהריה", "נס ציונה", "נשר", "עפולה", "ערד", "פרדס חנה-כרכור",
-                "קריית אונו", "קריית ביאליק", "קריית ים", "קריית מוצקין", "קריית שמונה",
-                "שוהם", "שדרות", "רמת השרון"
-            ].sort((a,b) => b.length - a.length);
-
-            for (const city of israeliCities) {
-                if (address.includes(city)) {
-                    return city;
-                }
-            }
-            return null;
-        };
-
         const getSuggestedMessageIdForOrder = (order) => {
             const daysOverdue = order['תאריך הזמנה'] ? daysSince(order['תאריך הזמנה']) : 0;
             const orderDate = order['תאריך הזמנה'];
@@ -1360,10 +945,13 @@
             // Check for new customer logic
             // Find all operations for this customer to check if this is truly their first.
             if (order['סוג פעולה'] === 'הצבה' && orderDate && daysSinceOrder <= 30) {
-                 const customerId = order['לקוח'];
-                 const customerOperations = allOperations.filter(op => op['לקוח'] === customerId);
-                 if (customerOperations.length === 1 && customerOperations[0]['תעודה'] === order['תעודה']) {
-                     return 'new_customer_welcome';
+                 const customerId = allOperations.find(op => op['טלפון לקוח'] === order['טלפון לקוח'])?.['לקוח'];
+                 if (customerId) {
+                     const customerOperations = allOperations.filter(op => op['לקוח'] === customerId);
+                     // If this is the only operation for this customer in the loaded data
+                     if (customerOperations.length === 1 && customerOperations[0]['תעודה'] === order['תעודה']) {
+                         return 'new_customer_welcome';
+                     }
                  }
             }
             
@@ -1376,7 +964,7 @@
         };
 
         const openWhatsAppModal = (event, phoneNumber, customerName, docId, daysOverdue, containerNum, expectedEndDateFormatted, customerAddress) => {
-            event.stopPropagation(); // Prevent opening customer history modal
+            event.stopPropagation();
             const modal = document.getElementById('whatsapp-modal');
             const phoneInput = document.getElementById('whatsapp-phone-input');
             const messageOptionsListDiv = document.getElementById('message-options-list');
@@ -1384,21 +972,20 @@
             const whatsappDocIdInput = document.getElementById('whatsapp-doc-id');
 
             phoneInput.value = phoneNumber.startsWith('972') ? phoneNumber : `972${phoneNumber.substring(1)}`;
-            whatsappDocIdInput.value = docId; // Set the document ID for logging
+            whatsappDocIdInput.value = docId;
 
             const dummyOrderForSuggestion = {
-                'סטטוס': (daysOverdue > 10 ? 'חריג' : 'פתוח'), // Simplified status for message suggestion logic
-                'תאריך הזמנה': new Date(new Date().getTime() - daysOverdue * 24 * 60 * 60 * 1000), // Approximate date for daysSince calculation
+                'סטטוס': (daysOverdue > 10 ? 'חריג' : 'פתוח'), 
+                'תאריך הזמנה': new Date(new Date().getTime() - daysOverdue * 24 * 60 * 60 * 1000), 
                 'תאריך סיום צפוי': expectedEndDateFormatted ? formatDate(expectedEndDateFormatted) : null,
-                'סוג פעולה': 'הצבה', // For new customer check
-                'לקוח': allOperations.find(op => op['טלפון לקוח'] === phoneNumber)?.['לקוח'], // Get customer ID for count
+                'סוג פעולה': 'הצבה',
+                'טלפון לקוח': phoneNumber,
                 'כתובת': customerAddress,
-                'תעודה': docId // Pass document ID for new customer check if it's the only one
+                'תעודה': docId
             };
             const suggestedMessageId = getSuggestedMessageIdForOrder(dummyOrderForSuggestion);
 
 
-            // Populate message options
             messageOptionsListDiv.innerHTML = '';
             
             const allMsgs = [...whatsappMessages];
@@ -1434,7 +1021,7 @@
                         'מספר טלפון חברה': companyInfo.phoneNumber,
                         'טלפון חברה': companyInfo.companyPhone,
                         'שם החברה': companyInfo.companyName,
-                        'לינק לביקורת': 'https://example.com/review' // Placeholder
+                        'לינק לביקורת': 'https://example.com/review'
                     };
                     selectAndTypeMessage(msg.id, placeholders);
                 };
@@ -1445,7 +1032,7 @@
             if (defaultSelection) {
                 defaultSelection.click();
             } else if (allMsgs.length > 0) {
-                messageOptionsListDiv.children[0].click(); // Fallback to first if no suggestion matched
+                messageOptionsListDiv.children[0].click();
             }
 
             modal.classList.remove('hidden');
@@ -1460,16 +1047,24 @@
 
         const selectAndTypeMessage = (messageId, placeholders = {}) => {
             clearInterval(typingInterval);
-            const allMessagesWithGuidelines = [...whatsappMessages, ...Object.values(cityGuidelines).map(g => ({id: `city_guideline_${g.id.split('_')[1]}`, text: g.text, category: g.category, placeholders: g.placeholders, emoji: g.emoji}))];
+            const allMessagesWithGuidelines = [
+                ...whatsappMessages,
+                ...Object.values(cityGuidelines).map(g => ({
+                    id: `city_guideline_${g.id.split('_')[0]}`,
+                    text: g.text,
+                    category: g.category,
+                    placeholders: g.placeholders,
+                    emoji: g.emoji
+                }))
+            ];
             const message = allMessagesWithGuidelines.find(msg => msg.id === messageId);
             const typingDisplay = document.getElementById('typing-effect-display');
             const whatsappMessageTextarea = document.getElementById('whatsapp-message-textarea');
 
-
             if (message) {
                 currentMessageFullText = message.text;
                 for (const key in placeholders) {
-                    currentMessageFullText = currentMessageFullText.replace(new RegExp(`\\[${key}\\]`, 'g'), placeholders[key]);
+                    currentMessageFullText = currentMessageFullText.replace(new RegExp(`\\[\\*\\*${key}\\*\\*\\]|\\[${key}\\]`, 'g'), placeholders[key]);
                 }
                 
                 typingIndex = 0;
@@ -1492,7 +1087,7 @@
         const sendWhatsAppMessage = async () => {
             const phoneNumber = document.getElementById('whatsapp-phone-input').value.trim().replace(/\D/g, '');
             const message = document.getElementById('whatsapp-message-textarea').value.trim();
-            const docId = document.getElementById('whatsapp-doc-id').value; // Get docId from hidden input
+            const docId = document.getElementById('whatsapp-doc-id').value;
 
             if (!phoneNumber) {
                 alert('אנא הזן מספר טלפון תקין.');
@@ -1508,10 +1103,9 @@
             closeModalWhatsApp();
 
             if (docId) {
-                // Exponential backoff for API calls
                 let retries = 0;
                 const maxRetries = 5;
-                const baseDelay = 1000; // 1 second
+                const baseDelay = 1000;
 
                 while (retries < maxRetries) {
                     try {
@@ -1519,7 +1113,7 @@
                         const data = await response.json();
                         if (data.success) {
                             alert('ההודעה נשלחה ותועדה בהצלחה!');
-                            return; // Exit on success
+                            return;
                         } else if (data.message && data.message.includes('Service invoked too many times')) {
                             const delay = baseDelay * Math.pow(2, retries);
                             console.warn(`API rate limit hit. Retrying in ${delay / 1000} seconds... (attempt ${retries + 1})`);
@@ -1527,15 +1121,15 @@
                             retries++;
                         } else {
                             alert('שגיאה בתיעוד ההודעה: ' + data.message);
-                            return; // Exit on other errors
+                            return;
                         }
                     } catch (error) {
                         console.error('Fetch error:', error);
                         alert('שגיאה בתקשורת עם השרת: ' + error.message);
-                        return; // Exit on network errors
+                        return;
                     }
                 }
-                alert('נכשל תיעוד ההודעה לאחר מספר ניסיונות חוזרים.'); // If all retries failed
+                alert('נכשל תיעוד ההודעה לאחר מספר ניסיונות חוזרים.');
             } else {
                 alert('ההודעה נשלחה, אך לא שויכה למסמך (חסר מספר תעודה).');
             }
