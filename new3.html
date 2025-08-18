@@ -492,7 +492,12 @@
         // Firebase configuration and initialization
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const __initial_auth_token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // This is the corrected way to access the global variable.
+        let initialAuthToken = null;
+        if (typeof __initial_auth_token !== 'undefined') {
+            initialAuthToken = __initial_auth_token;
+        }
 
         let app, db, auth;
         let isAuthReady = false;
@@ -544,8 +549,8 @@
                             console.log(`User signed in: ${userId}`);
                             await fetchDataAndRender();
                         } else {
-                            if (__initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
                             } else {
                                 await signInAnonymously(auth);
                             }
@@ -892,6 +897,7 @@
                 console.error("Error updating document: ", e);
                 showMessageModal('שגיאה', `שגיאה בעדכון הפעולה: ${e.message}`);
             }
+            hideLoader();
         }
         
         // Render Charts
