@@ -117,11 +117,34 @@
             box-shadow: 0 4px 12px rgba(58, 90, 64, 0.4);
         }
         
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
         .modal-content {
             background-color: var(--color-surface);
             border-radius: 1.25rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             border: 1px solid var(--color-border);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
         }
 
         input, select, textarea {
@@ -142,10 +165,10 @@
             font-weight: 600;
         }
         
-        tr:hover {
+        tr:hover:not(.no-hover) {
             background-color: #F8F7F4;
         }
-        body.dark tr:hover {
+        body.dark tr:hover:not(.no-hover) {
             background-color: #333;
         }
         
@@ -171,6 +194,19 @@
             height: 400px;
             max-height: 50vh;
         }
+
+        .action-icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.2rem;
+            margin: 0 0.1rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .action-icon-btn:hover {
+            transform: scale(1.2);
+        }
     </style>
 </head>
 <body class="text-base">
@@ -181,11 +217,11 @@
 
     <div id="alert-container" class="fixed bottom-5 left-5 z-[1100] space-y-3"></div>
 
-    <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col transform scale-95 transition-transform duration-300">
+    <div id="order-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
                 <h2 id="modal-title" class="text-xl font-bold">הוסף הזמנה חדשה</h2>
-                <button onclick="closeOrderModal()" class="text-2xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
+                <button onclick="closeModal('order-modal')" class="text-2xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
             </div>
             <form id="order-form" class="p-6 space-y-4 overflow-y-auto">
                  <div>
@@ -237,31 +273,76 @@
                     <textarea id="הערות" name="הערות" rows="3" class="w-full p-2 border"></textarea>
                 </div>
                 <div class="flex justify-end gap-3 pt-4 border-t border-[var(--color-border)]">
-                    <button type="button" class="btn btn-secondary" onclick="closeOrderModal()">ביטול</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('order-modal')">ביטול</button>
                     <button type="submit" class="btn btn-primary">שמור הזמנה</button>
                 </div>
             </form>
         </div>
     </div>
     
-    <div id="delete-confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="modal-content w-full max-w-md p-6 transform scale-95 transition-transform duration-300">
+    <div id="delete-confirm-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-md p-6">
             <h2 class="text-xl font-bold mb-4">אישור מחיקה</h2>
             <p class="mb-6 text-[var(--color-text-muted)]">האם אתה בטוח שברצונך למחוק את הזמנה מספר <span id="delete-order-id" class="font-bold"></span>? פעולה זו אינה הפיכה.</p>
             <div class="flex justify-end gap-3">
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirmModal()">ביטול</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('delete-confirm-modal')">ביטול</button>
                 <button type="button" class="btn bg-[var(--color-danger)] text-white" id="confirm-delete-btn">מחק</button>
             </div>
         </div>
     </div>
 
-    <div id="autofill-confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="modal-content w-full max-w-md p-6 transform scale-95 transition-transform duration-300">
-            <h2 class="text-xl font-bold mb-4">לקוח זוהה!</h2>
-            <p class="mb-6 text-[var(--color-text-muted)]">לקוח/כתובת זוהו במערכת. האם למלא אוטומטית את נתוני ההזמנה האחרונה?</p>
+    <div id="autofill-confirm-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-md p-6">
+            <h2 id="autofill-customer-name" class="text-xl font-bold mb-4"></h2>
+            <p id="autofill-message" class="mb-6 text-[var(--color-text-muted)]"></p>
             <div class="flex justify-center gap-4">
-                <button type="button" class="btn btn-primary" onclick="confirmAutofill(true)">כן</button>
-                <button type="button" class="btn btn-secondary" onclick="confirmAutofill(false)">לא</button>
+                <button type="button" class="btn btn-primary" onclick="confirmAutofill(true)">כן ✅</button>
+                <button type="button" class="btn btn-secondary" onclick="confirmAutofill(false)">לא ❌</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="order-details-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
+                <h2 class="text-xl font-bold">פרטי הזמנה <span id="details-order-id"></span></h2>
+                <button onclick="closeModal('order-details-modal')" class="text-2xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
+            </div>
+            <div id="order-details-content" class="p-6 space-y-3 overflow-y-auto text-[var(--color-text-base)]">
+                <!-- Details will be populated here -->
+            </div>
+            <div class="flex justify-end gap-3 p-5 border-t border-[var(--color-border)]">
+                <button type="button" class="btn btn-secondary" onclick="editOrderFromDetails()">ערוך 📝</button>
+                <button type="button" class="btn bg-[var(--color-danger)] text-white" onclick="deleteOrderFromDetails()">מחק 🗑️</button>
+                <button type="button" class="btn btn-primary" onclick="duplicateOrderFromDetails()">שכפל 📋</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="container-history-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
+                <h2 class="text-xl font-bold">היסטוריית מכולה: <span id="history-container-number"></span></h2>
+                <button onclick="closeModal('container-history-modal')" class="text-2xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <table class="w-full text-right">
+                    <thead>
+                        <tr>
+                            <th class="p-2">תעודה</th>
+                            <th class="p-2">שם לקוח</th>
+                            <th class="p-2">כתובת</th>
+                            <th class="p-2">סוג פעולה</th>
+                            <th class="p-2">תאריך התחלה</th>
+                            <th class="p-2">תאריך סיום (צפוי/בפועל)</th>
+                            <th class="p-2">משך שהייה (ימים)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="container-history-table-body">
+                        <!-- History will be populated here -->
+                    </tbody>
+                </table>
+                <div id="no-container-history" class="text-center text-gray-500 mt-4 hidden">אין היסטוריה זמינה למכולה זו.</div>
             </div>
         </div>
     </div>
@@ -272,7 +353,7 @@
                 <div class="w-16 h-16 bg-[var(--color-primary)] rounded-full flex items-center justify-center">
                     <i class="fas fa-truck-ramp-box text-3xl text-white"></i>
                 </div>
-                <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-primary)]">ניהול שכירות מכולות</h1>
+                <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-primary)]">מערכת CRM מתקדמת לניהול שכירות מכולות</h1>
             </div>
             <p class="text-lg text-[var(--color-text-muted)] mb-4">ניהול קל ויעיל של כל הזמנות המכולות</p>
             <button id="theme-toggle" class="absolute top-5 left-5 text-xl p-2 rounded-full hover:bg-[var(--color-border)] transition-colors">
@@ -304,7 +385,7 @@
                     <button class="btn btn-primary" onclick="openOrderModal('add')">
                         <i class="fas fa-plus"></i> הוסף הזמנה חדשה
                     </button>
-                    <button class="btn bg-[var(--color-danger)] text-white" onclick="filterTable('חורג', 'all')">
+                    <button class="btn bg-[var(--color-danger)] text-white" onclick="filterTable('חורג', 'all', true)">
                         <i class="fas fa-triangle-exclamation"></i> הצג הזמנות חורגות
                         <span id="overdue-customers-badge" class="ml-2 bg-white text-[var(--color-danger)] px-2 py-0.5 rounded-full text-xs font-bold">0</span>
                     </button>
@@ -337,15 +418,12 @@
 
                 <div class="card p-6">
                     <h2 class="text-2xl font-bold mb-6">רשימת הזמנות</h2>
-                    <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="flex flex-col md:flex-row gap-4 mb-6 items-center">
                         <input type="text" id="search-input" placeholder="חיפוש חופשי..." class="flex-grow p-2 border" onkeyup="filterTable()">
-                        <select id="filter-status" onchange="filterTable()" class="p-2 border">
-                            <option value="all">כל הסטטוסים</option>
-                            <option value="פתוח">פתוח</option>
-                            <option value="חורג">חורג</option>
-                            <option value="סגור">סגור</option>
-                            <option value="ממתין/לא תקין">ממתין/לא תקין</option>
-                        </select>
+                        <div class="flex items-center gap-2">
+                            <label for="show-closed-orders" class="text-sm font-medium text-[var(--color-text-muted)]">הצג סגורות</label>
+                            <input type="checkbox" id="show-closed-orders" onchange="filterTable()" class="w-4 h-4 text-[var(--color-primary)] bg-gray-100 rounded border-gray-300 focus:ring-[var(--color-primary)]">
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -423,6 +501,16 @@
     let currentEditingOrder = null;
     let autoFillData = null;
     let charts = {};
+    const OVERDUE_THRESHOLD_DAYS = 10;
+
+    // Helper functions for modals
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
 
     function showLoader() { document.getElementById('loader-overlay').classList.remove('opacity-0', 'pointer-events-none'); }
     function hideLoader() { document.getElementById('loader-overlay').classList.add('opacity-0', 'pointer-events-none'); }
@@ -491,7 +579,22 @@
     async function loadOrders() {
         const response = await fetchData('list', { status: 'all' });
         if (response.success) {
-            allOrders = response.data;
+            allOrders = response.data.map(order => {
+                const orderDate = new Date(order['תאריך הזמנה']);
+                const today = new Date();
+                const daysPassed = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+                order._daysPassedCalculated = daysPassed; // Always calculate days passed
+
+                // Determine effective status for display/logic
+                if (order['סטטוס'] === 'סגור') {
+                    order._effectiveStatus = 'סגור';
+                } else if (daysPassed >= OVERDUE_THRESHOLD_DAYS) { // Changed to >=
+                    order._effectiveStatus = 'חורג';
+                } else {
+                    order._effectiveStatus = 'פתוח'; // Default for non-closed and non-overdue
+                }
+                return order;
+            });
             updateDashboard();
             filterTable();
             updateContainerInventory();
@@ -500,11 +603,15 @@
     }
 
     function updateDashboard() {
-        const openOrders = allOrders.filter(o => o['סטטוס'] !== 'סגור');
-        // Explicitly convert to string before splitting
-        const containersInUse = new Set(openOrders.flatMap(o => String(o['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean)));
-        const overdueOrders = allOrders.filter(o => o['סטטוס'] === 'חורג');
-        const activeCustomers = new Set(openOrders.map(o => o['שם לקוח']));
+        const openOrders = allOrders.filter(o => o._effectiveStatus === 'פתוח');
+        const overdueOrders = allOrders.filter(o => o._effectiveStatus === 'חורג');
+        
+        const containersInUse = new Set();
+        openOrders.forEach(order => {
+            String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => containersInUse.add(c));
+        });
+        
+        const activeCustomers = new Set(allOrders.filter(o => o._effectiveStatus !== 'סגור').map(o => o['שם לקוח']));
 
         document.getElementById('open-orders-count').textContent = openOrders.length;
         document.getElementById('overdue-orders-count').textContent = overdueOrders.length;
@@ -520,41 +627,74 @@
         tableBody.innerHTML = '';
         ordersToRender.forEach(order => {
             const row = tableBody.insertRow();
-            row.className = 'border-b border-[var(--color-border)] transition-colors';
-            if (order['סטטוס'] !== 'סגור' && order['ימים שעברו'] > 110) row.classList.add('overdue-110-days');
+            row.className = 'border-b border-[var(--color-border)] transition-colors cursor-pointer';
+            row.dataset.sheetRow = order.sheetRow;
+            row.onclick = (e) => {
+                if (!e.target.closest('.action-icon-btn, .container-badge')) { // Exclude container badge
+                    showOrderDetailsModal(order.sheetRow);
+                }
+            };
 
-            // Explicitly convert to string before splitting
-            const containers = new Set([
-                ...String(order['מספר מכולה ירדה'] || '').split(','),
-                ...String(order['מספר מכולה עלתה'] || '').split(',')
-            ]);
-            const containerHTML = [...containers].filter(Boolean).map(c => `<span class="inline-block bg-[var(--color-secondary)] text-white text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">${c.trim()}</span>`).join('');
+            const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+            const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+            const allContainers = new Set([...containersTaken, ...containersBrought]);
+            
+            const containerHTML = [...allContainers].filter(Boolean).map(c => 
+                `<span class="container-badge inline-block bg-[var(--color-secondary)] text-white text-xs font-semibold px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-[var(--color-primary)] transition-colors" onclick="event.stopPropagation(); showContainerHistory('${c.trim()}')">📦 ${c.trim()}</span>`
+            ).join(' ');
             
             row.innerHTML = `
-                <td class="p-3">${formatDate(order['תאריך הזמנה'])}</td>
-                <td class="p-3">${order['תעודה'] || ''}</td>
-                <td class="p-3 font-medium">${order['שם לקוח'] || ''}</td>
-                <td class="p-3">${order['כתובת'] || ''}</td>
+                <td class="p-3 font-medium">${formatDate(order['תאריך הזמנה'])}</td>
+                <td class="p-3 font-medium">${order['תעודה'] || ''}</td>
+                <td class="p-3 font-semibold">${order['שם לקוח'] || ''}</td>
+                <td class="p-3 font-medium">${order['כתובת'] || ''}</td>
                 <td class="p-3">${order['סוג פעולה'] || ''}</td>
-                <td class="p-3">${order['ימים שעברו'] || ''}</td>
+                <td class="p-3">${order._daysPassedCalculated || ''}</td>
                 <td class="p-3">${containerHTML}</td>
-                <td class="p-3"><span class="status-${(order['סטטוס'] || '').replace(/[/ ]/g, '-').toLowerCase()}">${order['סטטוס'] || ''}</span></td>
-                <td class="p-3">
-                    <button class="text-[var(--color-text-muted)] hover:text-[var(--color-primary)]" onclick="openOrderModal('edit', ${order.sheetRow})"><i class="fas fa-edit"></i></button>
-                    <button class="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] mr-2" onclick="openDeleteConfirmModal(${order.sheetRow}, '${order['תעודה']}')"><i class="fas fa-trash"></i></button>
+                <td class="p-3"><span class="status-${(order._effectiveStatus || '').replace(/[/ ]/g, '-').toLowerCase()}">${order._effectiveStatus || ''}</span></td>
+                <td class="p-3 whitespace-nowrap">
+                    <button class="action-icon-btn" onclick="event.stopPropagation(); openOrderModal('edit', ${order.sheetRow})" title="ערוך"><i class="fas fa-edit text-[var(--color-info)]"></i></button>
+                    <button class="action-icon-btn" onclick="event.stopPropagation(); duplicateOrder(${order.sheetRow})" title="שכפל"><i class="fas fa-copy text-[var(--color-primary)]"></i></button>
+                    <button class="action-icon-btn" onclick="event.stopPropagation(); openDeleteConfirmModal(${order.sheetRow}, '${order['תעודה']}')" title="מחק"><i class="fas fa-trash text-[var(--color-danger)]"></i></button>
                 </td>
             `;
+            if (order._effectiveStatus === 'חורג') {
+                row.classList.add('overdue-110-days');
+            }
         });
     }
 
-    function filterTable(statusFilterParam = null, actionTypeFilterParam = null) {
+    function filterTable(statusFilterParam = null, actionTypeFilterParam = null, isExplicitButtonFilter = false) {
         const searchText = document.getElementById('search-input').value.toLowerCase();
-        const filterStatus = statusFilterParam !== null ? statusFilterParam : document.getElementById('filter-status').value;
-        document.getElementById('filter-status').value = filterStatus;
+        let showClosed = document.getElementById('show-closed-orders').checked;
+
+        // If explicitly filtered by "Show Overdue" button, set checkbox to false and filter by overdue
+        if (isExplicitButtonFilter && statusFilterParam === 'חורג') {
+             showClosed = false; // Override checkbox for this specific action
+             document.getElementById('show-closed-orders').checked = false;
+             document.getElementById('search-input').value = ''; // Clear search for clean filter
+        } else if (isExplicitButtonFilter) { // For other explicit filters (e.g. from chart clicks)
+            document.getElementById('show-closed-orders').checked = showClosed; // Set checkbox state if needed
+        }
 
         const filtered = allOrders.filter(order => {
             const matchesSearch = Object.values(order).some(val => String(val).toLowerCase().includes(searchText));
-            const matchesStatus = filterStatus === 'all' || order['סטטוס'] === filterStatus;
+            
+            let matchesStatus;
+            if (showClosed) {
+                matchesStatus = true; // Show all statuses if checkbox is checked
+            } else {
+                matchesStatus = (order._effectiveStatus === 'פתוח' || order._effectiveStatus === 'חורג');
+            }
+            
+            // Apply explicit status filter if provided (from buttons/charts)
+            if (statusFilterParam !== null && statusFilterParam !== 'all' && !isExplicitButtonFilter) {
+                 matchesStatus = matchesStatus && (order._effectiveStatus === statusFilterParam);
+            } else if (isExplicitButtonFilter && statusFilterParam === 'חורג') {
+                 matchesStatus = (order._effectiveStatus === 'חורג');
+            }
+
+
             return matchesSearch && matchesStatus;
         });
         renderOrdersTable(filtered);
@@ -567,8 +707,18 @@
         return date.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
+    // Container validation helper
+    function validateContainerUsage(containerNum, currentOrderSheetRow = null) {
+        const containersInUse = new Set();
+        allOrders.filter(o => o._effectiveStatus !== 'סגור').forEach(order => {
+            if (order.sheetRow !== currentOrderSheetRow) { // Exclude the order being edited
+                String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => containersInUse.add(c));
+            }
+        });
+        return !containersInUse.has(containerNum); // True if container is NOT in use
+    }
+
     function openOrderModal(mode, sheetRow = null) {
-        const modal = document.getElementById('order-modal');
         const form = document.getElementById('order-form');
         form.reset();
         currentEditingOrder = null;
@@ -577,7 +727,7 @@
         if (mode === 'add') {
             document.getElementById('modal-title').textContent = 'הוסף הזמנה חדשה';
             document.getElementById('תאריך הזמנה').valueAsDate = new Date();
-            form.onsubmit = e => { e.preventDefault(); addOrder(); };
+            form.onsubmit = async e => { e.preventDefault(); await addOrder(); };
         } else if (mode === 'edit' && sheetRow) {
             document.getElementById('modal-title').textContent = 'ערוך הזמנה';
             currentEditingOrder = allOrders.find(order => order.sheetRow === sheetRow);
@@ -592,18 +742,29 @@
                         }
                     }
                 });
-                form.onsubmit = e => { e.preventDefault(); editOrder(sheetRow); };
+                form.onsubmit = async e => { e.preventDefault(); await editOrder(sheetRow); };
+            }
+        } else if (mode === 'duplicate' && sheetRow) {
+            document.getElementById('modal-title').textContent = 'שכפל הזמנה';
+            const originalOrder = allOrders.find(order => order.sheetRow === sheetRow);
+            if (originalOrder) {
+                Object.keys(originalOrder).forEach(key => {
+                    const input = form.elements[key];
+                    if (input && !['תעודה', 'תאריך סגירה', 'ימים שעברו', 'מספרי מכולות', '_effectiveStatus', '_daysPassedCalculated', 'sheetRow'].includes(key)) {
+                         if (input.type === 'date' && originalOrder[key]) {
+                            input.value = new Date(originalOrder[key]).toISOString().split('T')[0];
+                        } else {
+                            input.value = originalOrder[key];
+                        }
+                    }
+                });
+                document.getElementById('תאריך הזמנה').valueAsDate = new Date(); // New date for duplicated order
+                document.getElementById('תעודה').value = ''; // Clear document ID
+                form.onsubmit = async e => { e.preventDefault(); await addOrder(); }; // Treat as new order
             }
         }
         handleActionTypeChange();
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        modal.querySelector('.modal-content').classList.remove('scale-95');
-    }
-
-    function closeOrderModal() {
-        const modal = document.getElementById('order-modal');
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        modal.querySelector('.modal-content').classList.add('scale-95');
+        openModal('order-modal');
     }
 
     function handleActionTypeChange() {
@@ -618,10 +779,27 @@
         const form = document.getElementById('order-form');
         const formData = new FormData(form);
         const orderData = Object.fromEntries(formData.entries());
+        
+        // Validate container usage
+        if (['הורדה', 'החלפה'].includes(orderData['סוג פעולה'])) {
+            const containerTaken = String(orderData['מספר מכולה ירדה'] || '').trim();
+            if (containerTaken && !validateContainerUsage(containerTaken)) {
+                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה.`, 'error');
+                return;
+            }
+        }
+
+        orderData['סטטוס'] = 'פתוח'; // New orders are always open initially
+        // Ensure daysPassed is sent to the sheet
+        const orderDate = new Date(orderData['תאריך הזמנה']);
+        const today = new Date();
+        orderData['ימים שעברו'] = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+
+
         const response = await fetchData('add', { data: JSON.stringify(orderData) });
         if (response.success) {
             showAlert(response.message, 'success');
-            closeOrderModal();
+            closeModal('order-modal');
             loadOrders();
         } else {
             showAlert(response.message || 'שגיאה בהוספת הזמנה', 'error');
@@ -632,35 +810,49 @@
         const form = document.getElementById('order-form');
         const formData = new FormData(form);
         const updateData = Object.fromEntries(formData.entries());
+        
+        // Validate container usage
+        if (['הורדה', 'החלפה'].includes(updateData['סוג פעולה'])) {
+            const containerTaken = String(updateData['מספר מכולה ירדה'] || '').trim();
+            if (containerTaken && !validateContainerUsage(containerTaken, sheetRow)) { // Pass current sheetRow to exclude itself
+                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה אחרת.`, 'error');
+                return;
+            }
+        }
+
+        // Do not allow status to be changed directly from this form, only via Kanban board
+        if (updateData.hasOwnProperty('סטטוס')) delete updateData['סטטוס'];
+        
+        // Update daysPassed in the data sent for sheet if needed
+        const orderDate = new Date(updateData['תאריך הזמנה']);
+        const today = new Date();
+        updateData['ימים שעברו'] = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+
         const response = await fetchData('edit', { id: sheetRow, data: JSON.stringify(updateData) });
         if (response.success) {
             showAlert(response.message, 'success');
-            closeOrderModal();
+            closeModal('order-modal');
             loadOrders();
         } else {
             showAlert(response.message || 'שגיאה בעדכון הזמנה', 'error');
         }
     }
 
+    async function duplicateOrder(sheetRow) {
+        openOrderModal('duplicate', sheetRow);
+    }
+
     function openDeleteConfirmModal(sheetRow, orderId) {
         document.getElementById('delete-order-id').textContent = orderId;
         document.getElementById('confirm-delete-btn').onclick = () => deleteOrder(sheetRow);
-        const modal = document.getElementById('delete-confirm-modal');
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        modal.querySelector('.modal-content').classList.remove('scale-95');
-    }
-
-    function closeDeleteConfirmModal() {
-        const modal = document.getElementById('delete-confirm-modal');
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        modal.querySelector('.modal-content').classList.add('scale-95');
+        openModal('delete-confirm-modal');
     }
 
     async function deleteOrder(sheetRow) {
         const response = await fetchData('delete', { id: sheetRow });
         if (response.success) {
             showAlert(response.message, 'success');
-            closeDeleteConfirmModal();
+            closeModal('delete-confirm-modal');
             loadOrders();
         } else {
             showAlert(response.message || 'שגיאה במחיקת הזמנה', 'error');
@@ -670,17 +862,32 @@
     function checkCustomerExistenceAndAutofill() {
         const customerName = document.getElementById('שם לקוח').value.trim();
         const address = document.getElementById('כתובת').value.trim();
-        if (!customerName || !address) return;
+        const phone = document.getElementById('טלפון לקוח') ? document.getElementById('טלפון לקוח').value.trim() : ''; // Assuming phone might be added later
 
-        const latestOrder = allOrders
-            .filter(o => o['שם לקוח'] === customerName && o['כתובת'] === address)
-            .sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה']))[0];
-        
+        if (!customerName && !address && !phone) return;
+
+        let latestOrder = null;
+        if (customerName || address) {
+            latestOrder = allOrders
+                .filter(o => {
+                    const matchesName = customerName ? o['שם לקוח'] === customerName : true;
+                    const matchesAddress = address ? o['כתובת'] === address : true;
+                    return matchesName && matchesAddress;
+                })
+                .sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה']))[0];
+        }
+        // If phone field existed and was used, prioritize finding by phone
+        if (!latestOrder && phone) {
+             latestOrder = allOrders
+                .filter(o => o['טלפון לקוח'] === phone)
+                .sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה']))[0];
+        }
+
         if (latestOrder && !currentEditingOrder) {
             autoFillData = latestOrder;
-            const modal = document.getElementById('autofill-confirm-modal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            modal.querySelector('.modal-content').classList.remove('scale-95');
+            document.getElementById('autofill-customer-name').textContent = `הלקוח ${latestOrder['שם לקוח']} זוהה!`;
+            document.getElementById('autofill-message').innerHTML = `הלקוח **${latestOrder['שם לקוח']}** זוהה מהזמנה קודמת מתאריך **${formatDate(latestOrder['תאריך הזמנה'])}**. תרצה לשכפל הזמנה זו?`;
+            openModal('autofill-confirm-modal');
         }
     }
 
@@ -688,7 +895,8 @@
         if (confirm && autoFillData) {
             Object.keys(autoFillData).forEach(key => {
                 const input = document.getElementById(key);
-                if (input && !['שם לקוח', 'כתובת'].includes(key)) {
+                // Exclude specific fields not to be autofilled for new order
+                if (input && !['שם לקוח', 'כתובת', 'תעודה', 'תאריך הזמנה', 'תאריך סגירה', 'ימים שעברו', 'מספרי מכולות', '_effectiveStatus', '_daysPassedCalculated', 'sheetRow'].includes(key)) {
                      if (input.type === 'date' && autoFillData[key]) {
                         input.value = new Date(autoFillData[key]).toISOString().split('T')[0];
                     } else {
@@ -696,19 +904,112 @@
                     }
                 }
             });
+            document.getElementById('תאריך הזמנה').valueAsDate = new Date(); // New date for duplicated order
+            document.getElementById('תעודה').value = ''; // Clear document ID
             handleActionTypeChange();
         }
-        const modal = document.getElementById('autofill-confirm-modal');
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        modal.querySelector('.modal-content').classList.add('scale-95');
+        closeModal('autofill-confirm-modal');
         autoFillData = null;
+    }
+
+    function showOrderDetailsModal(sheetRow) {
+        const order = allOrders.find(o => o.sheetRow === sheetRow);
+        if (!order) {
+            showAlert('פרטי הזמנה לא נמצאו.', 'error');
+            return;
+        }
+
+        document.getElementById('details-order-id').textContent = order['תעודה'] || 'לא ידוע';
+        const detailsContent = document.getElementById('order-details-content');
+        detailsContent.innerHTML = `
+            <p><strong>תאריך הזמנה:</strong> ${formatDate(order['תאריך הזמנה'])}</p>
+            <p><strong>סטטוס:</strong> <span class="status-${(order._effectiveStatus || '').replace(/[/ ]/g, '-').toLowerCase()}">${order._effectiveStatus || ''}</span></p>
+            <p><strong>לקוח:</strong> ${order['שם לקוח'] || ''}</p>
+            <p><strong>כתובת:</strong> ${order['כתובת'] || ''}</p>
+            <p><strong>סוכן:</strong> ${order['שם סוכן'] || ''}</p>
+            <p><strong>סוג פעולה:</strong> ${order['סוג פעולה'] || ''}</p>
+            <p><strong>מכולה ירדה:</strong> ${order['מספר מכולה ירדה'] || ''}</p>
+            <p><strong>מכולה עלתה:</strong> ${order['מספר מכולה עלתה'] || ''}</p>
+            <p><strong>ימים שעברו:</strong> ${order._daysPassedCalculated || ''}</p>
+            <p><strong>תאריך סיום צפוי:</strong> ${formatDate(order['תאריך סיום צפוי'])}</p>
+            <p><strong>הערות:</strong> ${order['הערות'] || ''}</p>
+            <p><strong>טלפון לקוח:</strong> ${order['טלפון לקוח'] || ''}</p>
+            ${order['תאריך סגירה'] ? `<p><strong>תאריך סגירה:</strong> ${formatDate(order['תאריך סגירה'])}</p>` : ''}
+        `;
+        
+        const actionButtonsDiv = document.querySelector('#order-details-modal .flex.justify-end.gap-3');
+        actionButtonsDiv.dataset.sheetRow = sheetRow;
+
+        openModal('order-details-modal');
+    }
+
+    function editOrderFromDetails() {
+        const sheetRow = document.querySelector('#order-details-modal .flex.justify-end.gap-3').dataset.sheetRow;
+        closeModal('order-details-modal');
+        openOrderModal('edit', parseInt(sheetRow));
+    }
+
+    function deleteOrderFromDetails() {
+        const sheetRow = document.querySelector('#order-details-modal .flex.justify-end.gap-3').dataset.sheetRow;
+        const order = allOrders.find(o => o.sheetRow === parseInt(sheetRow));
+        closeModal('order-details-modal');
+        if (order) {
+            openDeleteConfirmModal(parseInt(sheetRow), order['תעודה']);
+        }
+    }
+
+    function duplicateOrderFromDetails() {
+        const sheetRow = document.querySelector('#order-details-modal .flex.justify-end.gap-3').dataset.sheetRow;
+        closeModal('order-details-modal');
+        openOrderModal('duplicate', parseInt(sheetRow));
+    }
+
+    function showContainerHistory(containerNumber) {
+        document.getElementById('history-container-number').textContent = containerNumber;
+        const historyTableBody = document.getElementById('container-history-table-body');
+        historyTableBody.innerHTML = '';
+        document.getElementById('no-container-history').classList.add('hidden');
+
+        const containerMovements = allOrders
+            .filter(order => {
+                const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                return containersTaken.includes(containerNumber) || containersBrought.includes(containerNumber);
+            })
+            .sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה'])); // Sort chronologically
+
+        if (containerMovements.length === 0) {
+            document.getElementById('no-container-history').classList.remove('hidden');
+        } else {
+            containerMovements.forEach(order => {
+                const startDate = new Date(order['תאריך הזמנה']);
+                const endDate = order['תאריך סגירה'] ? new Date(order['תאריך סגירה']) : (order['תאריך סיום צפוי'] ? new Date(order['תאריך סיום צפוי']) : null);
+                
+                let durationDays = '';
+                if (endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+                    durationDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+                }
+
+                const row = historyTableBody.insertRow();
+                row.className = 'border-b border-[var(--color-border)]';
+                row.innerHTML = `
+                    <td class="p-2">${order['תעודה'] || ''}</td>
+                    <td class="p-2 font-medium">${order['שם לקוח'] || ''}</td>
+                    <td class="p-2">${order['כתובת'] || ''}</td>
+                    <td class="p-2">${order['סוג פעולה'] || ''}</td>
+                    <td class="p-2">${formatDate(order['תאריך הזמנה'])}</td>
+                    <td class="p-2">${endDate ? formatDate(endDate) : 'טרם נקבע'}</td>
+                    <td class="p-2">${durationDays !== '' ? `${durationDays} ימים` : 'N/A'}</td>
+                `;
+            });
+        }
+        openModal('container-history-modal');
     }
 
     function drawCharts() {
         const customerData = allOrders.reduce((acc, order) => {
-            if (order['סטטוס'] !== 'סגור') {
-                // Explicitly convert to string before splitting
-                const count = String(order['מספר מכולה ירדה'] || '').split(',').filter(Boolean).length;
+            if (order._effectiveStatus !== 'סגור') {
+                const count = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).length;
                 if (count > 0) {
                     acc[order['שם לקוח']] = (acc[order['שם לקוח']] || 0) + count;
                 }
@@ -718,7 +1019,7 @@
         const sortedCustomers = Object.entries(customerData).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
         const statusData = allOrders.reduce((acc, order) => {
-            const status = order['סטטוס'] || 'לא ידוע';
+            const status = order._effectiveStatus || 'לא ידוע';
             acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {});
@@ -727,7 +1028,7 @@
             'פתוח': 'rgba(39, 174, 96, 0.7)',
             'חורג': 'rgba(192, 57, 43, 0.7)',
             'סגור': 'rgba(127, 140, 141, 0.7)',
-            'ממתין/לא תקין': 'rgba(41, 128, 185, 0.7)'
+            // 'ממתין/לא תקין': 'rgba(41, 128, 185, 0.7)' // This status is not set by effectiveStatus logic
         };
 
         if (charts.customerChart) charts.customerChart.destroy();
@@ -747,7 +1048,16 @@
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false } },
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const customerName = sortedCustomers[index][0];
+                        document.getElementById('search-input').value = customerName;
+                        filterTable(); // Call filter without status param to apply search
+                        showPage('dashboard');
+                    }
+                }
             }
         });
 
@@ -764,7 +1074,17 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } }
+                plugins: { legend: { position: 'bottom' } },
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const statusClicked = Object.keys(statusData)[index];
+                        document.getElementById('search-input').value = ''; // Clear search
+                        document.getElementById('show-closed-orders').checked = (statusClicked === 'סגור');
+                        filterTable(statusClicked, null, true); // Explicitly filter by status clicked
+                        showPage('dashboard');
+                    }
+                }
             }
         });
     }
@@ -775,31 +1095,53 @@
         inUseTableBody.innerHTML = '';
         availableTableBody.innerHTML = '';
 
-        const containerStates = {};
+        const containerStates = {}; // containerNum: { status: 'in-use' | 'available', lastActivityOrderDate: Date }
+
+        // Step 1: Initialize container states and find last activity date for ALL containers
+        const allUniqueContainers = new Set();
         allOrders.forEach(order => {
-            // Explicitly convert to string before splitting
-            const containers = String(order['מספר מכולה ירדה'] || '').split(',').filter(Boolean);
-            containers.forEach(c => {
-                if (order['סטטוס'] !== 'סגור') {
-                    containerStates[c.trim()] = { status: 'בשימוש', order };
-                } else if (containerStates[c.trim()]?.status !== 'בשימוש') {
-                    containerStates[c.trim()] = { status: 'פנוי', order };
+            const orderDate = new Date(order['תאריך הזמנה']);
+            const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+            const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+
+            [...containersTaken, ...containersBrought].forEach(c => {
+                allUniqueContainers.add(c);
+                if (!containerStates[c] || orderDate > (containerStates[c].lastActivityOrderDate || new Date(0))) {
+                    containerStates[c] = {
+                        status: 'unknown', // Will determine later
+                        lastActivityOrderDate: orderDate
+                    };
                 }
             });
         });
 
-        Object.entries(containerStates).forEach(([num, state]) => {
+        // Step 2: Determine actual 'in-use' status based on active orders
+        allOrders.filter(o => o._effectiveStatus !== 'סגור').forEach(order => {
+            const containers = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+            containers.forEach(c => {
+                if (containerStates[c]) {
+                    containerStates[c].status = 'in-use';
+                    containerStates[c].currentOrder = order; // Store current order for in-use containers
+                }
+            });
+        });
+
+        // Step 3: Populate tables
+        Object.entries(containerStates).sort((a,b) => a[0].localeCompare(b[0])).forEach(([num, state]) => {
             const row = document.createElement('tr');
             row.className = 'border-b border-[var(--color-border)]';
-            if (state.status === 'בשימוש') {
-                row.innerHTML = `<td class="p-2">${num}</td><td class="p-2">${state.order['שם לקוח']}</td><td class="p-2">${formatDate(state.order['תאריך הזמנה'])}</td>`;
+            if (state.status === 'in-use') {
+                row.innerHTML = `<td class="p-2"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')">📦 ${num}</span></td><td class="p-2">${state.currentOrder['שם לקוח']}</td><td class="p-2">${formatDate(state.currentOrder['תאריך הזמנה'])}</td>`;
                 inUseTableBody.appendChild(row);
-            } else {
-                row.innerHTML = `<td class="p-2">${num}</td><td class="p-2">${formatDate(state.order['תאריך סגירה'] || state.order['תאריך הזמנה'])}</td>`;
+            } else { // It's available
+                let releaseDate = new Date(state.lastActivityOrderDate);
+                releaseDate.setDate(releaseDate.getDate() + OVERDUE_THRESHOLD_DAYS); // +10 days from last activity order date
+                row.innerHTML = `<td class="p-2"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')">📦 ${num}</span></td><td class="p-2">${formatDate(releaseDate)}</td>`;
                 availableTableBody.appendChild(row);
             }
         });
     }
+
 
     function renderTreatmentBoard() {
         const columns = {
@@ -809,7 +1151,8 @@
         };
         Object.values(columns).forEach(col => col.querySelectorAll('.kanban-item').forEach(item => item.remove()));
 
-        const ordersForTreatment = allOrders.filter(o => ['חורג', 'ממתין/לא תקין'].includes(o['סטטוס']));
+        const ordersForTreatment = allOrders.filter(o => o._effectiveStatus === 'חורג' || (o._effectiveStatus === 'פתוח' && o._daysPassedCalculated >= OVERDUE_THRESHOLD_DAYS));
+        
         document.getElementById('no-treatment-orders').classList.toggle('hidden', ordersForTreatment.length > 0);
 
         ordersForTreatment.forEach(order => {
@@ -821,9 +1164,14 @@
             item.innerHTML = `
                 <p class="font-bold">${order['שם לקוח']}</p>
                 <p class="text-sm text-[var(--color-text-muted)]">${order['תעודה']}</p>
-                <p class="text-sm mt-2"><span class="font-semibold text-[var(--color-danger)]">${order['ימים שעברו'] || 0}</span> ימים</p>
+                <p class="text-sm mt-2"><span class="font-semibold text-[var(--color-danger)]">${order._daysPassedCalculated || 0}</span> ימים</p>
+                <div class="flex justify-end gap-1 mt-3">
+                    <button class="action-icon-btn" onclick="event.stopPropagation(); openOrderModal('edit', ${order.sheetRow})" title="ערוך"><i class="fas fa-edit text-[var(--color-info)]"></i></button>
+                    <button class="action-icon-btn" onclick="event.stopPropagation(); duplicateOrder(${order.sheetRow})" title="שכפל"><i class="fas fa-copy text-[var(--color-primary)]"></i></button>
+                    <button class="action-icon-btn" onclick="event.stopPropagation(); openDeleteConfirmModal(${order.sheetRow}, '${order['תעודה']}')" title="מחק"><i class="fas fa-trash text-[var(--color-danger)]"></i></button>
+                </div>
             `;
-            const targetColumn = order['סטטוס'] === 'חורג' ? 'overdue' : 'in-progress';
+            const targetColumn = order._effectiveStatus === 'חורג' ? 'overdue' : 'in-progress'; // Use overdue if it's explicitly overdue, otherwise in-progress
             columns[targetColumn].appendChild(item);
         });
     }
@@ -835,15 +1183,15 @@
         const sheetRow = event.dataTransfer.getData('text/plain');
         const targetColumn = event.currentTarget;
         const statusMap = {
-            'column-overdue': 'חורג',
-            'column-in-progress': 'ממתין/לא תקין',
-            'column-resolved': 'סגור'
+            'column-overdue': 'פתוח', // Kanban column status, maps to sheet status 'פתוח' but treated as 'חורג'
+            'column-in-progress': 'פתוח', // Kanban column status, maps to sheet status 'פתוח'
+            'column-resolved': 'סגור' // Done and closed
         };
-        const newStatus = statusMap[targetColumn.id];
-        if (!newStatus) return;
+        const newSheetStatus = statusMap[targetColumn.id];
+        if (!newSheetStatus) return;
 
-        const updateData = { 'סטטוס': newStatus };
-        if (newStatus === 'סגור') {
+        const updateData = { 'סטטוס': newSheetStatus };
+        if (newSheetStatus === 'סגור') {
             updateData['תאריך סגירה'] = new Date().toISOString().split('T')[0];
         }
         
@@ -852,7 +1200,7 @@
             showAlert('סטטוס הזמנה עודכן', 'success');
             loadOrders();
         } else {
-            showAlert('שגיאה בעדכון סטטוס', 'error');
+            showAlert(response.message || 'שגיאה בעדכון סטטוס', 'error');
         }
     }
 
