@@ -553,7 +553,11 @@
 
 <script>
     const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec';
-    const WHATSAPP_LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_YOUR_WHATSAPP_SCRIPT_ID_HERE/exec'; // Placeholder for WhatsApp Logger Script
+    // NOTE: For WHATSAPP_LOG_SCRIPT_URL, you will need to publish a separate Google Apps Script
+    // that accepts 'action=logMessage', 'docId', and 'message' parameters and writes them to your
+    // "יומן WhatsApp" Google Sheet. Replace 'AKfycbx_YOUR_WHATSAPP_SCRIPT_ID_HERE' with your actual Script ID.
+    const WHATSAPP_LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_YOUR_WHATSAPP_SCRIPT_ID_HERE/exec'; 
+    
     let allOrders = [];
     let currentEditingOrder = null;
     let autoFillData = null;
@@ -635,7 +639,11 @@
 
     async function logWhatsAppMessage(docId, message) {
         // This function sends data to the WhatsApp log sheet
-        const url = `${WHATSAPP_LOG_SCRIPT_URL}?action=logMessage&docId=${docId}&message=${encodeURIComponent(message)}`;
+        // IMPORTANT: You need to set up a Google Apps Script published as a web app
+        // to handle this logging. The script should receive 'docId' and 'message'
+        // and append them to your "יומן WhatsApp" sheet.
+        // Replace WHATSAPP_LOG_SCRIPT_URL with your actual published script URL.
+        const url = `${WHATSAPP_LOG_SCRIPT_URL}?action=logMessage&docId=${encodeURIComponent(docId)}&message=${encodeURIComponent(message)}`;
         try {
             const response = await fetch(url);
             const data = await response.json();
@@ -657,15 +665,15 @@
                 const orderDate = new Date(order['תאריך הזמנה']);
                 const today = new Date();
                 const daysPassed = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
-                order._daysPassedCalculated = daysPassed; // Always calculate days passed
+                order._daysPassedCalculated = daysPassed; // Always calculate days passed and store it
 
                 // Determine effective status for display/logic
                 if (order['סטטוס'] === 'סגור') {
                     order._effectiveStatus = 'סגור';
-                } else if (daysPassed >= OVERDUE_THRESHOLD_DAYS) {
+                } else if (daysPassed >= OVERDUE_THRESHOLD_DAYS) { // If days passed are 10 or more, it's overdue
                     order._effectiveStatus = 'חורג';
                 } else {
-                    order._effectiveStatus = 'פתוח'; // Default for non-closed and non-overdue
+                    order._effectiveStatus = 'פתוח'; // Default for non-closed and not yet overdue
                 }
                 return order;
             });
@@ -685,6 +693,7 @@
             String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => containersInUse.add(c));
         });
         
+        // Active customers are those with open or overdue orders
         const activeCustomers = new Set(allOrders.filter(o => o._effectiveStatus !== 'סגור').map(o => o['שם לקוח']));
 
         document.getElementById('open-orders-count').textContent = openOrders.length;
@@ -704,7 +713,8 @@
             row.className = 'border-b border-[var(--color-border)] transition-colors cursor-pointer';
             row.dataset.sheetRow = order.sheetRow;
             row.onclick = (e) => {
-                if (!e.target.closest('.action-icon-btn, .container-badge, .whatsapp-btn')) { // Exclude container badge and WhatsApp button
+                // If a button or container badge was clicked, prevent showing order details
+                if (!e.target.closest('.action-icon-btn, .container-badge, .whatsapp-btn')) { 
                     showOrderDetailsModal(order.sheetRow);
                 }
             };
@@ -756,7 +766,7 @@
             
             let matchesStatus;
             if (showClosed) {
-                matchesStatus = true;
+                matchesStatus = true; // Show all statuses if checkbox is checked
             } else {
                 matchesStatus = (order._effectiveStatus === 'פתוח' || order._effectiveStatus === 'חורג');
             }
@@ -781,14 +791,19 @@
 
     // Container validation helper
     function validateContainerUsage(containerNum, currentOrderSheetRow = null) {
-        const containersInUse = new Set();
-        allOrders.filter(o => o._effectiveStatus !== 'סגור').forEach(order => {
-            if (order.sheetRow !== currentOrderSheetRow) { // Exclude the order being edited
-                // Check containers taken down as they are in use by this order
-                String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => containersInUse.add(c));
+        if (!containerNum) return true; // No container entered, so no conflict
+
+        const isContainerCurrentlyInUse = allOrders.some(order => {
+            // Check if this order is the one being edited, if so, skip it for this check
+            if (order.sheetRow === currentOrderSheetRow) {
+                return false;
             }
+            // A container is 'in use' if it's been taken down by an open/overdue order
+            const containersTakenByOrder = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+            return (order._effectiveStatus === 'פתוח' || order._effectiveStatus === 'חורג') && containersTakenByOrder.includes(containerNum);
         });
-        return !containersInUse.has(containerNum); // True if container is NOT in use
+        
+        return !isContainerCurrentlyInUse; // True if container is NOT currently in use
     }
 
     function openOrderModal(mode, sheetRow = null) {
@@ -853,11 +868,11 @@
         const formData = new FormData(form);
         const orderData = Object.fromEntries(formData.entries());
         
-        // Validate container usage
+        // Validate container usage for 'הורדה' or 'החלפה' action types
         if (['הורדה', 'החלפה'].includes(orderData['סוג פעולה'])) {
             const containerTaken = String(orderData['מספר מכולה ירדה'] || '').trim();
             if (containerTaken && !validateContainerUsage(containerTaken)) {
-                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה.`, 'error');
+                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה. אנא ודא שהיא פנויה.`, 'error');
                 return;
             }
         }
@@ -879,11 +894,11 @@
         const formData = new FormData(form);
         const updateData = Object.fromEntries(formData.entries());
         
-        // Validate container usage
+        // Validate container usage for 'הורדה' or 'החלפה' action types
         if (['הורדה', 'החלפה'].includes(updateData['סוג פעולה'])) {
             const containerTaken = String(updateData['מספר מכולה ירדה'] || '').trim();
             if (containerTaken && !validateContainerUsage(containerTaken, sheetRow)) { // Pass current sheetRow to exclude itself
-                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה אחרת.`, 'error');
+                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה אחרת. אנא ודא שהיא פנויה.`, 'error');
                 return;
             }
         }
@@ -1139,7 +1154,8 @@
                         showPage('dashboard');
                     }
                 }
-            });
+            }
+        });
     }
 
     function updateContainerInventory() {
@@ -1148,31 +1164,33 @@
         inUseTableBody.innerHTML = '';
         availableTableBody.innerHTML = '';
 
-        const containerStates = {}; // containerNum: { status: 'in-use' | 'available', lastActivityDate: Date, currentOrder?: Object }
+        const containerStates = {}; // containerNum: { status: 'in-use' | 'available', lastRelevantActivityDate: Date, currentOrder?: Object }
 
-        // Step 1: Find all unique containers and their last activity date
-        allOrders.forEach(order => {
+        // Step 1: Initialize container states with their most recent activity date that might make them available
+        // Iterate through orders in reverse chronological order to find the *latest* relevant activity.
+        [...allOrders].sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה'])).forEach(order => {
             const orderDate = new Date(order['תאריך הזמנה']);
             const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
             const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
 
+            // If a container was brought up, or if the order is closed, it was made available/returned
             [...containersTaken, ...containersBrought].forEach(c => {
-                if (!containerStates[c] || orderDate > (containerStates[c].lastActivityDate || new Date(0))) {
-                    containerStates[c] = {
-                        status: 'available', // Assume available by default, will be overwritten if in-use
-                        lastActivityDate: orderDate,
-                        currentOrder: null // Only relevant if in-use
-                    };
+                 if (c && (!containerStates[c] || orderDate > containerStates[c].lastRelevantActivityDate)) {
+                    if (containersBrought.includes(c) || order._effectiveStatus === 'סגור') {
+                         containerStates[c] = {
+                            status: 'available', // This container was returned or made available
+                            lastRelevantActivityDate: orderDate
+                        };
+                    }
                 }
             });
         });
 
-        // Step 2: Mark containers that are currently 'in-use' based on active orders
-        // This takes precedence over 'available' status if a container is listed in an open/overdue order
+        // Step 2: Override status to 'in-use' if container is currently assigned to an open/overdue order
         allOrders.filter(o => o._effectiveStatus !== 'סגור').forEach(order => {
             const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
             containersTaken.forEach(c => {
-                if (containerStates[c]) {
+                if (c && containerStates[c]) {
                     containerStates[c].status = 'in-use';
                     containerStates[c].currentOrder = order;
                 }
@@ -1187,9 +1205,13 @@
                 row.innerHTML = `<td class="p-2"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')">📦 ${num}</span></td><td class="p-2">${state.currentOrder['שם לקוח']}</td><td class="p-2">${formatDate(state.currentOrder['תאריך הזמנה'])}</td>`;
                 inUseTableBody.appendChild(row);
             } else { // status === 'available'
-                let estimatedReleaseDate = new Date(state.lastActivityDate);
-                estimatedReleaseDate.setDate(estimatedReleaseDate.getDate() + OVERDUE_THRESHOLD_DAYS); // +10 days from last activity order date
-                row.innerHTML = `<td class="p-2"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')">📦 ${num}</span></td><td class="p-2">${formatDate(estimatedReleaseDate)}</td>`;
+                let estimatedAvailableDate = new Date(state.lastRelevantActivityDate);
+                // If it was removed, it becomes truly available 10 days after the removal order date
+                // This logic assumes 'removed' means 'מספר מכולה ירדה' in a closed order context, or just brought up.
+                // For simplicity and to match the "10 days for available" rule:
+                estimatedAvailableDate.setDate(estimatedAvailableDate.getDate() + OVERDUE_THRESHOLD_DAYS); 
+                
+                row.innerHTML = `<td class="p-2"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')">📦 ${num}</span></td><td class="p-2">${formatDate(estimatedAvailableDate)}</td>`;
                 availableTableBody.appendChild(row);
             }
         });
@@ -1204,6 +1226,7 @@
         };
         Object.values(columns).forEach(col => col.querySelectorAll('.kanban-item').forEach(item => item.remove()));
 
+        // Filter orders that are effectively 'חורג' or 'פתוח' but have passed the overdue threshold
         const ordersForTreatment = allOrders.filter(o => o._effectiveStatus === 'חורג' || (o._effectiveStatus === 'פתוח' && o._daysPassedCalculated >= OVERDUE_THRESHOLD_DAYS));
         
         document.getElementById('no-treatment-orders').classList.toggle('hidden', ordersForTreatment.length > 0);
@@ -1225,7 +1248,7 @@
                     <button class="action-icon-btn" onclick="event.stopPropagation(); openDeleteConfirmModal(${order.sheetRow}, '${order['תעודה']}')" title="מחק"><i class="fas fa-trash text-[var(--color-danger)]"></i></button>
                 </div>
             `;
-            const targetColumn = order._effectiveStatus === 'חורג' ? 'overdue' : 'in-progress';
+            const targetColumn = order._effectiveStatus === 'חורג' ? 'overdue' : 'in-progress'; // Use overdue if it's explicitly overdue, otherwise in-progress (for newly overdue ones)
             columns[targetColumn].appendChild(item);
         });
     }
@@ -1237,9 +1260,9 @@
         const sheetRow = event.dataTransfer.getData('text/plain');
         const targetColumn = event.currentTarget;
         const statusMap = {
-            'column-overdue': 'פתוח', // Kanban column status, maps to sheet status 'פתוח' but will be recalculated as 'חורג' by UI
-            'column-in-progress': 'פתוח', // Kanban column status, maps to sheet status 'פתוח'
-            'column-resolved': 'סגור' // Done and closed
+            'column-overdue': 'פתוח', // On the sheet, still 'פתוח', but _effectiveStatus will make it 'חורג' based on days
+            'column-in-progress': 'פתוח',
+            'column-resolved': 'סגור'
         };
         const newSheetStatus = statusMap[targetColumn.id];
         if (!newSheetStatus) return;
@@ -1252,7 +1275,7 @@
         const response = await fetchData('edit', { id: sheetRow, data: JSON.stringify(updateData) });
         if (response.success) {
             showAlert('סטטוס הזמנה עודכן', 'success');
-            loadOrders();
+            loadOrders(); // Reload to re-evaluate effective status
         } else {
             showAlert(response.message || 'שגיאה בעדכון סטטוס', 'error');
         }
@@ -1338,7 +1361,7 @@
             
             // Try to fill placeholders based on selected customer/order (if available)
             const customerName = document.getElementById('whatsapp-customer-name').value;
-            const phoneNumber = document.getElementById('whatsapp-phone-number').value;
+            const phoneNumber = document.getElementById('whatsapp-phone-number').value; // Get phone from input, not order
             const orderId = document.getElementById('details-order-id').textContent; // From details modal if opened via table row
             
             message = message.replace('[שם לקוח]', customerName || 'הלקוח');
@@ -1352,6 +1375,9 @@
                 }
                 if (selectedOrder['תאריך סיום צפוי']) {
                     message = message.replace('[תאריך סיום צפוי]', formatDate(selectedOrder['תאריך סיום צפוי']));
+                }
+                 if (selectedOrder['תאריך חדש']) { // For delay message template
+                    message = message.replace('[תאריך חדש]', formatDate(selectedOrder['תאריך חדש']));
                 }
             }
 
@@ -1386,6 +1412,7 @@
         document.getElementById('message-template-select').value = '';
         document.getElementById('whatsapp-customer-name').value = '';
         document.getElementById('whatsapp-phone-number').value = '';
+        document.getElementById('details-order-id').textContent = ''; // Clear associated order ID
     }
 
     function sendWhatsAppMessage() {
@@ -1427,7 +1454,7 @@
         // Try to pre-select a relevant template
         if (order._effectiveStatus === 'חורג') {
             document.getElementById('message-template-select').value = whatsappTemplates.findIndex(t => t.name.includes('חורגת')).toString();
-        } else if (order._daysPassedCalculated >= (OVERDUE_THRESHOLD_DAYS - 2) && order._effectiveStatus === 'פתוח') { // Example for pre-overdue
+        } else if (order._daysPassedCalculated >= (OVERDUE_THRESHOLD_DAYS - 2) && order._effectiveStatus === 'פתוח') { 
             document.getElementById('message-template-select').value = whatsappTemplates.findIndex(t => t.name.includes('לפני חריגה')).toString();
         } else {
             document.getElementById('message-template-select').value = ''; // Default
