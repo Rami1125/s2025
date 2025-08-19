@@ -663,7 +663,7 @@
 
         // Predefined WhatsApp messages and city guidelines
         const whatsappMessages = [
-            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! 👋 לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
+            { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! � לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
             { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** 🗓️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
             { id: 'approaching_due_3_days', text: 'שלום **[שם לקוח]**,\n\nתקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת ממש בקרוב, בעוד **3 ימים** ⚠️. אנא טפל בנושא כדי למנוע חריגות.\n\nאנו לרשותך לכל עזרה! 🙏', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏳' },
             { id: 'overdue_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להודיע לך על חריגה בימי שכירות של המכולה ([**מספר מכולה**]) ב-**[ימים שעברו] ימים** 🚨. נא ליצור קשר עם מחלקת הזמנות **[טלפון חברה]** או להשיב להודעה זו מה תרצה שנבצע (החלפה/הוצאה).', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '❗️' },
@@ -1702,8 +1702,9 @@
 
             overdueOperations.forEach(op => {
                 const days = op['ימים שעברו']; // Pre-calculated days
-                const containersDropped = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-                const containersLifted = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                // Fix: Define these variables within the current scope
+                const droppedContainers = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                const liftedContainers = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
                 let containerDisplay = droppedContainers.length > 0 ? `ירדה: ${droppedContainers.join(', ')}` : '';
                 if (liftedContainers.length > 0) {
                     containerDisplay += (containerDisplay ? ', ' : '') + `עלתה: ${liftedContainers.join(', ')}`;
@@ -2067,7 +2068,7 @@
 
             phoneInput.value = phoneNumber.startsWith('972') ? phoneNumber : `972${phoneNumber.substring(1)}`;
             whatsappDocIdInput.value = docId;
-            whatsappCustomerIdInput.value = customerName; // Store customer name for note updates
+            whatsappCustomerIdInput.value = customerName; // Store customer name for logging and potential note updates
 
             // Find the full operation object to pass to getSuggestedMessageIdForOrder
             const fullOrderOp = allOperations.find(op => String(op['תעודה']) === String(docId));
@@ -2491,3 +2492,4 @@
     </script>
 </body>
 </html>
+�
