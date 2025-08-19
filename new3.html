@@ -755,7 +755,7 @@
         // Predefined WhatsApp messages and city guidelines
         const whatsappMessages = [
             { id: 'new_customer_welcome', text: 'שלום **[שם לקוח]**,\nתודה שבחרת להתחיל שכירות מכולה אצלנו! 👋 לכל פניה, בקשת החלפה או הוצאה של המכולה, אתה מוזמן ליצור קשר.\n\n📞 מספר ווטסאפ להזמנות: **[מספר טלפון חברה]**\n☎️ טלפון מחלקת הזמנות: **[טלפון חברה]**', category: 'כללי', placeholders: ['שם לקוח', 'מספר טלפון חברה', 'טלפון חברה'], emoji: '👋' },
-            { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** 🗓️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
+            { id: 'approaching_due_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להזכיר לך כי תקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת בעוד **7 ימים** �️. זה הזמן לנקוט פעולה!\n\nהאם תרצה להאריך את תקופת השכירות, להחליף את המכולה, או להזמין איסוף? ♻️', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏰' },
             { id: 'approaching_due_3_days', text: 'שלום **[שם לקוח]**,\n\nתקופת שכירות המכולה ([**מספר מכולה**]) מסתיימת ממש בקרוב, בעוד **3 ימים** ⚠️. אנא טפל בנושא כדי למנוע חריגות.\n\nאנו לרשותך לכל עזרה! 🙏', category: 'תזכורות', placeholders: ['שם לקוח', 'מספר מכולה'], emoji: '⏳' },
             { id: 'overdue_7_days', text: 'שלום **[שם לקוח]**,\n\nברצוננו להודיע לך על חריגה בימי שכירות של המכולה ([**מספר מכולה**]) ב-**[ימים שעברו] ימים** 🚨. נא ליצור קשר עם מחלקת הזמנות **[טלפון חברה]** או להשיב להודעה זו מה תרצה שנבצע (החלפה/הוצאה).', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '❗️' },
             { id: 'overdue_30_days', text: '**התראה חמורה, [שם לקוח]:**\n\nהמכולה ([**מספר מכולה**]) שבשימושך חורגת ב-**[ימים שעברו] ימים**! יש לטפל בנושא בדחיפות כדי למנוע חיובים נוספים וסיבוכים משפטיים. ⚖️\n\n**צור קשר מיידית: [טלפון חברה].**', category: 'חריגות', placeholders: ['שם לקוח', 'מספר מכולה', 'ימים שעברו', 'טלפון חברה'], emoji: '🔴' },
@@ -803,7 +803,7 @@
                 link: 'https://www.tel-aviv.muni.il/Bussiness/Construction/Pages/WasteContainers.aspx',
                 category: 'היתרים עירוניים',
                 placeholders: [],
-                emoji: '�️'
+                emoji: '🏗️' // Changed from original to a more fitting emoji
             }
         };
 
@@ -993,7 +993,7 @@
 2025-08-14,6714018,שני אילתי/כללי,מוחמד/שארק,החלפה,רחוב האגוז 3, רמת השרון
 2025-08-14,6714022,שני אילתי/כללי,מוחמד/שארק,החלפה,רחוב האגוז 3, רמת השרון
 2025-08-15,6714030,מודי יבוא/בני ברק,מוחמד/שארק,החלפה,רחוב קק"ל 50, בני ברק
-2025-08-15,6714032,שני אילתי/כללי,אגבאריה/שא,החלפה,רחוב האגוז 3, רמת השרון
+2025-08-15,6714032,שni אילתי/כללי,אגבאריה/שא,החלפה,רחוב האגוז 3, רמת השרון
 2025-08-15,6714037,בזלת מזר בע"מ,אגבאריה/שארק,החלפה,רחוב הציונות 5, נס ציונה
 2025-08-17,6714041,שני אילתי/כללי,מוחמד/שארק,הצבה,רחוב האגוז 3, רמת השרון
 2025-08-17,6714051,אוהד טל,אגבאריה/שא,החלפה,רחוב הדקל 5, באר שבע
@@ -1354,4 +1354,1136 @@
         /**
          * Updates an existing order in the Google Sheet via Apps Script.
          * @param {string} originalDocId - The original document ID of the order to update.
-         * @param {Object} updatedOrderDat�
+         * @param {Object} updatedOrderData - The updated order data.
+         * @async
+         */
+        const updateOrderInSheet = async (originalDocId, updatedOrderData) => {
+            document.getElementById('global-loader').classList.remove('hidden'); // Show loader
+            try {
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=updateOrder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ originalDocId, updatedOrderData })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatusMessage('ההזמנה עודכנה בהצלחה בגיליון!', 'success');
+                    await fetchDataFromGoogleSheet(); // Re-fetch all data to ensure local state is updated
+                } else {
+                    showStatusMessage('שגיאה בעדכון ההזמנה: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating order in sheet:', error);
+                showStatusMessage('שגיאה בתקשורת עם השרת בעת עדכון הזמנה.', 'error');
+            } finally {
+                document.getElementById('global-loader').classList.add('hidden'); // Hide loader
+            }
+        };
+
+        /**
+         * Updates a customer's note in the Google Sheet via Apps Script.
+         * @param {string} customerName - The name of the customer.
+         * @param {string} note - The note to update/add.
+         * @async
+         */
+        const updateCustomerNoteInSheet = async (customerName, note) => {
+            try {
+                // No loader needed for subtle note updates
+                const response = await fetch(`${SCRIPT_WEB_APP_URL}?action=updateCustomerNote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ customerName, note })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    console.log(`Note for ${customerName} updated successfully.`);
+                    customerNotes[customerName] = note; // Update local cache
+                    // No status message needed for this subtle update
+                } else {
+                    console.error('Error updating customer note:', result.message);
+                    // No status message needed for this subtle update
+                }
+            } catch (error) {
+                console.error('Error communicating with server for note update:', error);
+            }
+        };
+
+        // Debounced version of updateCustomerNoteInSheet
+        const debouncedUpdateCustomerNote = debounce(updateCustomerNoteInSheet, 500);
+
+        /**
+         * Displays a status message to the user.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'success' or 'error' to determine styling.
+         */
+        const showStatusMessage = (message, type) => {
+            const messageContainer = document.getElementById('status-message-container');
+            if (!messageContainer) {
+                // If container doesn't exist, create it dynamically
+                const div = document.createElement('div');
+                div.id = 'status-message-container';
+                div.className = 'fixed top-4 right-4 z-[1000] p-4 rounded-lg shadow-lg text-white text-right transition-transform transform translate-x-full opacity-0';
+                document.body.appendChild(div);
+            }
+
+            const currentMessageContainer = document.getElementById('status-message-container');
+            currentMessageContainer.textContent = message;
+            currentMessageContainer.classList.remove('bg-green-500', 'bg-red-500', 'translate-x-full', 'opacity-0');
+
+            if (type === 'success') {
+                currentMessageContainer.classList.add('bg-green-500');
+            } else if (type === 'error') {
+                currentMessageContainer.classList.add('bg-red-500');
+            }
+
+            // Animate in
+            setTimeout(() => {
+                currentMessageContainer.classList.add('translate-x-0', 'opacity-100');
+            }, 50);
+
+            // Animate out after 5 seconds
+            setTimeout(() => {
+                currentMessageContainer.classList.remove('translate-x-0', 'opacity-100');
+                currentMessageContainer.classList.add('translate-x-full', 'opacity-0');
+            }, 5000);
+        };
+
+        /**
+         * Opens the new order modal and initializes form fields.
+         */
+        const openNewOrderModal = () => {
+            document.getElementById('new-order-form').reset();
+            // Set default date to today
+            const today = formatISODate(new Date());
+            document.getElementById('new-order-date').value = today;
+            document.getElementById('new-order-expected-end-date').value = ''; // Clear expected end date
+            document.getElementById('new-order-status').value = 'פתוח'; // Default status
+            document.getElementById('docid-error').classList.add('hidden');
+            document.getElementById('container-dropped-error').classList.add('hidden');
+            document.getElementById('container-lifted-error').classList.add('hidden');
+            document.getElementById('new-order-modal').classList.remove('hidden');
+            document.getElementById('new-order-modal').classList.add('flex');
+        };
+
+        /**
+         * Closes the new order modal.
+         */
+        const closeNewOrderModal = () => {
+            document.getElementById('new-order-modal').classList.add('hidden');
+            document.getElementById('new-order-modal').classList.remove('flex');
+        };
+
+        /**
+         * Handles submission of the new order form.
+         * @async
+         */
+        const submitNewOrder = async () => {
+            const form = document.getElementById('new-order-form');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const newDocId = document.getElementById('new-order-docid').value.trim();
+
+            // Check for duplicate docId
+            const isDuplicateDocId = allOperations.some(op => String(op['תעודה']) === newDocId);
+            if (isDuplicateDocId) {
+                document.getElementById('docid-error').textContent = 'מספר תעודה זה כבר קיים. אנא בחר מספר אחר.';
+                document.getElementById('docid-error').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('docid-error').classList.add('hidden');
+            }
+
+            const actionType = document.getElementById('new-order-action-type').value;
+            const containerDropped = document.getElementById('new-order-container-dropped').value.trim();
+            const containerLifted = document.getElementById('new-order-container-lifted').value.trim();
+
+            // Validate container numbers based on action type
+            let isValid = true;
+            if (actionType === 'הצבה' && !containerDropped) {
+                document.getElementById('container-dropped-error').textContent = 'בפעולת "הצבה" חובה לציין מספר מכולה יורדת.';
+                document.getElementById('container-dropped-error').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('container-dropped-error').classList.add('hidden');
+            }
+
+            if ((actionType === 'הוצאה' || actionType === 'פינוי במקום') && !containerLifted) {
+                document.getElementById('container-lifted-error').textContent = 'בפעולת "הוצאה" או "פינוי במקום" חובה לציין מספר מכולה עולה.';
+                document.getElementById('container-lifted-error').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('container-lifted-error').classList.add('hidden');
+            }
+
+            if (actionType === 'החלפה' && (!containerDropped || !containerLifted)) {
+                document.getElementById('container-dropped-error').textContent = 'בפעולת "החלפה" חובה לציין מכולה יורדת ועולה.';
+                document.getElementById('container-dropped-error').classList.remove('hidden');
+                document.getElementById('container-lifted-error').classList.remove('hidden');
+                isValid = false;
+            } else if (actionType === 'החלפה') { // If both filled, hide errors
+                document.getElementById('container-dropped-error').classList.add('hidden');
+                document.getElementById('container-lifted-error').classList.add('hidden');
+            }
+
+            if (!isValid) return;
+
+            // Prepare data in the structure expected by the Google Sheet (matching headers)
+            const orderData = {
+                'תאריך הזמנה': document.getElementById('new-order-date').value,
+                'תעודה': newDocId,
+                'שם סוכן': document.getElementById('new-order-agent').value || '',
+                'שם לקוח': document.getElementById('new-order-customer-name').value,
+                'כתובת': document.getElementById('new-order-address').value || '',
+                'סוג פעולה': actionType,
+                'ימים שעברו': '', // Will be calculated by Apps Script
+                'מספר מכולה ירדה': containerDropped,
+                'מספר מכולה עלתה': containerLifted,
+                'מספרי מכולות': `${containerDropped}${containerDropped && containerLifted ? ',' : ''}${containerLifted}`, // Combined field
+                'סטטוס': document.getElementById('new-order-status').value,
+                'הערות': document.getElementById('new-order-notes').value || '',
+                'תאריך סיום צפוי': document.getElementById('new-order-expected-end-date').value || '',
+                'הערות סיום': '',
+                'תאריך סגירה': document.getElementById('new-order-status').value === 'סגור' ? document.getElementById('new-order-date').value : '',
+                'ימים שעברו (עלתה)': '', // Will be calculated by Apps Script
+                'טלפון לקוח': document.getElementById('new-order-phone').value || '',
+            };
+
+            await addNewOrderToSheet(orderData);
+            closeNewOrderModal();
+        };
+
+        /**
+         * Opens the edit order modal and populates it with existing order data.
+         * @param {string} docId - The document ID of the order to edit.
+         */
+        const openEditOrderModal = (docId) => {
+            const orderToEdit = allOperations.find(op => String(op['תעודה']) === docId);
+            if (!orderToEdit) {
+                showStatusMessage('הזמנה לא נמצאה לעריכה.', 'error');
+                return;
+            }
+
+            document.getElementById('edit-order-original-docid').value = docId;
+            document.getElementById('edit-order-date').value = formatISODate(orderToEdit['תאריך הזמנה']);
+            document.getElementById('edit-order-docid').value = orderToEdit['תעודה'];
+            document.getElementById('edit-order-agent').value = orderToEdit['שם סוכן'] || '';
+            document.getElementById('edit-order-customer-name').value = orderToEdit['שם לקוח'] || '';
+            document.getElementById('edit-order-address').value = orderToEdit['כתובת'] || '';
+            document.getElementById('edit-order-action-type').value = orderToEdit['סוג פעולה'] || '';
+            document.getElementById('edit-order-status').value = orderToEdit['סטטוס'] || 'פתוח';
+            document.getElementById('edit-order-container-dropped').value = orderToEdit['מספר מכולה ירדה'] || '';
+            document.getElementById('edit-order-container-lifted').value = orderToEdit['מספר מכולה עלתה'] || '';
+            document.getElementById('edit-order-expected-end-date').value = formatISODate(orderToEdit['תאריך סיום צפוי']);
+            document.getElementById('edit-order-phone').value = orderToEdit['טלפון לקוח'] || '';
+            document.getElementById('edit-order-notes').value = orderToEdit['הערות'] || '';
+            document.getElementById('edit-order-closure-notes').value = orderToEdit['הערות סיום'] || '';
+            document.getElementById('edit-order-closure-date').value = formatISODate(orderToEdit['תאריך סגירה']);
+
+            document.getElementById('edit-docid-error').classList.add('hidden');
+            document.getElementById('edit-container-dropped-error').classList.add('hidden');
+            document.getElementById('edit-container-lifted-error').classList.add('hidden');
+
+            document.getElementById('edit-order-modal').classList.remove('hidden');
+            document.getElementById('edit-order-modal').classList.add('flex');
+        };
+
+        /**
+         * Closes the edit order modal.
+         */
+        const closeEditOrderModal = () => {
+            document.getElementById('edit-order-modal').classList.add('hidden');
+            document.getElementById('edit-order-modal').classList.remove('flex');
+        };
+
+        /**
+         * Handles submission of the edited order form.
+         * @async
+         */
+        const submitEditOrder = async () => {
+            const form = document.getElementById('edit-order-form');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const originalDocId = document.getElementById('edit-order-original-docid').value;
+            const newDocId = document.getElementById('edit-order-docid').value.trim();
+
+            // Check for duplicate docId if it's changed and exists for another record
+            if (newDocId !== originalDocId && allOperations.some(op => String(op['תעודה']) === newDocId)) {
+                document.getElementById('edit-docid-error').textContent = 'מספר תעודה זה כבר קיים עבור הזמנה אחרת. אנא בחר מספר אחר.';
+                document.getElementById('edit-docid-error').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('edit-docid-error').classList.add('hidden');
+            }
+
+            const actionType = document.getElementById('edit-order-action-type').value;
+            const containerDropped = document.getElementById('edit-order-container-dropped').value.trim();
+            const containerLifted = document.getElementById('edit-order-container-lifted').value.trim();
+
+            // Validate container numbers based on action type for edit modal
+            let isValid = true;
+            if (actionType === 'הצבה' && !containerDropped) {
+                document.getElementById('edit-container-dropped-error').textContent = 'בפעולת "הצבה" חובה לציין מספר מכולה יורדת.';
+                document.getElementById('edit-container-dropped-error').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('edit-container-dropped-error').classList.add('hidden');
+            }
+
+            if ((actionType === 'הוצאה' || actionType === 'פינוי במקום') && !containerLifted) {
+                document.getElementById('edit-container-lifted-error').textContent = 'בפעולת "הוצאה" או "פינוי במקום" חובה לציין מספר מכולה עולה.';
+                document.getElementById('edit-container-lifted-error').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('edit-container-lifted-error').classList.add('hidden');
+            }
+
+            if (actionType === 'החלפה' && (!containerDropped || !containerLifted)) {
+                document.getElementById('edit-container-dropped-error').textContent = 'בפעולת "החלפה" חובה לציין מכולה יורדת ועולה.';
+                document.getElementById('edit-container-dropped-error').classList.remove('hidden');
+                document.getElementById('edit-container-lifted-error').classList.remove('hidden');
+                isValid = false;
+            } else if (actionType === 'החלפה') { // If both filled, hide errors
+                document.getElementById('edit-container-dropped-error').classList.add('hidden');
+                document.getElementById('edit-container-lifted-error').classList.add('hidden');
+            }
+
+            if (!isValid) return;
+
+            const updatedOrderData = {
+                'תאריך הזמנה': document.getElementById('edit-order-date').value,
+                'תעודה': newDocId,
+                'שם סוכן': document.getElementById('edit-order-agent').value || '',
+                'שם לקוח': document.getElementById('edit-order-customer-name').value,
+                'כתובת': document.getElementById('edit-order-address').value || '',
+                'סוג פעולה': actionType,
+                'מספר מכולה ירדה': containerDropped,
+                'מספר מכולה עלתה': containerLifted,
+                'מספרי מכולות': `${containerDropped}${containerDropped && containerLifted ? ',' : ''}${containerLifted}`, // Combined field
+                'סטטוס': document.getElementById('edit-order-status').value,
+                'הערות': document.getElementById('edit-order-notes').value || '',
+                'תאריך סיום צפוי': document.getElementById('edit-order-expected-end-date').value || '',
+                'הערות סיום': document.getElementById('edit-order-closure-notes').value || '',
+                'תאריך סגירה': document.getElementById('edit-order-status').value === 'סגור' ? document.getElementById('edit-order-closure-date').value : '',
+                'טלפון לקוח': document.getElementById('edit-order-phone').value || '',
+            };
+
+            await updateOrderInSheet(originalDocId, updatedOrderData);
+            closeEditOrderModal();
+        };
+
+        /**
+         * Opens the WhatsApp modal and pre-fills phone number and message based on the customer/operation.
+         * @param {string} customerName - The name of the customer.
+         * @param {string} docId - The document ID related to the operation.
+         * @param {string} phoneNumber - The customer's phone number.
+         * @param {string} address - The customer's address (for city guidelines).
+         * @param {string} containerNum - Optional: The container number related to the message.
+         */
+        const openWhatsAppModal = (customerName, docId, phoneNumber, address, containerNum = '') => {
+            const phoneInput = document.getElementById('whatsapp-phone-input');
+            const messageTextarea = document.getElementById('whatsapp-message-textarea');
+            const whatsappDocId = document.getElementById('whatsapp-doc-id');
+            const whatsappCustomerId = document.getElementById('whatsapp-customer-id');
+
+            phoneInput.value = phoneNumber || '';
+            messageTextarea.value = ''; // Clear custom message area
+            whatsappDocId.value = docId;
+            whatsappCustomerId.value = customerName; // Store customer name for note updates
+
+            // Populate message options
+            populateMessageOptions(customerName, docId, containerNum, address);
+
+            // Display typing effect for chosen message
+            document.getElementById('typing-effect-display').textContent = '';
+            typingIndex = 0;
+            currentMessageFullText = '';
+
+            // Show WhatsApp modal
+            document.getElementById('whatsapp-modal').classList.remove('hidden');
+            document.getElementById('whatsapp-modal').classList.add('flex');
+        };
+
+
+        /**
+         * Populates the WhatsApp message options list.
+         * @param {string} customerName - The name of the customer.
+         * @param {string} docId - The document ID related to the operation.
+         * @param {string} containerNum - Optional: The container number related to the message.
+         * @param {string} address - The customer's address (for city guidelines).
+         */
+        const populateMessageOptions = (customerName, docId, containerNum, address) => {
+            const messageListDiv = document.getElementById('message-options-list');
+            messageListDiv.innerHTML = ''; // Clear previous options
+
+            // Filter out specific messages for calculation:
+            // For overdue, find the actual days overdue.
+            const operation = allOperations.find(op => String(op['תעודה']) === docId);
+            const daysOverdue = operation && operation.isOverdue ? daysSince(operation['תאריך הזמנה']) : 0;
+            const expectedEndDate = operation ? formatISODate(operation['תאריך סיום צפוי']) : '';
+
+            // Determine relevant city guideline
+            const city = getCityFromAddress(address);
+            let relevantCityGuideline = null;
+            if (city && cityGuidelines[city]) {
+                relevantCityGuideline = cityGuidelines[city];
+            }
+
+            // Create a temporary object to hold all possible replacements
+            const replacements = {
+                '[שם לקוח]': customerName,
+                '[מספר טלפון חברה]': companyInfo.phoneNumber,
+                '[טלפון חברה]': companyInfo.companyPhone,
+                '[שם החברה]': companyInfo.companyName,
+                '[מספר מכולה]': containerNum || 'לא צוין',
+                '[ימים שעברו]': daysOverdue.toString(),
+                '[תעודה]': docId,
+                '[לינק לביקורת]': 'https://example.com/review', // Placeholder
+                '[תאריך סיום צפוי]': expectedEndDate || 'לא צוין'
+            };
+
+            // Combine all messages and potentially add the relevant city guideline
+            let allAvailableMessages = [...whatsappMessages];
+            if (relevantCityGuideline) {
+                // Add the city guideline to the top
+                allAvailableMessages.unshift(relevantCityGuideline);
+            }
+
+            allAvailableMessages.forEach(msg => {
+                let displayMsg = msg.text;
+                // Replace placeholders in the display message
+                for (const placeholder in replacements) {
+                    displayMsg = displayMsg.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replacements[placeholder]);
+                }
+
+                const button = document.createElement('button');
+                button.className = 'block w-full text-right p-3 hover:bg-violet-50 text-gray-800 border-b border-gray-100 last:border-b-0 transition-colors rounded-md';
+                button.innerHTML = `<span class="text-sm text-gray-500">${msg.category}</span><br>${msg.emoji ? msg.emoji + ' ' : ''}<strong>${displayMsg.split('\n')[0]}</strong><p class="text-sm text-gray-600 line-clamp-2">${displayMsg.split('\n').slice(1).join('\n')}</p>`;
+                button.onclick = () => selectWhatsAppMessage(msg.id, replacements);
+                messageListDiv.appendChild(button);
+            });
+        };
+
+        /**
+         * Selects a predefined WhatsApp message and starts the typing effect.
+         * @param {string} messageId - The ID of the selected message.
+         * @param {Object} replacements - Object with placeholder replacements.
+         */
+        const selectWhatsAppMessage = (messageId, replacements) => {
+            const selectedMessageObj = whatsappMessages.find(msg => msg.id === messageId) || cityGuidelines[messageId];
+            if (selectedMessageObj) {
+                let fullText = selectedMessageObj.text;
+                for (const placeholder in replacements) {
+                    fullText = fullText.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replacements[placeholder]);
+                }
+                currentMessageFullText = fullText;
+                document.getElementById('whatsapp-message-textarea').value = fullText; // Set full text immediately for copy/send
+                startTypingEffect(currentMessageFullText);
+                toggleMessageOptions(); // Close options after selection
+            }
+        };
+
+        /**
+         * Starts the typing effect for the WhatsApp message display.
+         * @param {string} text - The text to type.
+         */
+        const startTypingEffect = (text) => {
+            clearInterval(typingInterval);
+            typingIndex = 0;
+            const displayElement = document.getElementById('typing-effect-display');
+            displayElement.textContent = ''; // Clear previous text
+            displayElement.nextElementSibling.classList.remove('hidden'); // Show cursor
+
+            typingInterval = setInterval(() => {
+                if (typingIndex < text.length) {
+                    displayElement.textContent += text.charAt(typingIndex);
+                    typingIndex++;
+                    displayElement.scrollTop = displayElement.scrollHeight; // Scroll to bottom
+                } else {
+                    clearInterval(typingInterval);
+                    displayElement.nextElementSibling.classList.add('hidden'); // Hide cursor
+                }
+            }, 30); // Adjust typing speed here
+        };
+
+        /**
+         * Toggles the visibility of the WhatsApp message options container.
+         */
+        const toggleMessageOptions = () => {
+            const container = document.getElementById('whatsapp-message-options-container');
+            const icon = document.getElementById('message-options-toggle-icon');
+            container.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180'); // Rotate arrow icon
+        };
+
+        /**
+         * Filters the WhatsApp message options based on user input.
+         */
+        const filterMessageOptions = () => {
+            const input = document.getElementById('message-filter-input').value.toLowerCase();
+            const messageButtons = document.querySelectorAll('#message-options-list button');
+
+            messageButtons.forEach(button => {
+                const text = button.textContent.toLowerCase();
+                if (text.includes(input)) {
+                    button.style.display = 'block';
+                } else {
+                    button.style.display = 'none';
+                }
+            });
+        };
+
+        /**
+         * Sends a WhatsApp message using the WhatsApp Web API.
+         */
+        const sendWhatsAppMessage = () => {
+            const phoneInput = document.getElementById('whatsapp-phone-input');
+            const messageTextarea = document.getElementById('whatsapp-message-textarea');
+            const phoneError = document.getElementById('phone-error');
+            const whatsappDocId = document.getElementById('whatsapp-doc-id').value;
+            const whatsappCustomerId = document.getElementById('whatsapp-customer-id').value; // Get customer ID for note
+
+            let phoneNumber = phoneInput.value.trim();
+            const message = messageTextarea.value.trim();
+
+            // Basic validation for Israeli phone numbers (972 followed by 9 digits)
+            if (!/^9725\d{8}$/.test(phoneNumber)) {
+                phoneError.classList.remove('hidden');
+                return;
+            } else {
+                phoneError.classList.add('hidden');
+            }
+
+            // Remove leading '972' if present for the WhatsApp API which prefers without it for direct links sometimes,
+            // but for full international format, it should be present.
+            // For simplicity and broad compatibility, keep 972 and let WhatsApp handle it.
+            // If the number is already just 10 digits and starts with 05, then convert.
+            if (phoneNumber.startsWith('05') && phoneNumber.length === 10) {
+                phoneNumber = `972${phoneNumber.substring(1)}`;
+            }
+
+
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            // Add a note to the customer's record that a WhatsApp message was sent.
+            // This is a simple append for demonstration. You might want more sophisticated logging.
+            const existingNote = customerNotes[whatsappCustomerId] || '';
+            const newNote = `${existingNote}${existingNote ? '\n' : ''}[${new Date().toLocaleDateString('he-IL')}] נשלחה הודעת ווטסאפ לתעודה ${whatsappDocId}.`;
+            debouncedUpdateCustomerNote(whatsappCustomerId, newNote); // Use debounced update
+
+            closeModalWhatsApp();
+        };
+
+        /**
+         * Closes the WhatsApp modal.
+         */
+        const closeModalWhatsApp = () => {
+            document.getElementById('whatsapp-modal').classList.add('hidden');
+            document.getElementById('whatsapp-modal').classList.remove('flex');
+            clearInterval(typingInterval); // Clear typing effect interval
+            document.getElementById('message-filter-input').value = ''; // Clear filter
+            document.getElementById('message-options-toggle-icon').classList.remove('rotate-180'); // Reset icon
+            document.getElementById('whatsapp-message-options-container').classList.add('hidden'); // Hide options
+        };
+
+        /**
+         * Opens the unified history modal for a customer or container.
+         * @param {string} type - 'customer' or 'container'.
+         * @param {string} identifier - The name of the customer or the container number.
+         */
+        const openHistoryModal = (type, identifier) => {
+            const modalTitle = document.getElementById('modal-history-title');
+            const modalCustomerSpecificDetails = document.getElementById('modal-customer-specific-details');
+            const modalCustomerSummary = document.getElementById('modal-customer-summary');
+            const modalCustomerContainers = document.getElementById('modal-customer-containers');
+            const customerContainerList = document.getElementById('customer-container-list');
+            const historyTableTitle = document.getElementById('history-table-title');
+            const historyTableBody = document.getElementById('modal-customer-history-table');
+            const historyTableHeaderRow = document.getElementById('history-table-header-row');
+
+            historyTableBody.innerHTML = ''; // Clear previous data
+            historyTableHeaderRow.innerHTML = ''; // Clear previous headers
+            modalCustomerSpecificDetails.classList.add('hidden'); // Hide by default
+
+            let filteredOperations = [];
+
+            if (type === 'customer') {
+                modalTitle.textContent = `היסטוריית פעולות עבור לקוח: ${identifier}`;
+                historyTableTitle.textContent = 'היסטוריית פעולות הלקוח';
+                modalCustomerSpecificDetails.classList.remove('hidden');
+
+                filteredOperations = allOperations.filter(op => op['שם לקוח'] === identifier);
+
+                // Populate customer summary (active containers, total operations, overdue)
+                const customerActiveContainers = filteredOperations.filter(op => op['סטטוס'] === 'פתוח' && ['הצבה', 'החלפה'].includes(op['סוג פעולה'])).length;
+                const customerTotalOperations = filteredOperations.length;
+                const customerOverdueCount = filteredOperations.filter(op => op.isOverdue).length;
+
+                modalCustomerSummary.innerHTML = `
+                    <div class="text-center">
+                        <p class="text-sm">מכולות פעילות</p>
+                        <p class="text-2xl font-bold">${customerActiveContainers}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm">סה"כ פעולות</p>
+                        <p class="text-2xl font-bold">${customerTotalOperations}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm">חריגות</p>
+                        <p class="text-2xl font-bold ${customerOverdueCount > 0 ? 'text-red-600' : 'text-green-600'}">${customerOverdueCount}</p>
+                    </div>
+                `;
+
+                // Populate containers associated with the customer
+                const uniqueContainers = new Set();
+                filteredOperations.forEach(op => {
+                    const dropped = String(op['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                    const lifted = String(op['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+                    [...dropped, ...lifted].forEach(c => uniqueContainers.add(c));
+                });
+                customerContainerList.textContent = uniqueContainers.size > 0 ? Array.from(uniqueContainers).join(', ') : 'אין מכולות משויכות.';
+
+                // Define headers for customer history
+                const headers = ['תאריך', 'תעודה', 'סוג פעולה', 'מכולה ירדה', 'מכולה עלתה', 'סטטוס', 'ימים בשכירות', 'הערות'];
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.className = 'py-3 px-4 text-right font-bold text-gray-600';
+                    th.textContent = header;
+                    historyTableHeaderRow.appendChild(th);
+                });
+
+                filteredOperations.forEach(op => {
+                    const row = historyTableBody.insertRow();
+                    row.innerHTML = `
+                        <td class="py-2 px-4 whitespace-nowrap">${op['תאריך הזמנה'] ? formatISODate(op['תאריך הזמנה']) : ''}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${op['תעודה']}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${op['סוג פעולה']}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${op['מספר מכולה ירדה'] || ''}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${op['מספר מכולה עלתה'] || ''}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <span class="status-badge ${getStatusBadgeClass(op['סטטוס'], op.isOverdue)}">${op['סטטוס']}</span>
+                        </td>
+                        <td class="py-2 px-4 whitespace-nowrap">${op['ימים שעברו']}</td>
+                        <td class="py-2 px-4 whitespace-nowrap text-sm text-gray-500">${op['הערות'] || ''}</td>
+                    `;
+                });
+
+            } else if (type === 'container') {
+                modalTitle.textContent = `היסטוריית מכולה: ${identifier}`;
+                historyTableTitle.textContent = 'היסטוריית תנועות מכולה';
+                modalCustomerSpecificDetails.classList.add('hidden'); // No customer summary for container history
+
+                // Define headers for container history
+                const headers = ['תאריך', 'סוג אירוע', 'לקוח', 'תעודה', 'כתובת', 'סוג פעולה מקורית'];
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.className = 'py-3 px-4 text-right font-bold text-gray-600';
+                    th.textContent = header;
+                    historyTableHeaderRow.appendChild(th);
+                });
+
+                const containerHist = containerLedger[identifier]?.history || [];
+                containerHist.forEach(event => {
+                    const row = historyTableBody.insertRow();
+                    row.innerHTML = `
+                        <td class="py-2 px-4 whitespace-nowrap">${event.date ? formatISODate(event.date) : ''}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${event.type === 'dropped' ? 'הצבה' : 'הוצאה'}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${event.customer || ''}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${event.docId || ''}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${event.address || ''}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${event.actionType || ''}</td>
+                    `;
+                });
+            }
+
+            document.getElementById('customer-history-modal').classList.remove('hidden');
+            document.getElementById('customer-history-modal').classList.add('flex');
+        };
+
+        /**
+         * Closes the unified history modal.
+         */
+        const closeModal = () => {
+            document.getElementById('customer-history-modal').classList.add('hidden');
+            document.getElementById('customer-history-modal').classList.remove('flex');
+        };
+
+        // Render functions
+        /**
+         * Renders the dashboard page with KPIs and charts.
+         */
+        const renderDashboard = () => {
+            if (allOperations.length === 0) {
+                document.getElementById('kpi-active-containers').textContent = '0';
+                document.getElementById('kpi-overdue-customers').textContent = '0';
+                document.getElementById('kpi-available-containers').textContent = '0';
+                document.getElementById('kpi-total-operations').textContent = '0';
+                updateChart('agentActivityChart', [], []);
+                updateChart('operationsTimelineChart', [], []);
+                document.getElementById('all-operations-table').innerHTML = '';
+                return;
+            }
+
+            const activeContainers = new Set();
+            const customersInOverdue = new Set();
+            const totalOperationsCount = allOperations.length;
+
+            allOperations.forEach(op => {
+                if (op['סטטוס'] === 'פתוח' && ['הצבה', 'החלפה'].includes(op['סוג פעולה'])) {
+                    if (op['מספר מכולה ירדה']) {
+                        activeContainers.add(op['מספר מכולה ירדה']);
+                    }
+                }
+                if (op.isOverdue) {
+                    customersInOverdue.add(op['שם לקוח']);
+                }
+            });
+
+            // Calculate available containers from the ledger
+            const availableContainers = Object.values(containerLedger).filter(c => c.currentStatus === 'available').length;
+            const inUseContainersCount = Object.values(containerLedger).filter(c => c.currentStatus === 'in_use').length;
+
+            document.getElementById('kpi-active-containers').textContent = inUseContainersCount;
+            document.getElementById('kpi-overdue-customers').textContent = customersInOverdue.size;
+            document.getElementById('kpi-available-containers').textContent = availableContainers;
+            document.getElementById('kpi-total-operations').textContent = totalOperationsCount;
+
+            // Agent Activity Chart
+            const agentActivity = {};
+            allOperations.forEach(op => {
+                const agent = op['שם סוכן'] || 'לא ידוע';
+                agentActivity[agent] = (agentActivity[agent] || 0) + 1;
+            });
+            updateChart('agentActivityChart', Object.keys(agentActivity), Object.values(agentActivity));
+
+            // Operations Timeline Chart
+            const operationsByMonth = {};
+            allOperations.forEach(op => {
+                if (op['תאריך הזמנה']) {
+                    const monthYear = op['תאריך הזמנה'].toLocaleString('he-IL', { year: 'numeric', month: 'short' });
+                    operationsByMonth[monthYear] = (operationsByMonth[monthYear] || 0) + 1;
+                }
+            });
+            // Sort months chronologically
+            const sortedMonths = Object.keys(operationsByMonth).sort((a, b) => {
+                const [monthA, yearA] = a.split(' ');
+                const [monthB, yearB] = b.split(' ');
+                const dateA = new Date(`1 ${monthA} ${yearA}`);
+                const dateB = new Date(`1 ${monthB} ${yearB}`);
+                return dateA - dateB;
+            });
+            const operationsData = sortedMonths.map(month => operationsByMonth[month]);
+            updateChart('operationsTimelineChart', sortedMonths, operationsData);
+
+            // Render all operations table
+            renderAllOperationsTable(allOperations);
+        };
+
+        /**
+         * Renders the 'All Operations' table based on the provided data.
+         * @param {Array<Object>} data - The operations data to display.
+         */
+        const renderAllOperationsTable = (data) => {
+            const tableBody = document.getElementById('all-operations-table');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            // Apply search filter
+            const searchTerm = document.getElementById('main-search').value.toLowerCase();
+            const showClosedOrders = document.getElementById('show-closed-orders').checked;
+
+            const filteredData = data.filter(op => {
+                const matchesSearch = (op['שם לקוח'] || '').toLowerCase().includes(searchTerm) ||
+                                      (op['תעודה'] || '').toLowerCase().includes(searchTerm) ||
+                                      (op['שם סוכן'] || '').toLowerCase().includes(searchTerm) ||
+                                      (op['מספר מכולה ירדה'] || '').toLowerCase().includes(searchTerm) ||
+                                      (op['מספר מכולה עלתה'] || '').toLowerCase().includes(searchTerm);
+                const matchesClosedFilter = showClosedOrders || op['סטטוס'] !== 'סגור';
+                return matchesSearch && matchesClosedFilter;
+            });
+
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-500">אין נתונים להצגה</td></tr>`;
+                return;
+            }
+
+            filteredData.forEach(op => {
+                const row = tableBody.insertRow();
+                row.className = 'hover:bg-gray-50'; // Add hover effect
+
+                const daysInRental = op['ימים שעברו'] !== undefined ? op['ימים שעברו'] : (op['תאריך הזמנה'] ? daysSince(op['תאריך הזמנה']) : 0);
+                const isOverdue = op['סטטוס'] !== 'סגור' && daysInRental >= 10;
+                const statusClass = getStatusBadgeClass(op['סטטוס'], isOverdue);
+
+                const containerNumberCell = op['מספר מכולה ירדה'] ? `<span class="container-link" onclick="openHistoryModal('container', '${op['מספר מכולה ירדה']}')">${op['מספר מכולה ירדה']}</span>` : (op['מספר מכולה עלתה'] || '');
+
+                row.innerHTML = `
+                    <td class="py-2 px-4 whitespace-nowrap">${op['תאריך הזמנה'] ? formatISODate(op['תאריך הזמנה']) : ''}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">${op['תעודה']}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">
+                        <span class="container-link" onclick="openHistoryModal('customer', '${op['שם לקוח']}')">${op['שם לקוח']}</span>
+                    </td>
+                    <td class="py-2 px-4 whitespace-nowrap">${op['שם סוכן'] || ''}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">${op['סוג פעולה']}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">${daysInRental}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">${containerNumberCell}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">
+                        <span class="status-badge ${statusClass}">${op['סטטוס']}</span>
+                    </td>
+                    <td class="py-2 px-4 whitespace-nowrap">
+                        <button onclick="openEditOrderModal('${op['תעודה']}')" class="text-blue-600 hover:text-blue-800 transition-colors mr-2" title="ערוך הזמנה">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="openWhatsAppModal('${op['שם לקוח']}', '${op['תעודה']}', '${op['טלפון לקוח'] || ''}', '${op['כתובת'] || ''}', '${op['מספר מכולה ירדה'] || op['מספר מכולה עלתה'] || ''}')" class="text-green-600 hover:text-green-800 transition-colors" title="שלח WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                    </td>
+                `;
+            });
+        };
+
+        /**
+         * Renders the inventory page tables (in-use and available containers).
+         */
+        const renderInventory = () => {
+            const inUseTableBody = document.getElementById('in-use-containers-table');
+            const availableTableBody = document.getElementById('available-containers-table');
+            inUseTableBody.innerHTML = '';
+            availableTableBody.innerHTML = '';
+
+            const inUseContainers = Object.entries(containerLedger).filter(([num, data]) => data.currentStatus === 'in_use');
+            const availableContainers = Object.entries(containerLedger).filter(([num, data]) => data.currentStatus === 'available' || data.currentStatus === 'in_transit');
+
+            if (inUseContainers.length === 0) {
+                inUseTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">אין מכולות בשימוש פעיל כרגע.</td></tr>`;
+            } else {
+                inUseContainers.forEach(([containerNum, data]) => {
+                    const latestOp = allOperations.find(op => String(op['תעודה']) === data.latestOperationDocId);
+                    const placementDate = data.lastDroppedDate ? formatISODate(data.lastDroppedDate) : 'N/A';
+                    const daysOnSite = data.lastDroppedDate ? daysSince(data.lastDroppedDate) : 0;
+                    const row = inUseTableBody.insertRow();
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <span class="container-link" onclick="openHistoryModal('container', '${containerNum}')">${containerNum}</span>
+                        </td>
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <span class="status-badge status-blue">בשימוש</span>
+                        </td>
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <span class="container-link" onclick="openHistoryModal('customer', '${data.currentCustomer}')">${data.currentCustomer || 'N/A'}</span>
+                        </td>
+                        <td class="py-2 px-4 whitespace-nowrap">${placementDate}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">${daysOnSite}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <button onclick="openHistoryModal('container', '${containerNum}')" class="text-gray-600 hover:text-gray-800 transition-colors" title="הצג היסטוריה">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </td>
+                    `;
+                });
+            }
+
+            if (availableContainers.length === 0) {
+                availableTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">אין מכולות פנויות/בתהליך כרגע.</td></tr>`;
+            } else {
+                availableContainers.forEach(([containerNum, data]) => {
+                    const lastOperationDate = data.lastLiftedDate ? formatISODate(data.lastLiftedDate) : (data.nextDropDate ? formatISODate(data.nextDropDate) : 'N/A');
+                    const lastCustomerOrTarget = data.nextDropCustomer || data.currentCustomer || 'מלאי';
+                    const statusClass = data.currentStatus === 'available' ? 'status-green' : 'status-yellow'; // Green for available, Yellow for in_transit
+                    const statusText = data.currentStatus === 'available' ? 'פנויה' : 'במעבר';
+
+                    const row = availableTableBody.insertRow();
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <span class="container-link" onclick="openHistoryModal('container', '${containerNum}')">${containerNum}</span>
+                        </td>
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </td>
+                        <td class="py-2 px-4 whitespace-nowrap">${lastOperationDate}</td>
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            ${lastCustomerOrTarget !== 'מלאי' ? `<span class="container-link" onclick="openHistoryModal('customer', '${lastCustomerOrTarget}')">${lastCustomerOrTarget}</span>` : lastCustomerOrTarget}
+                        </td>
+                        <td class="py-2 px-4 whitespace-nowrap">
+                            <button onclick="openHistoryModal('container', '${containerNum}')" class="text-gray-600 hover:text-gray-800 transition-colors" title="הצג היסטוריה">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </td>
+                    `;
+                });
+            }
+        };
+
+
+        /**
+         * Renders the treatment board with Kanban-style columns for overdue customers.
+         */
+        const renderTreatmentBoard = () => {
+            const treatmentBoard = document.getElementById('treatment-board');
+            treatmentBoard.innerHTML = ''; // Clear existing columns
+            const noOverdueMessage = document.getElementById('no-overdue-message');
+
+            const overdueOperations = allOperations.filter(op => op.isOverdue);
+
+            if (overdueOperations.length === 0) {
+                noOverdueMessage.classList.remove('hidden');
+                return;
+            } else {
+                noOverdueMessage.classList.add('hidden');
+            }
+
+            // Group overdue operations by customer
+            const customersMap = new Map();
+            overdueOperations.forEach(op => {
+                const customerName = op['שם לקוח'];
+                if (!customersMap.has(customerName)) {
+                    customersMap.set(customerName, {
+                        customer: customerName,
+                        address: op['כתובת'],
+                        phone: op['טלפון לקוח'],
+                        overdueContainers: []
+                    });
+                }
+                customersMap.get(customerName).overdueContainers.push({
+                    docId: op['תעודה'],
+                    containerNum: op['מספר מכולה ירדה'], // Assuming 'מספר מכולה ירדה' is the relevant one for overdue
+                    daysOverdue: op['ימים שעברו'],
+                    notes: op['הערות'] // Initial notes from operation
+                });
+            });
+
+            // Ensure order of customers is somewhat consistent (e.g., by oldest overdue first)
+            const sortedCustomers = Array.from(customersMap.values()).sort((a, b) => {
+                const minDaysA = Math.min(...a.overdueContainers.map(c => c.daysOverdue));
+                const minDaysB = Math.min(...b.overdueContainers.map(c => c.daysOverdue));
+                return minDaysB - minDaysA; // Longest overdue first
+            });
+
+            sortedCustomers.forEach(customerData => {
+                const customerName = customerData.customer;
+                const customerPhone = customerData.phone;
+                const customerAddress = customerData.address;
+
+                const column = document.createElement('div');
+                column.className = 'kanban-column bg-white p-4 rounded-lg shadow-md border border-red-200';
+                column.innerHTML = `
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">${customerName} <span class="text-red-600">(${customerData.overdueContainers.length} מכולות חורגות)</span></h3>
+                    <p class="text-sm text-gray-600 mb-2"><strong>כתובת:</strong> ${customerAddress || 'לא צוין'}</p>
+                    <p class="text-sm text-gray-600 mb-3"><strong>טלפון:</strong> ${customerPhone || 'לא צוין'}</p>
+                    <div class="space-y-3 mb-4">
+                        ${customerData.overdueContainers.map(container => `
+                            <div class="bg-red-50 p-3 rounded-md border border-red-200">
+                                <p class="font-semibold text-red-700">מכולה: <span class="container-link" onclick="openHistoryModal('container', '${container.containerNum}')">${container.containerNum || 'N/A'}</span></p>
+                                <p class="text-sm text-red-600">תעודה: <span class="container-link" onclick="openHistoryModal('customer', '${customerName}')">${container.docId}</span></p>
+                                <p class="text-sm text-red-600">ימים בחריגה: ${container.daysOverdue}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mb-4">
+                        <label for="note-${customerName}" class="block text-sm font-semibold text-gray-700 mb-1">הערות טיפול:</label>
+                        <textarea id="note-${customerName}" class="kpi-note-input scrollable-notes" rows="2" placeholder="הוסף הערות טיפול כאן..."></textarea>
+                    </div>
+                    <div class="flex justify-between items-center mt-auto">
+                        <button onclick="openWhatsAppModal('${customerName}', '${customerData.overdueContainers[0].docId}', '${customerPhone || ''}', '${customerAddress || ''}', '${customerData.overdueContainers[0].containerNum || ''}')" class="px-3 py-2 bg-green-500 text-white rounded-md shadow-sm hover:bg-green-600 transition-colors flex items-center text-sm">
+                            <i class="fab fa-whatsapp mr-1"></i>וואטסאפ
+                        </button>
+                        <button onclick="openHistoryModal('customer', '${customerName}')" class="px-3 py-2 bg-blue-500 text-white rounded-md shadow-sm hover:bg-blue-600 transition-colors flex items-center text-sm">
+                            <i class="fas fa-history mr-1"></i>היסטוריה
+                        </button>
+                    </div>
+                `;
+                treatmentBoard.appendChild(column);
+
+                // Set initial note value and add event listener
+                const noteTextarea = document.getElementById(`note-${customerName}`);
+                noteTextarea.value = customerNotes[customerName] || '';
+                noteTextarea.addEventListener('input', (event) => {
+                    debouncedUpdateCustomerNote(customerName, event.target.value);
+                });
+            });
+        };
+
+        /**
+         * Renders the top 3 overdue customers as KPI cards.
+         */
+        const renderTopOverdueCustomers = () => {
+            const overdueKpisSection = document.getElementById('overdue-kpis');
+            overdueKpisSection.innerHTML = ''; // Clear existing cards
+
+            const overdueCustomers = {};
+            allOperations.forEach(op => {
+                if (op.isOverdue) {
+                    const customerName = op['שם לקוח'];
+                    if (!overdueCustomers[customerName]) {
+                        overdueCustomers[customerName] = {
+                            name: customerName,
+                            address: op['כתובת'] || '',
+                            phone: op['טלפון לקוח'] || '',
+                            totalDaysOverdue: 0,
+                            containerCount: 0,
+                            latestDocId: op['תעודה'], // Store latest docId for WhatsApp link
+                            latestContainerNum: op['מספר מכולה ירדה'] || op['מספר מכולה עלתה'] || ''
+                        };
+                    }
+                    overdueCustomers[customerName].totalDaysOverdue += op['ימים שעברו'];
+                    overdueCustomers[customerName].containerCount++;
+                }
+            });
+
+            const sortedOverdueCustomers = Object.values(overdueCustomers).sort((a, b) => b.totalDaysOverdue - a.totalDaysOverdue);
+            const top3Overdue = sortedOverdueCustomers.slice(0, 3);
+
+            if (top3Overdue.length === 0) {
+                overdueKpisSection.innerHTML = `
+                    <div class="col-span-full text-center text-gray-500 p-4 bg-white rounded-lg shadow-md">
+                        <p class="text-xl font-semibold mb-2">אין לקוחות בחריגה כרגע. כל הכבוד! 🎉</p>
+                        <p>המערכת נקייה ופועלת כשורה.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            top3Overdue.forEach(customer => {
+                const kpiCard = document.createElement('div');
+                kpiCard.className = 'kpi-card flex flex-col justify-between h-full'; // Added h-full
+                kpiCard.innerHTML = `
+                    <div>
+                        <h3 class="text-gray-500 font-semibold mb-1">לקוח בחריגה:</h3>
+                        <p class="text-2xl font-bold text-red-600 blink-subtle">
+                            <span class="container-link" onclick="openHistoryModal('customer', '${customer.name}')">${customer.name}</span>
+                        </p>
+                        <p class="text-sm text-gray-600 mt-1">
+                            <i class="fas fa-boxes"></i> ${customer.containerCount} מכולות חורגות
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-calendar-times"></i> סה"כ ${customer.totalDaysOverdue} ימי חריגה
+                        </p>
+                        <p class="text-sm text-gray-600 mb-2">
+                             <i class="fas fa-map-marker-alt"></i> ${customer.address || 'כתובת לא ידועה'}
+                        </p>
+                        <div class="mb-3">
+                            <label for="kpi-note-${customer.name}" class="block text-xs font-semibold text-gray-700">הערות:</label>
+                            <textarea id="kpi-note-${customer.name}" class="kpi-note-input scrollable-notes" rows="2" placeholder="הוסף הערות טיפול כאן..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button onclick="openWhatsAppModal('${customer.name}', '${customer.latestDocId}', '${customer.phone}', '${customer.address}', '${customer.latestContainerNum}')" class="px-3 py-2 bg-green-500 text-white rounded-md shadow-sm hover:bg-green-600 transition-colors flex items-center text-sm">
+                            <i class="fab fa-whatsapp mr-1"></i>וואטסאפ
+                        </button>
+                        <button onclick="showPage('treatment')" class="px-3 py-2 bg-red-500 text-white rounded-md shadow-sm hover:bg-red-600 transition-colors flex items-center text-sm">
+                            <i class="fas fa-clipboard-check mr-1"></i>טפל בחריגה
+                        </button>
+                    </div>
+                `;
+                overdueKpisSection.appendChild(kpiCard);
+
+                // Set initial note value and add event listener
+                const noteTextarea = document.getElementById(`kpi-note-${customer.name}`);
+                noteTextarea.value = customerNotes[customer.name] || '';
+                noteTextarea.addEventListener('input', (event) => {
+                    debouncedUpdateCustomerNote(customer.name, event.target.value);
+                });
+            });
+        };
+
+        /**
+         * Returns the appropriate Tailwind CSS class for a status badge.
+         * @param {string} status - The status string.
+         * @param {boolean} isOverdue - Whether the operation is overdue.
+         * @returns {string} The CSS class string.
+         */
+        const getStatusBadgeClass = (status, isOverdue) => {
+            if (isOverdue) return 'status-red';
+            switch (status) {
+                case 'פתוח': return 'status-yellow';
+                case 'סגור': return 'status-green';
+                case 'חורג': return 'status-red'; // Explicitly 'חורג' status
+                default: return 'status-gray';
+            }
+        };
+
+        /**
+         * Updates a Chart.js instance or creates a new one if it doesn't exist.
+         * @param {string} chartId - The ID of the canvas element.
+         * @param {Array<string>} labels - Labels for the chart.
+         * @param {Array<number>} data - Data for the chart.
+         * @param {string} type - Chart type ('bar' or 'line').
+         */
+        const updateChart = (chartId, labels, data, type = 'bar') => {
+            const ctx = document.getElementById(chartId);
+            if (!ctx) {
+                console.error(`Canvas element with ID '${chartId}' not found.`);
+                return;
+            }
+
+            if (charts[chartId]) {
+                charts[chartId].data.labels = labels;
+                charts[chartId].data.datasets[0].data = data;
+                charts[chartId].update();
+            } else {
+                charts[chartId] = new Chart(ctx, {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: chartId === 'agentActivityChart' ? 'מספר פעולות' : 'סה"כ פעולות',
+                            data: data,
+                            backgroundColor: chartId === 'agentActivityChart' ? '#8b5cf6' : '#3b82f6', // Violet for agent, blue for timeline
+                            borderColor: chartId === 'agentActivityChart' ? '#6d28d9' : '#2563eb',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            barThickness: 20 // Adjust bar thickness for better appearance
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0 // Ensure integer ticks for counts
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchDataFromGoogleSheet(); // Initial data load
+
+            // Search functionality for the main operations table
+            document.getElementById('main-search').addEventListener('input', debounce(() => {
+                renderAllOperationsTable(allOperations);
+            }, 300)); // Debounce to prevent excessive re-renders
+
+            // Filter for closed orders
+            document.getElementById('show-closed-orders').addEventListener('change', () => {
+                renderAllOperationsTable(allOperations);
+            });
+        });
+    </script>
+    <!-- Dynamic status message container - will be created if not exists -->
+    <div id="status-message-container"></div>
+</body>
+</html>
+�
