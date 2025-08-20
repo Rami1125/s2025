@@ -24,99 +24,130 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        /* הגדרות משתנים עבור פלטת הצבעים והפונטים */
         :root {
-            --color-background: #F8F7F4; /* Warm off-white */
+            --color-background: #F4F7F6; /* בהיר, רך ונעים */
             --color-surface: #FFFFFF;
-            --color-primary: #3A5A40; /* Muted Forest Green */
-            --color-primary-light: #588157;
-            --color-secondary: #A3B18A; /* Sage Green */
-            --color-accent: #D9A05B; /* Soft Gold/Ochre */
-            --color-text-base: #333333;
-            --color-text-muted: #5c5c5c;
-            --color-border: #EAE8E1;
-            --color-danger: #C0392B;
-            --color-warning: #F39C12;
-            --color-success: #27AE60;
-            --color-info: #2980B9;
+            --color-primary: #3C6E71; /* כחול-טורקיז עמוק */
+            --color-primary-light: #61A6AB;
+            --color-secondary: #C8D6DB; /* אפור-כחול בהיר */
+            --color-accent: #FFC0CB; /* ורוד עדין כצבע הדגשה */
+            --color-text-base: #2D3A3A;
+            --color-text-muted: #6B7280;
+            --color-border: #E0E7E9;
+            --color-danger: #D64545; /* אדום חזק יותר */
+            --color-warning: #FFD700; /* זהב/צהוב חם */
+            --color-success: #5CB85C;
+            --color-info: #5BC0DE;
 
             --font-main: 'Rubik', sans-serif;
         }
 
+        /* מצב כהה - Dark Mode */
         body.dark {
-            --color-background: #1A1A1A;
-            --color-surface: #2C2C2C;
-            --color-primary: #588157;
-            --color-primary-light: #A3B18A;
-            --color-secondary: #588157;
-            --color-accent: #E5B878;
-            --color-text-base: #E0E0E0;
-            --color-text-muted: #A0A0A0;
-            --color-border: #404040;
+            --color-background: #1C2A3A;
+            --color-surface: #2E3C4A;
+            --color-primary: #61A6AB;
+            --color-primary-light: #89C7CC;
+            --color-secondary: #4A5B6B;
+            --color-accent: #FFB6C1;
+            --color-text-base: #E0E7EB;
+            --color-text-muted: #AAB7C3;
+            --color-border: #3A4E5E;
+            --color-danger: #E57373;
+            --color-warning: #FFEB3B;
+            --color-success: #8BC34A;
+            --color-info: #81D4FA;
         }
 
+        /* הגדרות כלליות לגוף הדף והפונטים */
         body {
             font-family: var(--font-main);
             background-color: var(--color-background);
             color: var(--color-text-base);
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out;
+            line-height: 1.6;
         }
 
+        /* עיצוב כפתורים */
         .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
+            padding: 0.85rem 1.8rem;
+            border-radius: 0.85rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
             border: 1px solid transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* צל עדין לכל הכפתורים */
         }
 
         .btn-primary {
             background-color: var(--color-primary);
             color: white;
-            box-shadow: 0 4px 15px -5px rgba(58, 90, 64, 0.6);
+            background-image: linear-gradient(to right, var(--color-primary), var(--color-primary-light));
+            box-shadow: 0 6px 20px -5px rgba(60, 110, 113, 0.4);
         }
         .btn-primary:hover {
-            background-color: var(--color-primary-light);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px -5px rgba(58, 90, 64, 0.7);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 30px -8px rgba(60, 110, 113, 0.6);
+            background-image: linear-gradient(to left, var(--color-primary), var(--color-primary-light));
         }
 
         .btn-secondary {
             background-color: var(--color-surface);
-            color: var(--color-text-muted);
+            color: var(--color-text-base);
             border-color: var(--color-border);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
         }
         body.dark .btn-secondary {
              color: var(--color-text-base);
         }
         .btn-secondary:hover {
             background-color: var(--color-background);
-            border-color: var(--color-secondary);
+            border-color: var(--color-primary-light);
             color: var(--color-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.06);
         }
         
+        /* עיצוב כרטיסים (Cards) */
         .card {
             background-color: var(--color-surface);
-            border-radius: 1rem;
+            border-radius: 1.25rem; /* פינות עגולות יותר */
             border: 1px solid var(--color-border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.06); /* צל עדין יותר */
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.12);
         }
 
+        /* כפתורי ניווט (Tabs) */
+        .nav-tab-btn {
+            font-size: 1.05rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            color: var(--color-text-muted);
+            transition: all 0.3s ease;
+        }
         .nav-tab-btn.active {
             background-color: var(--color-primary);
             color: white;
-            box-shadow: 0 4px 12px rgba(58, 90, 64, 0.4);
+            box-shadow: 0 5px 15px rgba(60, 110, 113, 0.3);
+            font-weight: 600;
+            transform: translateY(-2px);
+        }
+        .nav-tab-btn:hover:not(.active) {
+            color: var(--color-primary);
+            background-color: var(--color-border);
         }
         
+        /* מודלים (Modals) */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -125,11 +156,11 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
+            background-color: rgba(0, 0, 0, 0.6); /* רקע כהה יותר */
+            backdrop-filter: blur(8px); /* טשטוש חזק יותר */
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.4s ease;
         }
         .modal-overlay.active {
             opacity: 1;
@@ -137,65 +168,85 @@
         }
         .modal-content {
             background-color: var(--color-surface);
-            border-radius: 1.25rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 1.5rem; /* פינות עגולות יותר */
+            box-shadow: 0 15px 45px rgba(0,0,0,0.25);
             border: 1px solid var(--color-border);
-            transform: scale(0.95);
-            transition: transform 0.3s ease;
+            transform: scale(0.9);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .modal-overlay.active .modal-content {
             transform: scale(1);
         }
 
+        /* קלטי טקסט ובחירה (Inputs, Selects, Textareas) */
         input, select, textarea {
             background-color: var(--color-background);
             border-color: var(--color-border);
-            border-radius: 0.75rem;
-            transition: all 0.2s ease;
+            border-radius: 0.8rem;
+            transition: all 0.25s ease;
+            padding: 0.75rem 1rem;
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(58, 90, 64, 0.2);
+            box-shadow: 0 0 0 4px rgba(60, 110, 113, 0.25);
             background-color: var(--color-surface);
         }
         
+        /* טבלאות (Tables) */
         th {
             background-color: var(--color-background);
             font-weight: 600;
+            padding: 1rem;
+            text-align: right; /* יישור לימין עבור עברית */
+        }
+        td {
+            padding: 0.9rem;
         }
         
         tr:hover:not(.no-hover) {
-            background-color: #F8F7F4;
+            background-color: var(--color-border); /* שינוי רקע בולט יותר במעבר עכבר */
         }
         body.dark tr:hover:not(.no-hover) {
-            background-color: #333;
+            background-color: var(--color-surface);
         }
         
-        .status-open { color: var(--color-success); font-weight: 600; }
+        /* סטטוסים בטבלה */
+        .status-open { color: var(--color-success); font-weight: 700; }
         .status-closed { color: var(--color-text-muted); }
-        .status-overdue { color: var(--color-danger); font-weight: 600; }
-        .status-pending { color: var(--color-info); font-weight: 600; }
-        .status-warning { color: var(--color-warning); font-weight: 600; }
+        .status-overdue { color: var(--color-danger); font-weight: 700; }
+        .status-pending { color: var(--color-info); font-weight: 700; }
+        .status-warning { color: var(--color-warning); font-weight: 700; }
         
-        /* Conditional styling for action types */
-        .action-type-הורדה { background-color: #e6ffe6; /* Light green */ }
-        body.dark .action-type-הורדה { background-color: #2a3a2a; }
-        .action-type-החלפה { background-color: #fffacd; /* Light yellow */ }
-        body.dark .action-type-החלפה { background-color: #3a3a2a; }
-        .action-type-העלאה { background-color: #ffe6e6; /* Light red */ }
-        body.dark .action-type-העלאה { background-color: #3a2a2a; }
+        /* עיצוב ספציפי לסוגי פעולה */
+        .action-type-הורדה { background-color: rgba(92, 184, 92, 0.1); } /* Light green */
+        body.dark .action-type-הורדה { background-color: rgba(139, 195, 74, 0.1); }
+        .action-type-החלפה { background-color: rgba(255, 215, 0, 0.1); } /* Light yellow/gold */
+        body.dark .action-type-החלפה { background-color: rgba(255, 235, 59, 0.1); }
+        .action-type-העלאה { background-color: rgba(214, 69, 69, 0.1); } /* Light red */
+        body.dark .action-type-העלאה { background-color: rgba(229, 115, 115, 0.1); }
 
-        /* Blinking effect for overdue orders */
+        /* אפקט הבהוב להזמנות חורגות (שורה שלמה) */
         .overdue-blinking {
-            animation: pulse-border 1.5s infinite alternate;
+            animation: pulse-border 1.8s infinite alternate;
         }
-
         @keyframes pulse-border {
-            from { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.4); }
-            to { box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.0); }
+            from { box-shadow: 0 0 0 0 rgba(214, 69, 69, 0.4); }
+            to { box-shadow: 0 0 0 6px rgba(214, 69, 69, 0.0); }
         }
 
+        /* אפקט הבהוב לטקסט "ימים שעברו" חורג */
+        .overdue-text-blinking {
+            animation: text-pulse-red 1.8s infinite alternate;
+            font-weight: 700; /* הדגשת גופן */
+        }
+        @keyframes text-pulse-red {
+            from { color: var(--color-danger); text-shadow: 0 0 4px rgba(214, 69, 69, 0.4); }
+            to { color: #FF0000; text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); }
+        }
+
+
+        /* קונטיינר לתרשימים */
         .chart-container {
             position: relative;
             width: 100%;
@@ -206,20 +257,26 @@
             max-height: 50vh;
         }
 
+        /* כפתורי אייקונים לפעולות */
         .action-icon-btn {
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1.2rem;
-            padding: 0.2rem;
-            margin: 0 0.1rem;
-            transition: transform 0.2s ease-in-out;
+            font-size: 1.4rem; /* אייקונים גדולים יותר */
+            padding: 0.4rem;
+            margin: 0 0.2rem;
+            transition: transform 0.25s ease-in-out, color 0.25s ease-in-out;
+            border-radius: 50%; /* כפתורים עגולים */
         }
         .action-icon-btn:hover {
-            transform: scale(1.2);
+            transform: scale(1.3); /* הגדלה בולטת יותר */
+            background-color: rgba(0,0,0,0.05);
+        }
+        body.dark .action-icon-btn:hover {
+            background-color: rgba(255,255,255,0.08);
         }
         
-        /* Message box typing effect */
+        /* אפקט הקלדה לתיבת הודעה */
         .typing-effect::after {
             content: '|';
             animation: blink-caret 0.75s step-end infinite;
@@ -229,46 +286,87 @@
             50% { border-color: var(--color-primary); }
         }
 
-        /* Scroll to Top Button */
+        /* כפתור גלילה למעלה */
         #scroll-to-top-btn {
             display: none; /* Hidden by default */
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 25px;
+            right: 25px;
             z-index: 99;
             border: none;
             outline: none;
             background-color: var(--color-primary);
             color: white;
             cursor: pointer;
-            padding: 15px;
+            padding: 18px; /* כפתור גדול יותר */
             border-radius: 50%;
-            font-size: 18px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
             transition: background-color 0.3s, opacity 0.3s, transform 0.3s;
         }
 
         #scroll-to-top-btn:hover {
             background-color: var(--color-primary-light);
-            transform: translateY(-2px);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        /* טעינה (Loader) */
+        #loader-overlay {
+            transition: opacity 0.3s ease;
+        }
+        #loader-overlay > div {
+            border-top-color: var(--color-primary);
+        }
+
+        /* New CSS for neon blinking effect on Kanban column title */
+        .neon-blinking-border-title {
+            animation: neon-pulse-strong 1.8s infinite alternate;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.6), 0 0 20px rgba(255, 0, 0, 0.4);
+            border: 2px solid rgba(255, 0, 0, 0.5); /* Semi-transparent border */
+            border-radius: 1rem; /* Adjust as needed */
+            padding: 1rem; /* Adjust as needed */
+            background-color: rgba(255, 0, 0, 0.05); /* Very light red background */
+            color: #FF0000; /* ניאון אדום לטקסט */
+        }
+
+        @keyframes neon-pulse-strong {
+            0% {
+                box-shadow: 0 0 5px rgba(255, 0, 0, 0.4), 0 0 15px rgba(255, 0, 0, 0.2);
+                border-color: rgba(255, 0, 0, 0.3);
+            }
+            100% {
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.6);
+                border-color: rgba(255, 0, 0, 0.8);
+            }
+        }
+        /* Kanban item styling */
+        .kanban-item {
+            font-weight: 500; /* הדגשת גופן לקריאות טובה יותר */
+        }
+        .kanban-item .font-bold {
+            font-weight: 700;
         }
     </style>
 </head>
 <body class="text-base">
 
-    <div id="loader-overlay" class="fixed inset-0 bg-gray-500 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[1000] transition-opacity duration-300">
-        <div class="w-16 h-16 border-4 border-t-4 border-gray-200 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
+    <!-- שכבת טעינה (Loader Overlay) -->
+    <div id="loader-overlay" class="fixed inset-0 bg-gray-500 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[1000] opacity-0 pointer-events-none">
+        <div class="w-20 h-20 border-6 border-t-6 border-gray-200 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
     </div>
 
-    <div id="alert-container" class="fixed bottom-5 left-5 z-[1100] space-y-3"></div>
+    <!-- קונטיינר להודעות התראה (Alerts) -->
+    <div id="alert-container" class="fixed bottom-6 left-6 z-[1100] space-y-4"></div>
 
+    <!-- מודל הוספה/עריכת הזמנה (Order Modal) -->
     <div id="order-modal" class="modal-overlay">
-        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
-                <h2 id="modal-title" class="text-xl font-bold">הוסף הזמנה חדשה</h2>
-                <button onclick="closeModal('order-modal')" class="text-2xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
+        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
+            <div class="flex items-center justify-between pb-5 border-b border-[var(--color-border)] mb-4">
+                <h2 id="modal-title" class="text-2xl font-bold text-[var(--color-primary)]">הוסף הזמנה חדשה</h2>
+                <button onclick="closeModal('order-modal')" class="text-3xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
             </div>
-            <form id="order-form" class="p-6 space-y-4 overflow-y-auto">
+            <form id="order-form" class="space-y-5 overflow-y-auto">
                  <div>
                     <label for="תאריך הזמנה" class="block text-sm font-medium text-[var(--color-text-muted)] mb-1">תאריך הזמנה</label>
                     <input type="date" id="תאריך הזמנה" name="תאריך הזמנה" class="w-full p-2 border" required>
@@ -329,6 +427,7 @@
         </div>
     </div>
     
+    <!-- מודל אישור מחיקה (Delete Confirmation Modal) -->
     <div id="delete-confirm-modal" class="modal-overlay">
         <div class="modal-content w-full max-w-md p-6">
             <h2 class="text-xl font-bold mb-4">אישור מחיקה</h2>
@@ -340,6 +439,7 @@
         </div>
     </div>
 
+    <!-- מודל אישור השלמה אוטומטית (Autofill Confirmation Modal) -->
     <div id="autofill-confirm-modal" class="modal-overlay">
         <div class="modal-content w-full max-w-md p-6">
             <h2 id="autofill-customer-name-display" class="text-xl font-bold mb-4 text-[var(--color-primary)]"></h2>
@@ -351,16 +451,17 @@
         </div>
     </div>
 
+    <!-- מודל פרטי הזמנה (Order Details Modal) -->
     <div id="order-details-modal" class="modal-overlay">
-        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
-                <h2 class="text-xl font-bold">פרטי הזמנה <span id="details-order-id"></span></h2>
-                <button onclick="closeModal('order-details-modal')" class="text-2xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
+        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
+            <div class="flex items-center justify-between pb-5 border-b border-[var(--color-border)] mb-4">
+                <h2 class="text-2xl font-bold text-[var(--color-primary)]">פרטי הזמנה <span id="details-order-id"></span></h2>
+                <button onclick="closeModal('order-details-modal')" class="text-3xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
             </div>
-            <div id="order-details-content" class="p-6 space-y-3 overflow-y-auto text-[var(--color-text-base)]">
+            <div id="order-details-content" class="space-y-3 overflow-y-auto text-[var(--color-text-base)] text-lg">
                 <!-- Details will be populated here -->
             </div>
-            <div class="flex justify-end gap-3 p-5 border-t border-[var(--color-border)]">
+            <div class="flex justify-end gap-3 p-5 border-t border-[var(--color-border)] mt-4">
                 <button type="button" class="btn btn-secondary" onclick="editOrderFromDetails()">ערוך 📝</button>
                 <button type="button" class="btn bg-[var(--color-danger)] text-white" onclick="deleteOrderFromDetails()">מחק 🗑️</button>
                 <button type="button" class="btn btn-primary" onclick="duplicateOrderFromDetails()">שכפל 📋</button>
@@ -368,153 +469,210 @@
         </div>
     </div>
 
+    <!-- מודל היסטוריית מכולה (Container History Modal) -->
     <div id="container-history-modal" class="modal-overlay">
-        <div class="modal-content w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
-                <h2 class="text-xl font-bold">היסטוריית מכולה: <span id="history-container-number"></span></h2>
-                <button onclick="closeModal('container-history-modal')" class="text-2xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
+        <div class="modal-content w-full max-w-3xl max-h-[90vh] flex flex-col p-6">
+            <div class="flex items-center justify-between pb-5 border-b border-[var(--color-border)] mb-4">
+                <h2 class="text-2xl font-bold text-[var(--color-primary)]">היסטוריית מכולה: <span id="history-container-number"></span></h2>
+                <button onclick="closeModal('container-history-modal')" class="text-3xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
             </div>
-            <div class="p-6 overflow-y-auto">
+            <div class="overflow-y-auto">
                 <table class="w-full text-right">
                     <thead>
                         <tr>
-                            <th class="p-2">תעודה</th>
-                            <th class="p-2">שם לקוח</th>
-                            <th class="p-2">כתובת</th>
-                            <th class="p-2">סוג פעולה</th>
-                            <th class="p-2">תאריך התחלה</th>
-                            <th class="p-2">תאריך סיום (צפוי/בפועל)</th>
-                            <th class="p-2">משך שהייה (ימים)</th>
+                            <th class="p-3">תעודה</th>
+                            <th class="p-3">שם לקוח</th>
+                            <th class="p-3">כתובת</th>
+                            <th class="p-3">סוג פעולה</th>
+                            <th class="p-3">תאריך התחלה</th>
+                            <th class="p-3">תאריך סיום (צפוי/בפועל)</th>
+                            <th class="p-3">משך שהייה (ימים)</th>
                         </tr>
                     </thead>
                     <tbody id="container-history-table-body">
                         <!-- History will be populated here -->
                     </tbody>
                 </table>
-                <div id="no-container-history" class="text-center text-gray-500 mt-4 hidden">אין היסטוריה זמינה למכולה זו.</div>
+                <div id="no-container-history" class="text-center text-gray-500 mt-6 hidden text-lg">אין היסטוריה זמינה למכולה זו.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודל היסטוריית לקוח (Customer History Modal) -->
+    <div id="customer-history-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-4xl max-h-[90vh] flex flex-col p-6">
+            <div class="flex items-center justify-between pb-5 border-b border-[var(--color-border)] mb-4">
+                <h2 class="text-2xl font-bold text-[var(--color-primary)]">היסטוריית הזמנות ללקוח: <span id="history-customer-name"></span></h2>
+                <button onclick="closeModal('customer-history-modal')" class="text-3xl text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">&times;</button>
+            </div>
+            <div class="overflow-y-auto">
+                <table class="w-full text-right">
+                    <thead>
+                        <tr>
+                            <th class="p-3">תאריך הזמנה</th>
+                            <th class="p-3">תעודה</th>
+                            <th class="p-3">סוג פעולה</th>
+                            <th class="p-3">מכולה ירדה</th>
+                            <th class="p-3">מכולה עלתה</th>
+                            <th class="p-3">סטטוס</th>
+                            <th class="p-3">הערות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customer-history-table-body">
+                        <!-- History will be populated here -->
+                    </tbody>
+                </table>
+                <div id="no-customer-history" class="text-center text-gray-500 mt-6 hidden text-lg">אין היסטוריה זמינה ללקוח זה.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודל סגירת הזמנה (Close Order Modal) -->
+    <div id="close-order-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-md p-6">
+            <h2 class="text-xl font-bold mb-4">סגירת הזמנה <span id="close-order-id-display"></span></h2>
+            <p class="mb-4 text-[var(--color-text-muted)]">האם אתה בטוח שברצונך לסגור הזמנה זו?</p>
+            <div>
+                <label for="close-order-notes" class="block text-sm font-medium text-[var(--color-text-muted)] mb-1">הערות סגירה (אופציונלי)</label>
+                <textarea id="close-order-notes" rows="3" class="w-full p-2 border rounded-lg"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('close-order-modal')">ביטול</button>
+                <button type="button" class="btn btn-primary" id="confirm-close-order-btn">אשר סגירה ✅</button>
             </div>
         </div>
     </div>
     
+    <!-- מבנה העמוד הראשי (Main Page Structure) -->
     <div class="min-h-screen flex flex-col">
-        <header class="p-6 text-center border-b border-[var(--color-border)]">
-            <div class="flex items-center justify-center gap-4 mb-2">
-                <div class="w-16 h-16 bg-[var(--color-primary)] rounded-full flex items-center justify-center">
-                    <i class="fas fa-truck-ramp-box text-3xl text-white"></i>
-                </div>
-                <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-primary)]">מערכת CRM מתקדמת לניהול שכירות מכולות</h1>
+        <header class="p-6 text-center border-b border-[var(--color-border)] bg-white shadow-sm relative">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-2">
+                <!-- לוגו החברה -->
+                <img src="https://i.postimg.cc/J7JGQYcT/image.jpg" alt="Company Logo" class="h-16 rounded-lg shadow-md border border-[var(--color-border)]">
+                <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-primary)] mt-2 md:mt-0">מערכת CRM מתקדמת לניהול שכירות מכולות</h1>
             </div>
             <p class="text-lg text-[var(--color-text-muted)] mb-4">ניהול קל ויעיל של כל הזמנות המכולות</p>
-            <button id="theme-toggle" class="absolute top-5 left-5 text-xl p-2 rounded-full hover:bg-[var(--color-border)] transition-colors">
+            <!-- כפתור מעבר בין מצבי תצוגה (Light/Dark Mode) -->
+            <button id="theme-toggle" class="absolute top-5 left-5 text-2xl p-3 rounded-full hover:bg-[var(--color-border)] transition-colors duration-300">
                 <i class="fas fa-sun"></i>
             </button>
         </header>
 
+        <!-- סרגל ניווט ראשי (Navigation Tabs) -->
         <div class="flex justify-center p-4">
-            <nav class="card flex gap-2 p-2">
-                <button id="nav-dashboard" class="nav-tab-btn px-4 py-2 rounded-lg active" onclick="showPage('dashboard')">
+            <nav class="card flex gap-3 p-3 shadow-lg">
+                <button id="nav-dashboard" class="nav-tab-btn active" onclick="showPage('dashboard')">
                     <i class="fas fa-chart-pie mr-2"></i>לוח מחוונים
                 </button>
-                <button id="nav-container-inventory" class="nav-tab-btn px-4 py-2 rounded-lg" onclick="showPage('container-inventory')">
+                <button id="nav-container-inventory" class="nav-tab-btn" onclick="showPage('container-inventory')">
                     <i class="fas fa-boxes-stacked mr-2"></i>מלאי מכולות
                 </button>
-                <button id="nav-treatment-board" class="nav-tab-btn px-4 py-2 rounded-lg" onclick="showPage('treatment-board')">
+                <button id="nav-treatment-board" class="nav-tab-btn" onclick="showPage('treatment-board')">
                     <i class="fas fa-clipboard-list mr-2"></i>לוח טיפול
                 </button>
-                <button id="nav-whatsapp-alerts" class="nav-tab-btn px-4 py-2 rounded-lg" onclick="showPage('whatsapp-alerts')">
+                <button id="nav-whatsapp-alerts" class="nav-tab-btn" onclick="showPage('whatsapp-alerts')">
                     <i class="fab fa-whatsapp mr-2"></i>התראות WhatsApp
+                </button>
+                <button id="nav-tools" class="nav-tab-btn" onclick="showPage('tools')">
+                    <i class="fas fa-tools mr-2"></i>כלים
                 </button>
             </nav>
         </div>
 
-        <main class="flex-grow p-4 md:p-6 lg:p-8">
-            <section id="dashboard-page" class="page-content space-y-8">
+        <!-- תוכן העמודים השונים (Main Content Area) -->
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+            <!-- לוח מחוונים (Dashboard Page) -->
+            <section id="dashboard-page" class="page-content space-y-10">
                 <div class="text-center">
-                    <h2 class="text-2xl font-semibold mb-2">סקירה כללית</h2>
-                    <p class="text-[var(--color-text-muted)]">כאן ניתן לראות את הנתונים המרכזיים של המערכת, לנהל הזמנות קיימות וליצור חדשות.</p>
+                    <h2 class="text-3xl font-bold mb-3 text-[var(--color-text-base)]">סקירה כללית 📊</h2>
+                    <p class="text-lg text-[var(--color-text-muted)]">כאן ניתן לראות את הנתונים המרכזיים של המערכת, לנהל הזמנות קיימות וליצור חדשות.</p>
                 </div>
-                <div class="flex flex-col md:flex-row justify-center items-center gap-4 flex-wrap">
+                <!-- כפתורי פעולה מהירים -->
+                <div class="flex flex-col md:flex-row justify-center items-center gap-5 flex-wrap">
                     <button class="btn btn-primary" onclick="openOrderModal('add')">
                         <i class="fas fa-plus"></i> הוסף הזמנה חדשה
                     </button>
-                    <button class="btn bg-[var(--color-danger)] text-white" onclick="filterTable('חורג', null, true); scrollToOrdersTable();">
+                    <button class="btn bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger)] hover:opacity-90" onclick="filterTable('חורג', null, true); scrollToOrdersTable();">
                         <i class="fas fa-triangle-exclamation"></i> הצג הזמנות חורגות
-                        <span id="overdue-customers-badge" class="ml-2 bg-white text-[var(--color-danger)] px-2 py-0.5 rounded-full text-xs font-bold">0</span>
+                        <span id="overdue-customers-badge" class="ml-2 bg-white text-[var(--color-danger)] px-3 py-1 rounded-full text-sm font-bold shadow-sm">0</span>
                     </button>
                     <button class="btn btn-secondary" onclick="refreshData()">
                         <i class="fas fa-sync-alt"></i> רענן נתונים
                     </button>
                 </div>
 
+                <!-- כרטיסי KPI (Key Performance Indicators) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <button class="card p-5 flex items-center justify-between" onclick="filterTable('פתוח', null, true); scrollToOrdersTable();">
-                        <div class="font-medium">הזמנות פתוחות<p id="open-orders-count" class="text-3xl font-bold text-[var(--color-primary)] mt-1">0</p></div><i class="fas fa-box-open text-3xl text-[var(--color-secondary)]"></i>
+                    <button class="card p-6 flex items-center justify-between" onclick="filterTable('פתוח', null, true); scrollToOrdersTable();">
+                        <div class="font-semibold text-lg">הזמנות פתוחות<p id="open-orders-count" class="text-4xl font-bold text-[var(--color-primary)] mt-2">0</p></div><i class="fas fa-box-open text-4xl text-[var(--color-secondary)]"></i>
                     </button>
-                    <button class="card p-5 flex items-center justify-between" onclick="filterTable('חורג', null, true); scrollToOrdersTable();">
-                        <div class="font-medium">הזמנות חורגות<p id="overdue-orders-count" class="text-3xl font-bold text-[var(--color-danger)] mt-1">0</p></div><i class="fas fa-triangle-exclamation text-3xl text-[var(--color-danger)]"></i>
+                    <button class="card p-6 flex items-center justify-between" onclick="filterTable('חורג', null, true); scrollToOrdersTable();">
+                        <div class="font-semibold text-lg">הזמנות חורגות<p id="overdue-orders-count" class="text-4xl font-bold text-[var(--color-danger)] mt-2">0</p></div><i class="fas fa-triangle-exclamation text-4xl text-[var(--color-danger)]"></i>
                     </button>
-                    <button class="card p-5 flex items-center justify-between" onclick="filterTable(null, 'מכולה בשימוש', true); scrollToOrdersTable();"> <!-- Adjusted for container in use filter -->
-                        <div class="font-medium">מכולות בשימוש<p id="containers-in-use" class="text-3xl font-bold text-[var(--color-primary)] mt-1">0</p></div><i class="fas fa-truck-moving text-3xl text-[var(--color-secondary)]"></i>
+                    <button class="card p-6 flex items-center justify-between" onclick="filterTable(null, 'מכולה בשימוש', true); scrollToOrdersTable();">
+                        <div class="font-semibold text-lg">מכולות בשימוש<p id="containers-in-use" class="text-4xl font-bold text-[var(--color-primary)] mt-2">0</p></div><i class="fas fa-truck-moving text-4xl text-[var(--color-secondary)]"></i>
                     </button>
-                    <button class="card p-5 flex items-center justify-between" onclick="filterTable(null, 'לקוח פעיל', true); scrollToOrdersTable();"> <!-- Adjusted for active customer filter -->
-                        <div class="font-medium">לקוחות פעילים<p id="active-customers-count" class="text-3xl font-bold text-[var(--color-primary)] mt-1">0</p></div><i class="fas fa-users text-3xl text-[var(--color-secondary)]"></i>
+                    <button class="card p-6 flex items-center justify-between" onclick="filterTable(null, 'לקוח פעיל', true); scrollToOrdersTable();">
+                        <div class="font-semibold text-lg">לקוחות פעילים<p id="active-customers-count" class="text-4xl font-bold text-[var(--color-primary)] mt-2">0</p></div><i class="fas fa-users text-4xl text-[var(--color-secondary)]"></i>
                     </button>
                 </div>
 
-                <!-- New row for action type buttons -->
+                <!-- שורה חדשה לכפתורי סוגי פעולה -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <button class="card p-5 flex items-center justify-between" onclick="filterTable(null, 'הורדה', true); scrollToOrdersTable();">
-                        <div class="font-medium">הורדה<p id="action-type-הורדה-count" class="text-3xl font-bold text-[var(--color-success)] mt-1">0</p></div><i class="fas fa-download text-3xl text-[var(--color-secondary)]"></i>
+                    <button class="card p-6 flex items-center justify-between" onclick="filterTable(null, 'הורדה', true); scrollToOrdersTable();">
+                        <div class="font-semibold text-lg">הורדה<p id="action-type-הורדה-count" class="text-4xl font-bold text-[var(--color-success)] mt-2">0</p></div><i class="fas fa-download text-4xl text-[var(--color-secondary)]"></i>
                     </button>
-                    <button class="card p-5 flex items-center justify-between" onclick="filterTable(null, 'החלפה', true); scrollToOrdersTable();">
-                        <div class="font-medium">החלפה<p id="action-type-החלפה-count" class="text-3xl font-bold text-[var(--color-warning)] mt-1">0</p></div><i class="fas fa-exchange-alt text-3xl text-[var(--color-secondary)]"></i>
+                    <button class="card p-6 flex items-center justify-between" onclick="filterTable(null, 'החלפה', true); scrollToOrdersTable();">
+                        <div class="font-semibold text-lg">החלפה<p id="action-type-החלפה-count" class="text-4xl font-bold text-[var(--color-warning)] mt-2">0</p></div><i class="fas fa-exchange-alt text-4xl text-[var(--color-secondary)]"></i>
                     </button>
-                    <button class="card p-5 flex items-center justify-between" onclick="filterTable(null, 'העלאה', true); scrollToOrdersTable();">
-                        <div class="font-medium">העלאה<p id="action-type-העלאה-count" class="text-3xl font-bold text-[var(--color-danger)] mt-1">0</p></div><i class="fas fa-upload text-3xl text-[var(--color-secondary)]"></i>
+                    <button class="card p-6 flex items-center justify-between" onclick="filterTable(null, 'העלאה', true); scrollToOrdersTable();">
+                        <div class="font-semibold text-lg">העלאה<p id="action-type-העלאה-count" class="text-4xl font-bold text-[var(--color-danger)] mt-2">0</p></div><i class="fas fa-upload text-4xl text-[var(--color-secondary)]"></i>
                     </button>
                 </div>
                 
+                <!-- תרשימים -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="card p-6">
-                        <h3 class="text-xl font-semibold mb-4">מכולות בשימוש לפי לקוח</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-[var(--color-text-base)]">מכולות בשימוש לפי לקוח</h3>
                         <div class="chart-container">
                             <canvas id="chart-containers-by-customer"></canvas>
                         </div>
                     </div>
                     <div class="card p-6">
-                        <h3 class="text-xl font-semibold mb-4">התפלגות הזמנות לפי סטטוס</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-[var(--color-text-base)]">התפלגות הזמנות לפי סטטוס</h3>
                         <div class="chart-container">
                             <canvas id="chart-status-pie"></canvas>
                         </div>
                     </div>
-                    <!-- New chart for action type -->
+                    <!-- תרשים חדש לסוג פעולה -->
                     <div class="card p-6 lg:col-span-2">
-                        <h3 class="text-xl font-semibold mb-4">התפלגות הזמנות לפי סוג פעולה</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-[var(--color-text-base)]">התפלגות הזמנות לפי סוג פעולה</h3>
                         <div class="chart-container">
                             <canvas id="chart-action-type"></canvas>
                         </div>
                     </div>
                 </div>
 
+                <!-- רשימת הזמנות ראשית -->
                 <div class="card p-6">
-                    <h2 class="text-2xl font-bold mb-6">רשימת הזמנות</h2>
+                    <h2 class="text-2xl font-bold mb-6 text-[var(--color-text-base)]">רשימת הזמנות 📋</h2>
                     <div class="flex flex-col md:flex-row gap-4 mb-6 items-center">
-                        <input type="text" id="search-input" placeholder="חיפוש חופשי..." class="flex-grow p-2 border" onkeyup="filterTable()">
+                        <input type="text" id="search-input" placeholder="חיפוש חופשי (תעודה, לקוח, כתובת, מכולה)..." class="flex-grow p-3 border text-lg" onkeyup="filterTable()">
                         
-                        <!-- New filter dropdowns -->
-                        <select id="filter-status-select" class="p-2 border rounded-lg" onchange="filterTable()">
+                        <!-- פילטרים חדשים -->
+                        <select id="filter-status-select" class="p-3 border rounded-lg text-lg" onchange="filterTable()">
                             <option value="all">כל הסטטוסים</option>
                             <option value="פתוח">פתוח</option>
                             <option value="חורג">חורג</option>
                             <option value="סגור">סגור</option>
                         </select>
-                        <select id="filter-action-type-select" class="p-2 border rounded-lg" onchange="filterTable()">
+                        <select id="filter-action-type-select" class="p-3 border rounded-lg text-lg" onchange="filterTable()">
                             <option value="all">כל סוגי הפעולות</option>
                             <option value="הורדה">הורדה</option>
                             <option value="החלפה">החלפה</option>
                             <option value="העלאה">העלאה</option>
                         </select>
-                        <select id="filter-agent-select" class="p-2 border rounded-lg" onchange="filterTable()">
+                        <select id="filter-agent-select" class="p-3 border rounded-lg text-lg" onchange="filterTable()">
                             <option value="all">כל הסוכנים</option>
                             <!-- Agents will be populated by JS -->
                         </select>
@@ -523,13 +681,13 @@
                         </button>
                         <div class="flex items-center gap-2">
                             <label for="show-closed-orders" class="text-sm font-medium text-[var(--color-text-muted)]">הצג סגורות</label>
-                            <input type="checkbox" id="show-closed-orders" onchange="filterTable()" class="w-4 h-4 text-[var(--color-primary)] bg-gray-100 rounded border-gray-300 focus:ring-[var(--color-primary)]">
+                            <input type="checkbox" id="show-closed-orders" onchange="filterTable()" class="w-5 h-5 text-[var(--color-primary)] bg-gray-100 rounded border-gray-300 focus:ring-[var(--color-primary)]">
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table id="orders-table" class="w-full text-right">
-                            <thead class="border-b-2 border-[var(--color-border)]">
+                    <div class="overflow-x-auto rounded-lg border border-[var(--color-border)]">
+                        <table id="orders-table" class="w-full text-right table-auto">
+                            <thead class="bg-[var(--color-background)] border-b-2 border-[var(--color-border)] sticky top-0 z-10">
                                 <tr>
                                     <th class="p-3">תאריך</th>
                                     <th class="p-3">תעודה</th>
@@ -548,26 +706,27 @@
                 </div>
             </section>
 
-            <section id="container-inventory-page" class="page-content hidden space-y-8">
+            <!-- מלאי מכולות (Container Inventory Page) -->
+            <section id="container-inventory-page" class="page-content hidden space-y-10">
                  <div class="text-center">
-                    <h2 class="text-2xl font-semibold mb-2">ניהול מלאי מכולות</h2>
-                    <p class="text-[var(--color-text-muted)]">עקוב אחר המיקום והזמינות של כל המכולות במערכת.</p>
+                    <h2 class="text-3xl font-bold mb-3 text-[var(--color-text-base)]">ניהול מלאי מכולות 📦</h2>
+                    <p class="text-lg text-[var(--color-text-muted)]">עקוב אחר המיקום והזמינות של כל המכולות במערכת.</p>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="card p-6">
                         <h3 class="text-xl font-bold mb-4 text-[var(--color-danger)]">מכולות בשימוש</h3>
-                        <div class="overflow-x-auto max-h-96">
-                            <table id="containers-in-use-table" class="w-full text-right">
-                                <thead><tr><th class="p-2">מספר</th><th class="p-2">לקוח</th><th class="p-2">תאריך</th></tr></thead>
+                        <div class="overflow-x-auto max-h-96 rounded-lg border border-[var(--color-border)]">
+                            <table id="containers-in-use-table" class="w-full text-right table-auto">
+                                <thead class="bg-[var(--color-background)] sticky top-0 z-10"><tr><th class="p-3">מספר</th><th class="p-3">לקוח</th><th class="p-3">תאריך</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
                     <div class="card p-6">
                         <h3 class="text-xl font-bold mb-4 text-[var(--color-success)]">מכולות פנויות</h3>
-                        <div class="overflow-x-auto max-h-96">
-                            <table id="containers-available-table" class="w-full text-right">
-                                <thead><tr><th class="p-2">מספר</th><th class="p-2">תאריך התפנות</th></tr></thead>
+                        <div class="overflow-x-auto max-h-96 rounded-lg border border-[var(--color-border)]">
+                            <table id="containers-available-table" class="w-full text-right table-auto">
+                                <thead class="bg-[var(--color-background)] sticky top-0 z-10"><tr><th class="p-3">מספר</th><th class="p-3">תאריך התפנות</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -575,33 +734,35 @@
                 </div>
             </section>
 
-            <section id="treatment-board-page" class="page-content hidden space-y-8">
+            <!-- לוח טיפול (Treatment Board Page) -->
+            <section id="treatment-board-page" class="page-content hidden space-y-10">
                 <div class="text-center">
-                    <h2 class="text-2xl font-semibold mb-2">לוח טיפול</h2>
-                    <p class="text-[var(--color-text-muted)]">נהל את ההזמנות הדורשות טיפול באמצעות גרירה ושחרור בין הסטטוסים השונים.</p>
+                    <h2 class="text-3xl font-bold mb-3 text-[var(--color-text-base)]">לוח טיפול Kanban 🛠️</h2>
+                    <p class="text-lg text-[var(--color-text-muted)]">נהל את ההזמנות הדורשות טיפול באמצעות גרירה ושחרור בין הסטטוסים השונים.</p>
                 </div>
-                <div id="no-treatment-orders" class="text-center text-lg text-[var(--color-text-muted)] hidden">אין הזמנות לטיפול כרגע. כל הכבוד! 🎉</div>
+                <div id="no-treatment-orders" class="text-center text-xl text-[var(--color-text-muted)] hidden p-8 card">אין הזמנות לטיפול כרגע. כל הכבוד! 🎉</div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div id="column-overdue" ondrop="drop(event)" ondragover="allowDrop(event)" class="p-4 rounded-lg bg-[var(--color-background)] space-y-4 min-h-[200px]">
-                        <h3 class="font-bold text-lg text-center text-[var(--color-danger)]">חורגות</h3>
+                    <div id="column-overdue" ondrop="drop(event)" ondragover="allowDrop(event)" class="p-5 rounded-xl bg-[var(--color-surface)] space-y-4 min-h-[300px] border border-[var(--color-border)] shadow-inner">
+                        <h3 class="font-bold text-xl text-center text-[var(--color-danger)] mb-4 pb-2 border-b border-[var(--color-border)] neon-blinking-border-title">לקוחות חורגים שצריכים טיפול 🚨</h3>
                     </div>
-                    <div id="column-in-progress" ondrop="drop(event)" ondragover="allowDrop(event)" class="p-4 rounded-lg bg-[var(--color-background)] space-y-4 min-h-[200px]">
-                        <h3 class="font-bold text-lg text-center text-[var(--color-info)]">בטיפול</h3>
+                    <div id="column-in-progress" ondrop="drop(event)" ondragover="allowDrop(event)" class="p-5 rounded-xl bg-[var(--color-surface)] space-y-4 min-h-[300px] border border-[var(--color-border)] shadow-inner">
+                        <h3 class="font-bold text-xl text-center text-[var(--color-info)] mb-4 pb-2 border-b border-[var(--color-border)]">בטיפול ⚙️</h3>
                     </div>
-                    <div id="column-resolved" ondrop="drop(event)" ondragover="allowDrop(event)" class="p-4 rounded-lg bg-[var(--color-background)] space-y-4 min-h-[200px]">
-                        <h3 class="font-bold text-lg text-center text-[var(--color-success)]">טופלו</h3>
+                    <div id="column-resolved" ondrop="drop(event)" ondragover="allowDrop(event)" class="p-5 rounded-xl bg-[var(--color-surface)] space-y-4 min-h-[300px] border border-[var(--color-border)] shadow-inner">
+                        <h3 class="font-bold text-xl text-center text-[var(--color-success)] mb-4 pb-2 border-b border-[var(--color-border)]">טופלו ✅</h3>
                     </div>
                 </div>
             </section>
 
-            <section id="whatsapp-alerts-page" class="page-content hidden space-y-8">
+            <!-- התראות WhatsApp (WhatsApp Alerts Page) -->
+            <section id="whatsapp-alerts-page" class="page-content hidden space-y-10">
                 <div class="text-center">
-                    <h2 class="text-2xl font-semibold mb-2">לוח התראות WhatsApp</h2>
-                    <p class="text-[var(--color-text-muted)]">שלח הודעות מובנות ללקוחות על חריגות, סטטוס הזמנות והודעות חשובות נוספות.</p>
+                    <h2 class="text-3xl font-bold mb-3 text-[var(--color-text-base)]">לוח התראות WhatsApp 💬</h2>
+                    <p class="text-lg text-[var(--color-text-muted)]">שלח הודעות מובנות ללקוחות על חריגות, סטטוס הזמנות והודעות חשובות נוספות.</p>
                 </div>
 
-                <div class="card p-6 space-y-4 max-w-2xl mx-auto">
-                    <h3 class="text-xl font-bold mb-4">שליחת הודעת WhatsApp</h3>
+                <div class="card p-8 space-y-5 max-w-2xl mx-auto">
+                    <h3 class="text-2xl font-bold mb-4 text-[var(--color-primary)]">שליחת הודעת WhatsApp</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="whatsapp-customer-name" class="block text-sm font-medium text-[var(--color-text-muted)] mb-1">שם לקוח</label>
@@ -611,7 +772,7 @@
                             <label for="whatsapp-phone-number" class="block text-sm font-medium text-[var(--color-text-muted)] mb-1">מספר טלפון</label>
                             <input type="text" id="whatsapp-phone-number" class="w-full p-2 border" readonly>
                         </div>
-                        <div>
+                        <div class="md:col-span-2"> <!-- עמודה אחת לכתובת -->
                             <label for="whatsapp-address" class="block text-sm font-medium text-[var(--color-text-muted)] mb-1">כתובת</label>
                             <input type="text" id="whatsapp-address" class="w-full p-2 border" readonly>
                         </div>
@@ -619,7 +780,7 @@
 
                     <div>
                         <label for="message-template-select" class="block text-sm font-medium text-[var(--color-text-muted)] mb-1">בחר תבנית הודעה</label>
-                        <select id="message-template-select" class="w-full p-2 border" onchange="loadWhatsAppTemplate()">
+                        <select id="message-template-select" class="w-full p-3 border text-lg" onchange="loadWhatsAppTemplate()">
                             <option value="">בחר תבנית...</option>
                             <!-- Templates will be populated by JS -->
                         </select>
@@ -627,7 +788,7 @@
 
                     <div>
                         <label for="whatsapp-message-input" class="block text-sm font-medium text-[var(--color-text-muted)] mb-1">הודעה</label>
-                        <textarea id="whatsapp-message-input" rows="8" class="w-full p-2 border typing-effect"></textarea>
+                        <textarea id="whatsapp-message-input" rows="8" class="w-full p-3 border text-lg typing-effect"></textarea>
                     </div>
 
                     <div class="flex justify-end gap-3">
@@ -636,28 +797,63 @@
                     </div>
                 </div>
             </section>
+
+            <!-- כלים (Tools Page) -->
+            <section id="tools-page" class="page-content hidden space-y-10">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-3 text-[var(--color-text-base)]">כלים לבחינת הזמנות 🛠️</h2>
+                    <p class="text-lg text-[var(--color-text-muted)]">כאן תוכל לבצע חיפושים מתקדמים ולקבל מידע מפורט על הזמנות.</p>
+                </div>
+
+                <!-- חיפוש לפי מספרי תעודות -->
+                <div class="card p-6 space-y-4">
+                    <h3 class="text-xl font-bold text-[var(--color-primary)]">חיפוש לפי מספרי תעודות</h3>
+                    <input type="text" id="tool-doc-ids-input" placeholder="הזן מספרי תעודות מופרדים בפסיקים (לדוגמה: 12345, 67890)" class="w-full p-3 border text-lg">
+                    <button class="btn btn-primary" onclick="searchOrdersByDocIds()">חפש תעודות</button>
+                    <div id="tool-doc-ids-results" class="mt-4 overflow-x-auto"></div>
+                </div>
+
+                <!-- חיפוש לפי שם לקוח וכתובת -->
+                <div class="card p-6 space-y-4">
+                    <h3 class="text-xl font-bold text-[var(--color-primary)]">חיפוש לפי לקוח וכתובת</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="tool-customer-name-input" placeholder="שם לקוח" class="w-full p-3 border text-lg">
+                        <input type="text" id="tool-customer-address-input" placeholder="כתובת" class="w-full p-3 border text-lg">
+                    </div>
+                    <button class="btn btn-primary" onclick="searchOrdersByCustomerDetails()">חפש לקוח</button>
+                    <div id="tool-customer-details-results" class="mt-4 overflow-x-auto"></div>
+                </div>
+
+                <!-- חיפוש לפי מספרי מכולות -->
+                <div class="card p-6 space-y-4">
+                    <h3 class="text-xl font-bold text-[var(--color-primary)]">חיפוש לפי מספרי מכולות</h3>
+                    <input type="text" id="tool-container-numbers-input" placeholder="הזן מספרי מכולות מופרדים בפסיקים (לדוגמה: 1, 209)" class="w-full p-3 border text-lg">
+                    <button class="btn btn-primary" onclick="searchOrdersByContainerNumbers()">חפש מכולות</button>
+                    <div id="tool-container-numbers-results" class="mt-4 overflow-x-auto"></div>
+                </div>
+            </section>
         </main>
     </div>
 
-    <!-- Floating Scroll to Top Button -->
+    <!-- כפתור גלילה למעלה צף (Floating Scroll to Top Button) -->
     <button onclick="scrollToTop()" id="scroll-to-top-btn" title="חזור למעלה">
         <i class="fas fa-arrow-up"></i>
     </button>
 
 <script>
+    // URL של ה-Google Apps Script המשמש כ-API
     const SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxiS3wXwXCyh8xM1EdTiwXy0T-UyBRQgfrnRRis531lTxmgtJIGawfsPeetX5nVJW3V/exec';
-    // NOTE: For WHATSAPP_LOG_SCRIPT_URL, you will need to publish a separate Google Apps Script
-    // that accepts 'action=logMessage', 'docId', and 'message' parameters and writes them to your
-    // "יומן WhatsApp" Google Sheet. Replace 'AKfycbx_YOUR_WHATSAPP_SCRIPT_ID_HERE' with your actual Script ID.
+    // URL של סקריפט ה-Apps Script נפרד ללוגינג של הודעות וואטסאפ.
+    // **חשוב**: יש להחליף את 'AKfycbx_YOUR_WHATSAPP_SCRIPT_ID_HERE' ב-ID האמיתי של הסקריפט שלך.
     const WHATSAPP_LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_YOUR_WHATSAPP_SCRIPT_ID_HERE/exec'; 
     
-    let allOrders = [];
-    let currentEditingOrder = null;
-    let autoFillData = null;
-    let charts = {};
-    const OVERDUE_THRESHOLD_DAYS = 10; // Days after order date for 'overdue' status
+    let allOrders = []; // מערך המכיל את כל ההזמנות שנטענו
+    let currentEditingOrder = null; // משתנה לשמירת ההזמנה הנערכת כרגע
+    let autoFillData = null; // נתונים עבור השלמה אוטומטית של לקוחות
+    let charts = {}; // אובייקט לאחסון מופעי תרשימים (Chart.js)
+    const OVERDUE_THRESHOLD_DAYS = 10; // סף ימים לאחר תאריך ההזמנה להגדרת סטטוס 'חורג'
 
-    // Helper functions for modals
+    // פונקציות עזר לפתיחה וסגירת מודלים
     function openModal(id) {
         document.getElementById(id).classList.add('active');
     }
@@ -666,18 +862,22 @@
         document.getElementById(id).classList.remove('active');
     }
 
+    // פונקציות להצגה והסתרה של אנימציית הטעינה
     function showLoader() { document.getElementById('loader-overlay').classList.remove('opacity-0', 'pointer-events-none'); }
     function hideLoader() { document.getElementById('loader-overlay').classList.add('opacity-0', 'pointer-events-none'); }
 
+    // פונקציה למעבר בין מצב בהיר לכהה
     function toggleTheme() {
         const isDarkMode = document.body.classList.toggle('dark');
-        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-        document.querySelector('#theme-toggle i').className = isDarkMode ? 'fas fa-moon' : 'fas fa-sun';
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); // שמור העדפה ב-localStorage
+        document.querySelector('#theme-toggle i').className = isDarkMode ? 'fas fa-moon' : 'fas fa-sun'; // שנה אייקון
+        drawCharts(); // רענן תרשימים כדי להתאים לצבעי המצב החדש
     }
 
+    // פונקציה לאתחול מצב התצוגה (כהה/בהיר) בטעינת הדף
     function initializeTheme() {
         const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; // בדיקה אם המערכת מעדיפה מצב כהה
         if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
             document.body.classList.add('dark');
             document.querySelector('#theme-toggle i').className = 'fas fa-moon';
@@ -685,36 +885,51 @@
         document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
     }
 
+    // פונקציה להצגת הודעות התראה (alerts) למשתמש
     function showAlert(message, type = 'info') {
         const container = document.getElementById('alert-container');
         const alertItem = document.createElement('div');
-        let bgColor, icon;
+        let bgColor, icon, textColor, borderColor; // הוספת צבעי טקסט וגבולות
         switch(type) {
-            case 'success': bgColor = 'bg-green-100 border-green-500 text-green-700'; icon = 'fa-check-circle'; break;
-            case 'error': bgColor = 'bg-red-100 border-red-500 text-red-700'; icon = 'fa-times-circle'; break;
-            case 'warning': bgColor = 'bg-yellow-100 border-yellow-500 text-yellow-700'; icon = 'fa-exclamation-triangle'; break;
-            default: bgColor = 'bg-blue-100 border-blue-500 text-blue-700'; icon = 'fa-info-circle'; break;
+            case 'success': bgColor = 'bg-green-50'; borderColor = 'border-green-500'; textColor = 'text-green-700'; icon = 'fa-check-circle'; break;
+            case 'error': bgColor = 'bg-red-50'; borderColor = 'border-red-500'; textColor = 'text-red-700'; icon = 'fa-times-circle'; break;
+            case 'warning': bgColor = 'bg-yellow-50'; borderColor = 'border-yellow-500'; textColor = 'text-yellow-700'; icon = 'fa-exclamation-triangle'; break;
+            default: bgColor = 'bg-blue-50'; borderColor = 'border-blue-500'; textColor = 'text-blue-700'; icon = 'fa-info-circle'; break;
         }
-        alertItem.className = `p-4 rounded-lg border-l-4 shadow-md flex items-center gap-3 transform translate-x-full opacity-0 animate-slide-in ${bgColor}`;
+        alertItem.className = `p-4 rounded-lg border-l-4 shadow-md flex items-center gap-3 transform translate-x-full opacity-0 transition-all duration-500 ease-out ${bgColor} ${borderColor} ${textColor}`;
         alertItem.innerHTML = `<i class="fas ${icon}"></i><p>${message}</p>`;
-        container.prepend(alertItem);
+        container.prepend(alertItem); // הוספה להתחלה כדי שההודעות החדשות יופיעו למעלה
+        
+        // אנימציית כניסה
         setTimeout(() => {
-            alertItem.style.opacity = '0';
+            alertItem.style.transform = 'translateX(0)';
+            alertItem.style.opacity = '1';
+        }, 100);
+
+        // אנימציית יציאה והסרה
+        setTimeout(() => {
             alertItem.style.transform = 'translateX(100%)';
-            setTimeout(() => alertItem.remove(), 500);
+            alertItem.style.opacity = '0';
+            setTimeout(() => alertItem.remove(), 500); // הסרה לאחר סיום האנימציה
         }, 5000);
     }
 
+    // פונקציה לשליפת נתונים מהשרת (Google Apps Script)
     async function fetchData(action, params = {}, retries = 0) {
         showLoader();
         const urlParams = new URLSearchParams({ action, ...params });
         const url = `${SCRIPT_WEB_APP_URL}?${urlParams.toString()}`;
+        console.log(`[fetchData] Fetching: ${url}`); // DEBUG: Log the URL being fetched
         try {
             const response = await fetch(url);
+            console.log(`[fetchData] Response status: ${response.status}`); // DEBUG: Log response status
             const data = await response.json();
+            console.log(`[fetchData] Response data:`, data); // DEBUG: Log full response data
+            // טיפול בשגיאות "Service invoked too many times" באמצעות exponential backoff
             if (!data.success && data.message && data.message.includes('Service invoked too many times')) {
                 const delay = Math.pow(2, retries) * 1000;
-                if (retries < 5) {
+                if (retries < 5) { // מקסימום 5 ניסיונות חוזרים
+                    console.warn(`[fetchData] Service invoked too many times, retrying in ${delay}ms... (Attempt ${retries + 1})`); // DEBUG: Log retry attempt
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return fetchData(action, params, retries + 1);
                 } else {
@@ -724,71 +939,83 @@
             return data;
         } catch (error) {
             showAlert('שגיאת תקשורת עם השרת.', 'error');
+            console.error("[fetchData] Fetch error:", error); // DEBUG: Log detailed fetch error
             return { success: false, message: error.message };
         } finally {
             hideLoader();
         }
     }
 
+    // פונקציה לתיעוד הודעות WhatsApp בגיליון נפרד
     async function logWhatsAppMessage(docId, message) {
-        // This function sends data to the WhatsApp log sheet
-        // IMPORTANT: You need to set up a Google Apps Script published as a web app
-        // to handle this logging. The script should receive 'docId' and 'message'
-        // and append them to your "יומן WhatsApp" sheet.
-        // Replace WHATSAPP_LOG_SCRIPT_URL with your actual published script URL.
+        // פונקציה זו שולחת נתונים לגיליון לוג של WhatsApp
+        // יש לוודא שסקריפט ה-Google Apps Script פורסם כ-web app
+        // ושהוא מקבל את הפרמטרים 'docId' ו-'message' ומוסיף אותם לגיליון "יומן WhatsApp".
         const url = `${WHATSAPP_LOG_SCRIPT_URL}?action=logMessage&docId=${encodeURIComponent(docId)}&message=${encodeURIComponent(message)}`;
         try {
             const response = await fetch(url);
             const data = await response.json();
             if (data.success) {
-                console.log("WhatsApp message logged successfully.");
+                console.log("[logWhatsAppMessage] WhatsApp message logged successfully.");
             } else {
-                console.error("Failed to log WhatsApp message:", data.message);
+                console.error("[logWhatsAppMessage] Failed to log WhatsApp message:", data.message);
             }
         } catch (error) {
-            console.error("Error logging WhatsApp message:", error);
+            console.error("[logWhatsAppMessage] Error logging WhatsApp message:", error);
         }
     }
 
-
+    // טעינת ההזמנות מהשרת ועיבודן
     async function loadOrders() {
+        console.log("[loadOrders] Starting to load orders..."); // DEBUG
         const response = await fetchData('list', { status: 'all' });
         if (response.success) {
             allOrders = response.data.map(order => {
                 const orderDate = new Date(order['תאריך הזמנה']);
                 const today = new Date();
                 const daysPassed = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
-                order._daysPassedCalculated = daysPassed; // Always calculate days passed and store it
+                order._daysPassedCalculated = daysPassed; // חישוב ושמירה של ימים שעברו
 
-                // Determine effective status for display/logic
+                // קביעת סטטוס אפקטיבי לתצוגה וללוגיקה
                 if (order['סטטוס'] === 'סגור') {
                     order._effectiveStatus = 'סגור';
-                } else if (daysPassed >= OVERDUE_THRESHOLD_DAYS) { // If days passed are 10 or more, it's overdue
+                } else if (daysPassed >= OVERDUE_THRESHOLD_DAYS) { // אם עברו 10 ימים או יותר, ההזמנה חורגת
                     order._effectiveStatus = 'חורג';
                 } else {
-                    order._effectiveStatus = 'פתוח'; // Default for non-closed and not yet overdue
+                    order._effectiveStatus = 'פתוח'; // סטטוס ברירת מחדל להזמנות שאינן סגורות ואינן חורגות
                 }
+                order.sheetRow = parseInt(order.sheetRow); // וודא ש-sheetRow הוא מספר
+                // וודא ש-Kanban Status קיים, אחרת אתחל ל-null
+                order['Kanban Status'] = order['Kanban Status'] || null; 
                 return order;
             });
-            updateDashboard();
-            filterTable();
-            updateContainerInventory();
-            renderTreatmentBoard();
-            populateAgentFilter(); // Populate agent filter after loading orders
+            console.log("[loadOrders] Orders loaded successfully. Total:", allOrders.length); // DEBUG
+            updateDashboard(); // עדכון לוח המחוונים
+            filterTable(); // סינון ורינדור הטבלה
+            updateContainerInventory(); // עדכון מלאי המכולות
+            renderTreatmentBoard(); // רינדור לוח הטיפול
+            populateAgentFilter(); // אכלוס פילטר הסוכנים
+        } else {
+            showAlert(response.message || 'שגיאה בטעינת הזמנות.', 'error');
+            console.error("[loadOrders] Failed to load orders:", response.message); // DEBUG
         }
     }
 
+    // עדכון כרטיסי KPI והתרשימים בלוח המחוונים
     function updateDashboard() {
         const openOrders = allOrders.filter(o => o._effectiveStatus === 'פתוח');
         const overdueOrders = allOrders.filter(o => o._effectiveStatus === 'חורג');
         
         const containersInUse = new Set();
-        openOrders.forEach(order => {
+        allOrders.filter(o => o._effectiveStatus !== 'סגור').forEach(order => { // רק הזמנות פתוחות או חורגות
+            // יש לוודא שהכותרות 'מספר מכולה ירדה' ו'מספר מכולה עלתה' קיימות בגיליון
             String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => containersInUse.add(c));
+            // אם סוג הפעולה הוא העלאה, המכולה שעלתה אינה נחשבת בשימוש
+            String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => containersInUse.delete(c));
         });
         
-        // Active customers are those with open or overdue orders
-        const activeCustomers = new Set(allOrders.filter(o => o._effectiveStatus !== 'סגור').map(o => o['שם לקוח']));
+        // לקוחות פעילים הם אלו עם הזמנות פתוחות או חורגות
+        const activeCustomers = new Set(allOrders.filter(o => o._effectiveStatus !== 'סגור').map(o => o['שם לקוח']).filter(Boolean));
 
         document.getElementById('open-orders-count').textContent = openOrders.length;
         document.getElementById('overdue-orders-count').textContent = overdueOrders.length;
@@ -796,7 +1023,7 @@
         document.getElementById('active-customers-count').textContent = activeCustomers.size;
         document.getElementById('overdue-customers-badge').textContent = overdueOrders.length;
         
-        // Update action type counts
+        // עדכון ספירת סוגי פעולה
         const actionTypeCounts = allOrders.reduce((acc, order) => {
             const type = order['סוג פעולה'];
             if (type) {
@@ -809,84 +1036,98 @@
         document.getElementById('action-type-החלפה-count').textContent = actionTypeCounts['החלפה'] || 0;
         document.getElementById('action-type-העלאה-count').textContent = actionTypeCounts['העלאה'] || 0;
 
-        drawCharts();
+        drawCharts(); // רינדור התרשימים
     }
 
+    // רינדור טבלת ההזמנות
     function renderOrdersTable(ordersToRender) {
         const tableBody = document.querySelector('#orders-table tbody');
         tableBody.innerHTML = '';
+        if (ordersToRender.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-[var(--color-text-muted)]">אין הזמנות להצגה בסינון הנוכחי.</td></tr>`;
+            return;
+        }
+
         ordersToRender.forEach(order => {
             const row = tableBody.insertRow();
-            // Apply conditional styling for action type
+            // החלת עיצוב מותנה לפי סוג פעולה
             const actionTypeClass = order['סוג פעולה'] ? `action-type-${order['סוג פעולה']}` : '';
             row.className = `border-b border-[var(--color-border)] transition-colors cursor-pointer ${actionTypeClass}`;
             
-            // Apply blinking effect for overdue orders
+            // החלת אפקט הבהוב לשורות חורגות
             if (order._effectiveStatus === 'חורג') {
                 row.classList.add('overdue-blinking');
             }
 
             row.dataset.sheetRow = order.sheetRow;
             row.onclick = (e) => {
-                // If a button or container badge was clicked, prevent showing order details
-                if (!e.target.closest('.action-icon-btn, .container-badge, .whatsapp-btn')) { 
+                // אם כפתור או תג מכולה נלחץ, מנע הצגת פרטי הזמנה
+                if (!e.target.closest('.action-icon-btn, .container-badge, .customer-name-link')) { 
                     showOrderDetailsModal(order.sheetRow);
                 }
             };
 
+            // יצירת תגיות למספרי מכולות - שינוי אייקון מ-emoji 📦 לאייקון Font Awesome fa-box
             const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
             const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
             const allContainers = new Set([...containersTaken, ...containersBrought]);
             
             const containerHTML = [...allContainers].filter(Boolean).map(c => 
-                `<span class="container-badge inline-block bg-[var(--color-secondary)] text-white text-xs font-semibold px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-[var(--color-primary)] transition-colors" onclick="event.stopPropagation(); showContainerHistory('${c.trim()}')">📦 ${c.trim()}</span>`
+                `<span class="container-badge inline-block bg-[var(--color-secondary)] text-[var(--color-text-base)] text-xs font-semibold px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-[var(--color-primary)] hover:text-white transition-colors" onclick="event.stopPropagation(); showContainerHistory('${c.trim()}')"><i class="fas fa-box"></i> ${c.trim()}</span>`
             ).join(' ');
-            
+
+            // עיצוב ימי חריגה
+            const daysPassedHtml = order._effectiveStatus === 'חורג' ?
+                `<span class="overdue-text-blinking">${order._daysPassedCalculated || ''}</span>` :
+                `${order._daysPassedCalculated || ''}`;
+
             row.innerHTML = `
                 <td class="p-3 font-medium">${formatDate(order['תאריך הזמנה'])}</td>
                 <td class="p-3 font-medium">${order['תעודה'] || ''}</td>
-                <td class="p-3 font-semibold">${order['שם לקוח'] || ''}</td>
+                <td class="p-3 font-semibold customer-name-link cursor-pointer hover:text-[var(--color-primary)]" onclick="event.stopPropagation(); showCustomerHistory('${order['שם לקוח']}')">${order['שם לקוח'] || ''}</td>
                 <td class="p-3 font-medium">${order['כתובת'] || ''}</td>
                 <td class="p-3">${order['סוג פעולה'] || ''}</td>
-                <td class="p-3">${order._daysPassedCalculated || ''}</td>
+                <td class="p-3">${daysPassedHtml}</td>
                 <td class="p-3">${containerHTML}</td>
                 <td class="p-3"><span class="status-${(order._effectiveStatus || '').replace(/[/ ]/g, '-').toLowerCase()}">${order._effectiveStatus || ''}</span></td>
                 <td class="p-3 whitespace-nowrap">
                     <button class="action-icon-btn whatsapp-btn" onclick="event.stopPropagation(); openWhatsAppAlertsForOrder(${order.sheetRow})" title="שלח WhatsApp"><i class="fab fa-whatsapp text-green-500"></i></button>
                     <button class="action-icon-btn" onclick="event.stopPropagation(); openOrderModal('edit', ${order.sheetRow})" title="ערוך"><i class="fas fa-edit text-[var(--color-info)]"></i></button>
                     <button class="action-icon-btn" onclick="event.stopPropagation(); duplicateOrder(${order.sheetRow})" title="שכפל"><i class="fas fa-copy text-[var(--color-primary)]"></i></button>
+                    ${order._effectiveStatus !== 'סגור' ? `<button class="action-icon-btn" onclick="event.stopPropagation(); openCloseOrderModal(${order.sheetRow}, '${order['תעודה']}')" title="סגור הזמנה"><i class="fas fa-check-circle text-[var(--color-success)]"></i></button>` : ''}
                     <button class="action-icon-btn" onclick="event.stopPropagation(); openDeleteConfirmModal(${order.sheetRow}, '${order['תעודה']}')" title="מחק"><i class="fas fa-trash text-[var(--color-danger)]"></i></button>
                 </td>
             `;
         });
     }
 
+    // פונקציה לסינון טבלת ההזמנות (חיפוש חופשי משודרג)
     function filterTable(statusFilterParam = null, actionTypeFilterParam = null, isExplicitButtonFilter = false) {
-        const searchText = document.getElementById('search-input').value.toLowerCase();
+        let searchText = document.getElementById('search-input').value.toLowerCase().trim();
         const selectedStatusFilter = document.getElementById('filter-status-select').value;
         const selectedActionTypeFilter = document.getElementById('filter-action-type-select').value;
         const selectedAgentFilter = document.getElementById('filter-agent-select').value;
         let showClosed = document.getElementById('show-closed-orders').checked;
 
-        // If explicitly filtered by "Show Overdue" button, override checkbox and search
+        // אם בוצע סינון מפורש ע"י כפתור (למשל, "הצג הזמנות חורגות"), דרוס את מצב תיבת הסימון והחיפוש
         if (isExplicitButtonFilter) {
             if (statusFilterParam === 'חורג') {
                 showClosed = false;
                 document.getElementById('show-closed-orders').checked = false;
-                document.getElementById('search-input').value = '';
+                document.getElementById('search-input').value = ''; // נקה חיפוש חופשי
                 document.getElementById('filter-status-select').value = 'חורג';
                 document.getElementById('filter-action-type-select').value = 'all';
                 document.getElementById('filter-agent-select').value = 'all';
-            } else if (actionTypeFilterParam) { // For action type buttons
-                document.getElementById('search-input').value = '';
+            } else if (actionTypeFilterParam) { // עבור כפתורי סוגי פעולה
+                document.getElementById('search-input').value = ''; // נקה חיפוש חופשי
                 document.getElementById('filter-status-select').value = 'all';
                 document.getElementById('filter-action-type-select').value = actionTypeFilterParam;
                 document.getElementById('filter-agent-select').value = 'all';
-                showClosed = document.getElementById('show-closed-orders').checked; // Keep existing checkbox state
+                showClosed = document.getElementById('show-closed-orders').checked; // שמור את מצב תיבת הסימון הקיים
             }
-            // If it's a KPI click that doesn't set status/action type explicitly, reset other filters
+            // אם זו לחיצה על KPI שלא מגדירה סטטוס/סוג פעולה במפורש, אפס פילטרים אחרים
             else if (statusFilterParam === 'פתוח' || actionTypeFilterParam === 'מכולה בשימוש' || actionTypeFilterParam === 'לקוח פעיל') {
-                document.getElementById('search-input').value = '';
+                document.getElementById('search-input').value = ''; // נקה חיפוש חופשי
                 document.getElementById('filter-status-select').value = statusFilterParam || 'all';
                 document.getElementById('filter-action-type-select').value = 'all';
                 document.getElementById('filter-agent-select').value = 'all';
@@ -896,21 +1137,37 @@
         }
 
         const filtered = allOrders.filter(order => {
-            const matchesSearch = Object.values(order).some(val => String(val).toLowerCase().includes(searchText));
+            let matchesSearch = true;
+            if (searchText) {
+                // בדיקה אם טקסט החיפוש הוא מספר
+                const isNumericSearch = !isNaN(parseFloat(searchText)) && isFinite(searchText);
+
+                if (isNumericSearch) {
+                    // חיפוש ספציפי במספרי תעודה ומכולות אם זה חיפוש מספרי
+                    matchesSearch = String(order['תעודה'] || '').includes(searchText) ||
+                                    String(order['מספר מכולה ירדה'] || '').includes(searchText) ||
+                                    String(order['מספר מכולה עלתה'] || '').includes(searchText);
+                } else {
+                    // חיפוש חופשי רגיל בכל הערכים
+                    matchesSearch = Object.values(order).some(val => 
+                        String(val).toLowerCase().includes(searchText)
+                    );
+                }
+            }
             
-            // Apply status filter from dropdown or explicit button
+            // החלת פילטר סטטוס מהדרופדאון או כפתור מפורש
             let matchesStatus = true;
             const currentStatusFilter = isExplicitButtonFilter && statusFilterParam ? statusFilterParam : selectedStatusFilter;
             if (currentStatusFilter !== 'all') {
                 matchesStatus = (order._effectiveStatus === currentStatusFilter);
             }
 
-            // Apply action type filter from dropdown or explicit button
+            // החלת פילטר סוג פעולה מהדרופדאון או כפתור מפורש
             let matchesActionType = true;
             const currentActionTypeFilter = isExplicitButtonFilter && actionTypeFilterParam ? actionTypeFilterParam : selectedActionTypeFilter;
             if (currentActionTypeFilter !== 'all') {
                 if (currentActionTypeFilter === 'מכולה בשימוש') {
-                    matchesActionType = (String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).length > 0 && order._effectiveStatus !== 'סגור');
+                    matchesActionType = (String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).length > 0 && order._effectiveStatus !== 'סגור' && order['סוג פעולה'] !== 'העלאה');
                 } else if (currentActionTypeFilter === 'לקוח פעיל') {
                      matchesActionType = (order._effectiveStatus !== 'סגור');
                 }
@@ -919,13 +1176,13 @@
                 }
             }
 
-            // Apply agent filter from dropdown
+            // החלת פילטר סוכן מהדרופדאון
             let matchesAgent = true;
             if (selectedAgentFilter !== 'all') {
                 matchesAgent = (order['שם סוכן'] === selectedAgentFilter);
             }
 
-            // Apply "show closed" checkbox last
+            // החלת "הצג סגורות" אחרון
             let matchesShowClosed = true;
             if (!showClosed) {
                 matchesShowClosed = (order._effectiveStatus === 'פתוח' || order._effectiveStatus === 'חורג');
@@ -936,15 +1193,17 @@
         renderOrdersTable(filtered);
     }
     
+    // איפוס כל הפילטרים בטבלה
     function resetTableFilters() {
         document.getElementById('search-input').value = '';
         document.getElementById('filter-status-select').value = 'all';
         document.getElementById('filter-action-type-select').value = 'all';
         document.getElementById('filter-agent-select').value = 'all';
         document.getElementById('show-closed-orders').checked = false;
-        filterTable(); // Re-apply filters with reset values
+        filterTable(); // הפעל מחדש את הסינון עם הערכים המאופסים
     }
 
+    // אכלוס פילטר הסוכנים עם סוכנים ייחודיים
     function populateAgentFilter() {
         const agentSelect = document.getElementById('filter-agent-select');
         agentSelect.innerHTML = '<option value="all">כל הסוכנים</option>';
@@ -957,40 +1216,52 @@
         });
     }
 
+    // פונקציית עזר לעיצוב תאריך
     function formatDate(dateInput) {
         if (!dateInput) return '';
         const date = new Date(dateInput);
-        if (isNaN(date.getTime())) return dateInput;
+        if (isNaN(date.getTime())) return dateInput; // אם התאריך לא תקין, החזר את הקלט המקורי
         return date.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    // Container validation helper
+    // פונקציה לבדיקת שימוש במכולה (וולידציה)
     function validateContainerUsage(containerNum, currentOrderSheetRow = null) {
-        if (!containerNum) return true; // No container entered, so no conflict
+        if (!containerNum) return true; // אם לא הוזנה מכולה, אין קונפליקט
 
         const isContainerCurrentlyInUse = allOrders.some(order => {
-            // Check if this order is the one being edited, if so, skip it for this check
+            // דלג על ההזמנה הנערכת כרגע בבדיקה זו
             if (order.sheetRow === currentOrderSheetRow) {
                 return false;
             }
-            // A container is 'in use' if it's been taken down by an open/overdue order
+            // מכולה נחשבת 'בשימוש' אם היא ירדה בהזמנה פתוחה/חורגת ועדיין לא הועלתה באותה הזמנה
             const containersTakenByOrder = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-            return (order._effectiveStatus === 'פתוח' || order._effectiveStatus === 'חורג') && containersTakenByOrder.includes(containerNum);
+            const containersBroughtByOrder = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+
+            const isTaken = containersTakenByOrder.includes(containerNum);
+            const isBrought = containersBroughtByOrder.includes(containerNum);
+
+            // מכולה בשימוש אם היא ירדה וטרם הועלתה בהקשר של הזמנה פתוחה/חורגת
+            return (order._effectiveStatus === 'פתוח' || order._effectiveStatus === 'חורג') && isTaken && !isBrought;
         });
         
-        return !isContainerCurrentlyInUse; // True if container is NOT currently in use
+        return !isContainerCurrentlyInUse; // True אם המכולה אינה בשימוש כרגע
     }
 
+    // פתיחת מודל ההזמנה (הוספה/עריכה/שכפול)
     function openOrderModal(mode, sheetRow = null) {
         const form = document.getElementById('order-form');
-        form.reset();
-        currentEditingOrder = null;
+        form.reset(); // איפוס הטופס
+        currentEditingOrder = null; // ודא שמשתנה זה מאופס להוספה
         autoFillData = null;
 
         if (mode === 'add') {
             document.getElementById('modal-title').textContent = 'הוסף הזמנה חדשה';
-            document.getElementById('תאריך הזמנה').valueAsDate = new Date();
-            form.onsubmit = async e => { e.preventDefault(); await addOrder(); };
+            document.getElementById('תאריך הזמנה').valueAsDate = new Date(); // תאריך ברירת מחדל: היום
+            form.onsubmit = async e => {
+                e.preventDefault();
+                console.log("[openOrderModal] Add order form submitted."); // DEBUG
+                await addOrder();
+            };
         } else if (mode === 'edit' && sheetRow) {
             document.getElementById('modal-title').textContent = 'ערוך הזמנה';
             currentEditingOrder = allOrders.find(order => order.sheetRow === sheetRow);
@@ -1005,7 +1276,11 @@
                         }
                     }
                 });
-                form.onsubmit = async e => { e.preventDefault(); await editOrder(sheetRow); };
+                form.onsubmit = async e => {
+                    e.preventDefault();
+                    console.log("[openOrderModal] Edit order form submitted."); // DEBUG
+                    await editOrder(sheetRow);
+                };
             }
         } else if (mode === 'duplicate' && sheetRow) {
             document.getElementById('modal-title').textContent = 'שכפל הזמנה';
@@ -1013,7 +1288,8 @@
             if (originalOrder) {
                 Object.keys(originalOrder).forEach(key => {
                     const input = form.elements[key];
-                    if (input && !['תעודה', 'תאריך סגירה', 'ימים שעברו', 'מספרי מכולות', '_effectiveStatus', '_daysPassedCalculated', 'sheetRow'].includes(key)) {
+                    // שכפל את רוב השדות, אך נקה שדות ייחודיים להזמנה חדשה
+                    if (input && !['תעודה', 'תאריך סגירה', 'ימים שעברו', 'מספרי מכולות', '_effectiveStatus', '_daysPassedCalculated', 'sheetRow', 'Kanban Status'].includes(key)) {
                          if (input.type === 'date' && originalOrder[key]) {
                             input.value = new Date(originalOrder[key]).toISOString().split('T')[0];
                         } else {
@@ -1021,105 +1297,194 @@
                         }
                     }
                 });
-                document.getElementById('תאריך הזמנה').valueAsDate = new Date(); // New date for duplicated order
-                document.getElementById('תעודה').value = ''; // Clear document ID
-                form.onsubmit = async e => { e.preventDefault(); await addOrder(); }; // Treat as new order
+                document.getElementById('תאריך הזמנה').valueAsDate = new Date(); // תאריך חדש עבור הזמנה משוכפלת
+                document.getElementById('תעודה').value = ''; // נקה מספר תעודה
+                form.onsubmit = async e => {
+                    e.preventDefault();
+                    console.log("[openOrderModal] Duplicate order form submitted."); // DEBUG
+                    await addOrder();
+                }; // טפל כהזמנה חדשה
             }
         }
-        handleActionTypeChange();
+        handleActionTypeChange(); // עדכן שדות מכולה לפי סוג פעולה
         openModal('order-modal');
+        console.log(`[openOrderModal] Opened modal in ${mode} mode for sheetRow: ${sheetRow}`); // DEBUG
     }
 
+    // טיפול בשינוי סוג הפעולה במודל ההזמנה (הצגת/הסתרת שדות מכולה)
     function handleActionTypeChange() {
         const actionType = document.getElementById('סוג פעולה').value;
         const takenDiv = document.getElementById('container-taken-div');
         const broughtDiv = document.getElementById('container-brought-div');
         takenDiv.classList.toggle('hidden', !['הורדה', 'החלפה'].includes(actionType));
         broughtDiv.classList.toggle('hidden', !['העלאה', 'החלפה'].includes(actionType));
+        console.log(`[handleActionTypeChange] Action type changed to: ${actionType}`); // DEBUG
     }
 
+    // הוספת הזמנה חדשה
     async function addOrder() {
+        console.log("[addOrder] Function called."); // DEBUG
         const form = document.getElementById('order-form');
         const formData = new FormData(form);
         const orderData = Object.fromEntries(formData.entries());
         
-        // Validate container usage for 'הורדה' or 'החלפה' action types
-        if (['הורדה', 'החלפה'].includes(orderData['סוג פעולה'])) {
-            const containerTaken = String(orderData['מספר מכולה ירדה'] || '').trim();
-            if (containerTaken && !validateContainerUsage(containerTaken)) {
-                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה. אנא ודא שהיא פנויה.`, 'error');
+        // לוודא שכל שדות החובה מלאים
+        const requiredFields = ['תאריך הזמנה', 'תעודה', 'שם סוכן', 'שם לקוח', 'כתובת', 'סוג פעולה'];
+        for (const field of requiredFields) {
+            if (!orderData[field] || String(orderData[field]).trim() === '') {
+                showAlert(`שדה חובה חסר: ${field}`, 'error');
+                console.error(`[addOrder] Missing required field: ${field}`); // DEBUG
                 return;
             }
         }
 
-        orderData['סטטוס'] = 'פתוח'; // New orders are always open initially
-        
+        // וולידציית שימוש במכולה עבור פעולות 'הורדה' או 'החלפה'
+        if (['הורדה', 'החלפה'].includes(orderData['סוג פעולה'])) {
+            const containerTaken = String(orderData['מספר מכולה ירדה'] || '').trim();
+            if (containerTaken && !validateContainerUsage(containerTaken)) {
+                // שינוי: במקום לחסום לגמרי (return), הצג אזהרה בלבד
+                showAlert(`שימו לב: מכולה ${containerTaken} נראית כבר בשימוש בהזמנה פתוחה אחרת. ודאו שזו הפעולה הרצויה.`, 'warning');
+                console.warn(`[addOrder] Container ${containerTaken} already in use. Continuing with warning.`); // DEBUG
+                // אין return כאן, הפונקציה תמשיך לנסות להוסיף את ההזמנה
+            }
+        }
+
+        orderData['סטטוס'] = 'פתוח'; // הזמנות חדשות הן תמיד פתוחות בהתחלה
+        orderData['Kanban Status'] = null; // אתחל את סטטוס הקנבן ל-null בהוספה
+
+        console.log("[addOrder] Attempting to fetch data with:", orderData); // DEBUG: Log data being sent
         const response = await fetchData('add', { data: JSON.stringify(orderData) });
         if (response.success) {
             showAlert(response.message, 'success');
             closeModal('order-modal');
-            loadOrders();
+            console.log("[addOrder] Order added successfully, reloading orders."); // DEBUG
+            await loadOrders(); // טען מחדש את ההזמנות כדי לרענן את התצוגה
+            
+            // בצע שינוי סטטוס להזמנות קודמות של המכולה שהועלתה (אם רלוונטי)
+            if (['העלאה', 'החלפה'].includes(orderData['סוג פעולה'])) {
+                const containerBrought = String(orderData['מספר מכולה עלתה'] || '').trim();
+                if (containerBrought) {
+                    console.log(`[addOrder] Closing previous orders for container ${containerBrought}.`); // DEBUG
+                    await closePreviousContainerOrders(containerBrought, orderData['תאריך הזמנה']);
+                }
+            }
         } else {
             showAlert(response.message || 'שגיאה בהוספת הזמנה', 'error');
+            console.error("[addOrder] Failed to add order:", response.message); // DEBUG
         }
     }
 
+    // עריכת הזמנה קיימת
     async function editOrder(sheetRow) {
+        console.log("[editOrder] Function called for sheetRow:", sheetRow); // DEBUG
         const form = document.getElementById('order-form');
         const formData = new FormData(form);
         const updateData = Object.fromEntries(formData.entries());
         
-        // Validate container usage for 'הורדה' or 'החלפה' action types
-        if (['הורדה', 'החלפה'].includes(updateData['סוג פעולה'])) {
-            const containerTaken = String(updateData['מספר מכולה ירדה'] || '').trim();
-            if (containerTaken && !validateContainerUsage(containerTaken, sheetRow)) { // Pass current sheetRow to exclude itself
-                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה אחרת. אנא ודא שהיא פנויה.`, 'error');
+        // לוודא שכל שדות החובה מלאים
+        const requiredFields = ['תאריך הזמנה', 'תעודה', 'שם סוכן', 'שם לקוח', 'כתובת', 'סוג פעולה'];
+        for (const field of requiredFields) {
+            if (!updateData[field] || String(updateData[field]).trim() === '') {
+                showAlert(`שדה חובה חסר: ${field}`, 'error');
+                console.error(`[editOrder] Missing required field: ${field}`); // DEBUG
                 return;
             }
         }
 
-        // Do not allow status to be changed directly from this form, only via Kanban board
-        if (updateData.hasOwnProperty('סטטוס')) delete updateData['סטטוס'];
+        // וולידציית שימוש במכולה עבור פעולות 'הורדה' או 'החלפה'
+        if (['הורדה', 'החלפה'].includes(updateData['סוג פעולה'])) {
+            const containerTaken = String(updateData['מספר מכולה ירדה'] || '').trim();
+            if (containerTaken && !validateContainerUsage(containerTaken, sheetRow)) { // העבר את sheetRow הנוכחי כדי לא לכלול אותו בבדיקה
+                showAlert(`מכולה ${containerTaken} כבר בשימוש בהזמנה פתוחה אחרת. אנא ודא שהיא פנויה.`, 'error');
+                console.warn(`[editOrder] Container ${containerTaken} already in use by another order.`); // DEBUG
+                return;
+            }
+        }
+
+        // אל תאפשר לשנות סטטוס ישירות מטופס זה, אלא רק מלוח הקנבן
+        if (updateData.hasOwnProperty('סטטוס')) {
+            delete updateData['סטטוס'];
+        }
+        // אל תאפשר לשנות Kanban Status ישירות מטופס זה
+        if (updateData.hasOwnProperty('Kanban Status')) {
+            delete updateData['Kanban Status'];
+        }
         
+        console.log("[editOrder] Attempting to fetch data with:", { id: sheetRow, data: updateData }); // DEBUG: Log data being sent
         const response = await fetchData('edit', { id: sheetRow, data: JSON.stringify(updateData) });
         if (response.success) {
             showAlert(response.message, 'success');
             closeModal('order-modal');
-            loadOrders();
+            console.log("[editOrder] Order updated successfully, reloading orders."); // DEBUG
+            await loadOrders(); // טען מחדש את ההזמנות כדי לרענן את התצוגה
+
+            // בצע שינוי סטטוס להזמנות קודמות של המכולה שהועלתה (אם רלוונטי)
+            if (['העלאה', 'החלפה'].includes(updateData['סוג פעולה'])) {
+                const containerBrought = String(updateData['מספר מכולה עלתה'] || '').trim();
+                if (containerBrought) {
+                    console.log(`[editOrder] Closing previous orders for container ${containerBrought}.`); // DEBUG
+                    await closePreviousContainerOrders(containerBrought, updateData['תאריך הזמנה']);
+                }
+            }
         } else {
             showAlert(response.message || 'שגיאה בעדכון הזמנה', 'error');
+            console.error("[editOrder] Failed to edit order:", response.message); // DEBUG
         }
     }
 
+    // פונקציה לשינוי סטטוס הזמנות קודמות של מכולה שהוחזרה
+    async function closePreviousContainerOrders(containerNumber, closeDate) {
+        console.log("[closePreviousContainerOrders] Function called for container:", containerNumber, "closeDate:", closeDate); // DEBUG
+        const response = await fetchData('closePreviousContainerOrders', { containerNumber, closeDate });
+        if (response.success) {
+            console.log("[closePreviousContainerOrders] Previous orders updated successfully for container:", containerNumber);
+            // אין צורך ב-showAlert כאן כדי לא להציף את המשתמש
+        } else {
+            console.error("[closePreviousContainerOrders] Failed to update previous orders for container:", containerNumber, response.message);
+            // אין צורך ב-showAlert כאן
+        }
+    }
+
+
+    // שכפול הזמנה (פותח מודל "הוסף הזמנה" עם נתונים משוכפלים)
     async function duplicateOrder(sheetRow) {
+        console.log("[duplicateOrder] Duplicating order from sheetRow:", sheetRow); // DEBUG
         openOrderModal('duplicate', sheetRow);
     }
 
+    // פתיחת מודל אישור מחיקה
     function openDeleteConfirmModal(sheetRow, orderId) {
+        console.log("[openDeleteConfirmModal] Opening for sheetRow:", sheetRow, "orderId:", orderId); // DEBUG
         document.getElementById('delete-order-id').textContent = orderId;
         document.getElementById('confirm-delete-btn').onclick = () => deleteOrder(sheetRow);
         openModal('delete-confirm-modal');
     }
 
+    // מחיקת הזמנה
     async function deleteOrder(sheetRow) {
+        console.log("[deleteOrder] Function called for sheetRow:", sheetRow); // DEBUG
         const response = await fetchData('delete', { id: sheetRow });
         if (response.success) {
             showAlert(response.message, 'success');
             closeModal('delete-confirm-modal');
+            console.log("[deleteOrder] Order deleted successfully, reloading orders."); // DEBUG
             loadOrders();
         } else {
             showAlert(response.message || 'שגיאה במחיקת הזמנה', 'error');
+            console.error("[deleteOrder] Failed to delete order:", response.message); // DEBUG
         }
     }
     
+    // בדיקת קיום לקוח והשלמה אוטומטית של פרטים
     function checkCustomerExistenceAndAutofill() {
         const customerName = document.getElementById('שם לקוח').value.trim();
         const address = document.getElementById('כתובת').value.trim();
         const phone = document.getElementById('טלפון לקוח').value.trim();
 
-        if (!customerName && !address && !phone) return;
+        if (!customerName && !address && !phone) return; // אין מספיק מידע לבדיקה
 
         let latestOrder = null;
+        // מצא את ההזמנה האחרונה של הלקוח התואם
         latestOrder = allOrders
             .filter(o => {
                 const matchesName = customerName ? o['שם לקוח'] === customerName : true;
@@ -1127,21 +1492,28 @@
                 const matchesPhone = phone ? o['טלפון לקוח'] === phone : true;
                 return matchesName && matchesAddress && matchesPhone;
             })
-            .sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה']))[0];
-        
+            .sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה']))[0]; // מיין מהחדש לישן
+
+        // אם נמצאה הזמנה קודמת וזו לא עריכה של הזמנה קיימת
         if (latestOrder && !currentEditingOrder) {
             autoFillData = latestOrder;
             document.getElementById('autofill-customer-name-display').textContent = `הלקוח ${latestOrder['שם לקוח']} זוהה!`;
-            document.getElementById('autofill-message').innerHTML = `הלקוח **${latestOrder['שם לקוח']}** זוהה מהזמנה קודמת מתאריך **${formatDate(latestOrder['תאריך הזמנה'])}**. תרצה לשכפל הזמנה זו?`;
+            document.getElementById('autofill-message').innerHTML = `הלקוח <b>${latestOrder['שם לקוח']}</b> זוהה מהזמנה קודמת מתאריך <b>${formatDate(latestOrder['תאריך הזמנה'])}</b>. האם ברצונך למלא את פרטיו אוטומטית?`;
             openModal('autofill-confirm-modal');
+            console.log("[checkCustomerExistenceAndAutofill] Customer found, opening autofill modal."); // DEBUG
+        } else {
+            console.log("[checkCustomerExistenceAndAutofill] No matching customer found or currently editing."); // DEBUG
         }
     }
 
+    // אישור/ביטול השלמה אוטומטית
     function confirmAutofill(confirm) {
+        console.log("[confirmAutofill] Confirmation received:", confirm); // DEBUG
         if (confirm && autoFillData) {
             Object.keys(autoFillData).forEach(key => {
                 const input = document.getElementById(key);
-                if (input && !['תעודה', 'תאריך הזמנה', 'תאריך סגירה', 'ימים שעברו', 'מספרי מכולות', '_effectiveStatus', '_daysPassedCalculated', 'sheetRow'].includes(key)) {
+                // מלא את השדות בטופס, אך דלג על שדות ספציפיים
+                if (input && !['תעודה', 'תאריך הזמנה', 'תאריך סגירה', 'ימים שעברו', 'מספרי מכולות', '_effectiveStatus', '_daysPassedCalculated', 'sheetRow', 'Kanban Status'].includes(key)) {
                      if (input.type === 'date' && autoFillData[key]) {
                         input.value = new Date(autoFillData[key]).toISOString().split('T')[0];
                     } else {
@@ -1149,18 +1521,22 @@
                     }
                 }
             });
-            document.getElementById('תאריך הזמנה').valueAsDate = new Date();
-            document.getElementById('תעודה').value = '';
-            handleActionTypeChange();
+            document.getElementById('תאריך הזמנה').valueAsDate = new Date(); // תאריך חדש
+            document.getElementById('תעודה').value = ''; // נקה מספר תעודה
+            handleActionTypeChange(); // עדכן שדות מכולה
+            console.log("[confirmAutofill] Autofill applied."); // DEBUG
         }
         closeModal('autofill-confirm-modal');
         autoFillData = null;
     }
 
+    // הצגת פרטי הזמנה במודל
     function showOrderDetailsModal(sheetRow) {
+        console.log("[showOrderDetailsModal] Displaying details for sheetRow:", sheetRow); // DEBUG
         const order = allOrders.find(o => o.sheetRow === sheetRow);
         if (!order) {
             showAlert('פרטי הזמנה לא נמצאו.', 'error');
+            console.error("[showOrderDetailsModal] Order not found for sheetRow:", sheetRow); // DEBUG
             return;
         }
 
@@ -1169,6 +1545,7 @@
         detailsContent.innerHTML = `
             <p><strong>תאריך הזמנה:</strong> ${formatDate(order['תאריך הזמנה'])}</p>
             <p><strong>סטטוס:</strong> <span class="status-${(order._effectiveStatus || '').replace(/[/ ]/g, '-').toLowerCase()}">${order._effectiveStatus || ''}</span></p>
+            <p><strong>סטטוס קנבן:</strong> ${order['Kanban Status'] || 'לא נקבע'}</p>
             <p><strong>לקוח:</strong> ${order['שם לקוח'] || ''}</p>
             <p><strong>כתובת:</strong> ${order['כתובת'] || ''}</p>
             <p><strong>טלפון לקוח:</strong> ${order['טלפון לקוח'] || ''}</p>
@@ -1183,33 +1560,41 @@
         `;
         
         const actionButtonsDiv = document.querySelector('#order-details-modal .flex.justify-end.gap-3');
-        actionButtonsDiv.dataset.sheetRow = sheetRow;
+        actionButtonsDiv.dataset.sheetRow = sheetRow; // שמור את sheetRow על הכפתורים
 
         openModal('order-details-modal');
     }
 
+    // עריכת הזמנה ממודל הפרטים
     function editOrderFromDetails() {
         const sheetRow = document.querySelector('#order-details-modal .flex.justify-end.gap-3').dataset.sheetRow;
+        console.log("[editOrderFromDetails] Editing order from details for sheetRow:", sheetRow); // DEBUG
         closeModal('order-details-modal');
         openOrderModal('edit', parseInt(sheetRow));
     }
 
+    // מחיקת הזמנה ממודל הפרטים
     function deleteOrderFromDetails() {
         const sheetRow = document.querySelector('#order-details-modal .flex.justify-end.gap-3').dataset.sheetRow;
         const order = allOrders.find(o => o.sheetRow === parseInt(sheetRow));
+        console.log("[deleteOrderFromDetails] Deleting order from details for sheetRow:", sheetRow); // DEBUG
         closeModal('order-details-modal');
         if (order) {
             openDeleteConfirmModal(parseInt(sheetRow), order['תעודה']);
         }
     }
 
+    // שכפול הזמנה ממודל הפרטים
     function duplicateOrderFromDetails() {
         const sheetRow = document.querySelector('#order-details-modal .flex.justify-end.gap-3').dataset.sheetRow;
+        console.log("[duplicateOrderFromDetails] Duplicating order from details for sheetRow:", sheetRow); // DEBUG
         closeModal('order-details-modal');
         openOrderModal('duplicate', parseInt(sheetRow));
     }
 
+    // הצגת היסטוריית מכולה במודל
     function showContainerHistory(containerNumber) {
+        console.log("[showContainerHistory] Displaying history for container:", containerNumber); // DEBUG
         document.getElementById('history-container-number').textContent = containerNumber;
         const historyTableBody = document.getElementById('container-history-table-body');
         historyTableBody.innerHTML = '';
@@ -1221,18 +1606,20 @@
                 const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
                 return containersTaken.includes(containerNumber) || containersBrought.includes(containerNumber);
             })
-            .sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה'])); // Sort chronologically
+            .sort((a, b) => new Date(a['תאריך הזמנה']) - new Date(b['תאריך הזמנה'])); // מיין כרונולוגית
 
         if (containerMovements.length === 0) {
             document.getElementById('no-container-history').classList.remove('hidden');
         } else {
             containerMovements.forEach(order => {
                 const startDate = new Date(order['תאריך הזמנה']);
-                const endDate = order['תאריך סגירה'] ? new Date(order['תאריך סגירה']) : (order['תאריך סיום צפוי'] ? new Date(order['תאריך סיום צפוי']) : null);
+                // תאריך סיום יכול להיות תאריך סגירה, תאריך סיום צפוי, או תאריך היום אם עדיין פתוח
+                const endDate = order['תאריך סגירה'] ? new Date(order['תאריך סגירה']) : (order['תאריך סיום צפוי'] ? new Date(order['תאריך סיום צפוי']) : new Date());
                 
-                let durationDays = '';
-                if (endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+                let durationDays = 'N/A';
+                if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
                     durationDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+                    durationDays = Math.max(0, durationDays); // לוודא שהמספר לא שלילי
                 }
 
                 const row = historyTableBody.insertRow();
@@ -1243,66 +1630,183 @@
                     <td class="p-2">${order['כתובת'] || ''}</td>
                     <td class="p-2">${order['סוג פעולה'] || ''}</td>
                     <td class="p-2">${formatDate(order['תאריך הזמנה'])}</td>
-                    <td class="p-2">${endDate ? formatDate(endDate) : 'טרם נקבע'}</td>
-                    <td class="p-2">${durationDays !== '' ? `${durationDays} ימים` : 'N/A'}</td>
+                    <td class="p-2">${order['תאריך סגירה'] ? formatDate(order['תאריך סגירה']) : (order['תאריך סיום צפוי'] ? formatDate(order['תאריך סיום צפוי']) : 'טרם נסגר')}</td>
+                    <td class="p-2">${durationDays !== 'N/A' ? `${durationDays} ימים` : 'N/A'}</td>
                 `;
             });
         }
         openModal('container-history-modal');
     }
 
+    // הצגת היסטוריית לקוח במודל
+    function showCustomerHistory(customerName) {
+        console.log("[showCustomerHistory] Displaying history for customer:", customerName); // DEBUG
+        document.getElementById('history-customer-name').textContent = customerName;
+        const historyTableBody = document.getElementById('customer-history-table-body');
+        historyTableBody.innerHTML = '';
+        document.getElementById('no-customer-history').classList.add('hidden');
+
+        const customerOrders = allOrders
+            .filter(order => order['שם לקוח'] === customerName)
+            .sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה'])); // מיין מהחדש לישן
+
+        if (customerOrders.length === 0) {
+            document.getElementById('no-customer-history').classList.remove('hidden');
+        } else {
+            customerOrders.forEach(order => {
+                const row = historyTableBody.insertRow();
+                row.className = 'border-b border-[var(--color-border)] cursor-pointer';
+                row.onclick = () => {
+                    closeModal('customer-history-modal');
+                    showOrderDetailsModal(order.sheetRow);
+                };
+                row.innerHTML = `
+                    <td class="p-2">${formatDate(order['תאריך הזמנה'])}</td>
+                    <td class="p-2">${order['תעודה'] || ''}</td>
+                    <td class="p-2">${order['סוג פעולה'] || ''}</td>
+                    <td class="p-2">${order['מספר מכולה ירדה'] || ''}</td>
+                    <td class="p-2">${order['מספר מכולה עלתה'] || ''}</td>
+                    <td class="p-2"><span class="status-${(order._effectiveStatus || '').replace(/[/ ]/g, '-').toLowerCase()}">${order._effectiveStatus || ''}</span></td>
+                    <td class="p-2">${order['הערות'] || ''}</td>
+                `;
+            });
+        }
+        openModal('customer-history-modal');
+    }
+
+    // פתיחת מודל סגירת הזמנה
+    function openCloseOrderModal(sheetRow, orderId) {
+        const confirmBtn = document.getElementById('confirm-close-order-btn');
+        confirmBtn.dataset.sheetRow = sheetRow; // שמור את sheetRow על הכפתור באמצעות data attribute
+        
+        document.getElementById('close-order-id-display').textContent = orderId;
+        document.getElementById('close-order-notes').value = ''; // נקה הערות קודמות
+        
+        confirmBtn.onclick = async () => {
+            const notes = document.getElementById('close-order-notes').value;
+            const sheetRowToClose = parseInt(confirmBtn.dataset.sheetRow); // קבל את sheetRow מה-data attribute
+            console.log('[openCloseOrderModal] closeOrderConfirmation called from modal button. sheetRowToClose:', sheetRowToClose, 'notes:', notes); // DEBUG
+            if (isNaN(sheetRowToClose)) {
+                showAlert('שגיאה: מספר הזמנה לא חוקי. אנא רענן ונסה שוב.', 'error');
+                console.error("[openCloseOrderModal] Invalid sheetRowToClose (NaN)."); // DEBUG
+                return;
+            }
+            await closeOrderConfirmation(sheetRowToClose, notes);
+        };
+        openModal('close-order-modal');
+        console.log('[openCloseOrderModal] opened for sheetRow:', sheetRow); // DEBUG
+    }
+
+    // אישור וביצוע סגירת הזמנה
+    async function closeOrderConfirmation(sheetRow, notes) {
+        console.log('[closeOrderConfirmation] received sheetRow:', sheetRow, 'notes:', notes); // DEBUG
+        const response = await fetchData('close', { sheetRow: sheetRow, notes: notes });
+        if (response.success) {
+            showAlert(response.message, 'success');
+            closeModal('close-order-modal');
+            console.log("[closeOrderConfirmation] Order closed successfully, reloading orders."); // DEBUG
+            loadOrders(); // טען מחדש את ההזמנות כדי לרענן את התצוגה ואת לוח הקנבן
+        } else {
+            showAlert(response.message || 'שגיאה בסגירת הזמנה', 'error');
+            console.error("[closeOrderConfirmation] Failed to close order:", response.message); // DEBUG
+        }
+    }
+
+
+    // רינדור התרשימים באמצעות Chart.js
     function drawCharts() {
+        // נתוני מכולות בשימוש לפי לקוח (רק הזמנות פתוחות/חורגות)
         const customerData = allOrders.reduce((acc, order) => {
             if (order._effectiveStatus !== 'סגור') {
                 const count = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean).length;
-                if (count > 0) {
+                if (count > 0 && order['סוג פעולה'] !== 'העלאה') { // רק מכולות שהורדו ועדיין בשימוש
                     acc[order['שם לקוח']] = (acc[order['שם לקוח']] || 0) + count;
                 }
             }
             return acc;
         }, {});
-        const sortedCustomers = Object.entries(customerData).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const sortedCustomers = Object.entries(customerData).sort((a, b) => b[1] - a[1]).slice(0, 10); // 10 הלקוחות המובילים
 
+        // נתוני התפלגות סטטוסים
         const statusData = allOrders.reduce((acc, order) => {
             const status = order._effectiveStatus || 'לא ידוע';
             acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {});
 
+        // נתוני התפלגות סוגי פעולה
         const actionTypeChartData = allOrders.reduce((acc, order) => {
             const actionType = order['סוג פעולה'] || 'לא ידוע';
             acc[actionType] = (acc[actionType] || 0) + 1;
             return acc;
         }, {});
 
+        // אחזור ערכי משתני CSS באופן דינמי
+        const computedStyle = getComputedStyle(document.documentElement);
+        const surfaceColor = computedStyle.getPropertyValue('--color-surface').trim();
+        const primaryColor = computedStyle.getPropertyValue('--color-primary').trim();
+        const dangerColor = computedStyle.getPropertyValue('--color-danger').trim();
+        const successColor = computedStyle.getPropertyValue('--color-success').trim();
+        const warningColor = computedStyle.getPropertyValue('--color-warning').trim();
+        const textBaseColor = computedStyle.getPropertyValue('--color-text-base').trim();
 
+        // הגדרת צבעים עבור התרשימים (משתמשים כעת במשתני CSS שאוחזרו)
         const chartColors = {
-            'פתוח': 'rgba(39, 174, 96, 0.7)',
-            'חורג': 'rgba(192, 57, 43, 0.7)',
-            'סגור': 'rgba(127, 140, 141, 0.7)',
-            'הורדה': 'rgba(39, 174, 96, 0.7)', // Green
-            'החלפה': 'rgba(243, 156, 18, 0.7)', // Yellow
-            'העלאה': 'rgba(192, 57, 43, 0.7)' // Red
+            'פתוח': successColor,
+            'חורג': dangerColor,
+            'סגור': 'rgba(108, 117, 125, 0.8)', // אפור - נשאר קבוע אם אין משתנה CSS ספציפי
+            'הורדה': successColor,
+            'החלפה': warningColor,
+            'העלאה': dangerColor
         };
 
+        // פונקציית עזר להסרת אלפא מ-rgba, אם קיים
+        const getOpaqueColor = (color) => {
+            if (color.startsWith('rgba')) {
+                return color.replace(/, ?\d(\.\d+)?\)$/, ')').replace('rgba', 'rgb');
+            }
+            return color;
+        };
+
+
+        // תרשים מכולות לפי לקוח (בר)
         if (charts.customerChart) charts.customerChart.destroy();
         charts.customerChart = new Chart(document.getElementById('chart-containers-by-customer').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: sortedCustomers.map(c => c[0]),
                 datasets: [{
-                    label: 'מכולות בשימוש',
+                    label: 'מספר מכולות בשימוש',
                     data: sortedCustomers.map(c => c[1]),
-                    backgroundColor: 'rgba(58, 90, 64, 0.7)',
-                    borderColor: 'rgba(58, 90, 64, 1)',
-                    borderWidth: 1
+                    backgroundColor: primaryColor, // שימוש בצבע הראשי שאוחזר
+                    borderColor: getOpaqueColor(primaryColor), // וגרסתו האטומית לגבול
+                    borderWidth: 1,
+                    borderRadius: 8 // פינות מעוגלות לעמודות
                 }]
             },
             options: {
-                indexAxis: 'y',
+                indexAxis: 'y', // תרשים בר אופקי
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.x;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: { display: false } // הסתרת קווי רשת
+                    },
+                    y: {
+                        grid: { display: false } // הסתרת קווי רשת
+                    }
+                },
                 onClick: (e, elements) => {
                     if (elements.length > 0) {
                         const index = elements[0].index;
@@ -1316,6 +1820,7 @@
             }
         });
 
+        // תרשים סטטוסים (דונאט)
         if (charts.statusChart) charts.statusChart.destroy();
         charts.statusChart = new Chart(document.getElementById('chart-status-pie').getContext('2d'), {
             type: 'doughnut',
@@ -1324,19 +1829,42 @@
                 datasets: [{
                     data: Object.values(statusData),
                     backgroundColor: Object.keys(statusData).map(status => chartColors[status] || '#bdc3c7'),
+                    borderColor: surfaceColor, // שימוש בצבע המשטח שאוחזר
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } },
+                plugins: { 
+                    legend: { 
+                        position: 'bottom',
+                        labels: {
+                            color: textBaseColor // שימוש בצבע טקסט בסיס שאוחזר
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
                 onClick: (e, elements) => {
                     if (elements.length > 0) {
                         const index = elements[0].index;
                         const statusClicked = Object.keys(statusData)[index];
                         document.getElementById('search-input').value = '';
                         document.getElementById('show-closed-orders').checked = (statusClicked === 'סגור');
-                        document.getElementById('filter-status-select').value = statusClicked; // Set filter dropdown
+                        document.getElementById('filter-status-select').value = statusClicked;
                         filterTable(statusClicked, null, true);
                         showPage('dashboard');
                         scrollToOrdersTable();
@@ -1345,30 +1873,50 @@
             }
         });
 
-        // New chart for Action Type
+        // תרשים סוגי פעולה (בר)
         if (charts.actionTypeChart) charts.actionTypeChart.destroy();
         charts.actionTypeChart = new Chart(document.getElementById('chart-action-type').getContext('2d'), {
-            type: 'bar', // Using bar chart for action types
+            type: 'bar',
             data: {
                 labels: Object.keys(actionTypeChartData),
                 datasets: [{
                     label: 'מספר פעולות',
                     data: Object.values(actionTypeChartData),
                     backgroundColor: Object.keys(actionTypeChartData).map(type => chartColors[type] || '#bdc3c7'),
-                    borderColor: Object.keys(actionTypeChartData).map(type => chartColors[type].replace('0.7', '1') || '#bdc3c7'),
-                    borderWidth: 1
+                    // שימוש בפונקציית העזר כדי לקבל גבול אטום מצבע הרקע
+                    borderColor: Object.keys(actionTypeChartData).map(type => getOpaqueColor(chartColors[type] || '#bdc3c7')),
+                    borderWidth: 1,
+                    borderRadius: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { display: false }
+                    }
+                },
                 onClick: (e, elements) => {
                     if (elements.length > 0) {
                         const index = elements[0].index;
                         const actionTypeClicked = Object.keys(actionTypeChartData)[index];
                         document.getElementById('search-input').value = '';
-                        document.getElementById('filter-action-type-select').value = actionTypeClicked; // Set filter dropdown
+                        document.getElementById('filter-action-type-select').value = actionTypeClicked;
                         filterTable(null, actionTypeClicked, true);
                         showPage('dashboard');
                         scrollToOrdersTable();
@@ -1378,6 +1926,7 @@
         });
     }
 
+    // עדכון טבלאות מלאי המכולות (בשימוש ופנויות)
     function updateContainerInventory() {
         const inUseTableBody = document.querySelector('#containers-in-use-table tbody');
         const availableTableBody = document.querySelector('#containers-available-table tbody');
@@ -1386,173 +1935,222 @@
 
         const containerStates = {}; // containerNum: { status: 'in-use' | 'available', lastRelevantActivityDate: Date, currentOrder?: Object }
 
-        // Step 1: Initialize container states with their most recent activity date that might make them available
-        // Iterate through orders in reverse chronological order to find the *latest* relevant activity.
+        // שלב 1: אתחול מצבי מכולות עם תאריך הפעילות הרלוונטי האחרון
+        // עבר על הזמנות בסדר כרונולוגי הפוך (מהחדש לישן) כדי למצוא את הפעילות הרלוונטית האחרונה.
         [...allOrders].sort((a, b) => new Date(b['תאריך הזמנה']) - new Date(a['תאריך הזמנה'])).forEach(order => {
             const orderDate = new Date(order['תאריך הזמנה']);
             const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
             const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
 
-            // If a container was brought up, or if the order is closed, it was made available/returned
-            [...containersTaken, ...containersBrought].forEach(c => {
+            // אם מכולה הועלתה, או אם ההזמנה נסגרה, היא זמינה/הוחזרה
+            // בדוק קודם את המכולות שהועלו
+            containersBrought.forEach(c => {
                  if (c && (!containerStates[c] || orderDate > containerStates[c].lastRelevantActivityDate)) {
-                    if (containersBrought.includes(c) || order._effectiveStatus === 'סגור') {
-                         containerStates[c] = {
-                            status: 'available', // This container was returned or made available
-                            lastRelevantActivityDate: orderDate
-                        };
+                    containerStates[c] = {
+                        status: 'available', // המכולה הוחזרה או הפכה לזמינה
+                        lastRelevantActivityDate: orderDate
+                    };
+                }
+            });
+            // בדוק מכולות שהורדו רק אם הן לא הועלו באותה הזמנה
+            containersTaken.forEach(c => {
+                if (c && !containersBrought.includes(c)) { // אם המכולה לא הועלתה
+                    if (!containerStates[c] || orderDate > containerStates[c].lastRelevantActivityDate) {
+                        if (order._effectiveStatus !== 'סגור') { // אם ההזמנה פתוחה/חורגת
+                            containerStates[c] = {
+                                status: 'in-use', // המכולה ירדה והיא בשימוש
+                                lastRelevantActivityDate: orderDate,
+                                currentOrder: order
+                            };
+                        } else { // אם ההזמנה סגורה, היא זמינה
+                            containerStates[c] = {
+                                status: 'available',
+                                lastRelevantActivityDate: orderDate
+                            };
+                        }
                     }
                 }
             });
         });
 
-        // Step 2: Override status to 'in-use' if container is currently assigned to an open/overdue order
-        allOrders.filter(o => o._effectiveStatus !== 'סגור').forEach(order => {
-            const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
-            containersTaken.forEach(c => {
-                if (c && containerStates[c]) {
-                    containerStates[c].status = 'in-use';
-                    containerStates[c].currentOrder = order;
-                }
-            });
-        });
-
-        // Step 3: Populate tables based on final containerStates
+        // שלב 2: אכלוס הטבלאות על בסיס מצבי המכולות הסופיים
         Object.entries(containerStates).sort((a,b) => a[0].localeCompare(b[0])).forEach(([num, state]) => {
             const row = document.createElement('tr');
             row.className = 'border-b border-[var(--color-border)]';
             if (state.status === 'in-use') {
-                row.innerHTML = `<td class="p-2"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')">📦 ${num}</span></td><td class="p-2">${state.currentOrder['שם לקוח']}</td><td class="p-2">${formatDate(state.currentOrder['תאריך הזמנה'])}</td>`;
+                row.innerHTML = `<td class="p-3"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')"><i class="fas fa-box"></i> ${num}</span></td><td class="p-3">${state.currentOrder['שם לקוח']}</td><td class="p-3">${formatDate(state.currentOrder['תאריך הזמנה'])}</td>`;
                 inUseTableBody.appendChild(row);
             } else { // status === 'available'
                 let estimatedAvailableDate = new Date(state.lastRelevantActivityDate);
-                // If it was removed, it becomes truly available 10 days after the removal order date
-                // This logic assumes 'removed' means 'מספר מכולה ירדה' in a closed order context, or just brought up.
-                // For simplicity and to match the "10 days for available" rule:
-                estimatedAvailableDate.setDate(estimatedAvailableDate.getDate() + OVERDUE_THRESHOLD_DAYS); 
+                // אם היא הפכה לזמינה עקב הורדה שנסגרה, או העלאה, היא זמינה מיד מהתאריך הזה
+                // אין צורך להוסיף OVERDUE_THRESHOLD_DAYS עבור זמינות, כי זה כבר משקף פעולה שסיימה את השימוש.
                 
-                row.innerHTML = `<td class="p-2"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')">📦 ${num}</span></td><td class="p-2">${formatDate(estimatedAvailableDate)}</td>`;
+                row.innerHTML = `<td class="p-3"><span class="cursor-pointer hover:text-[var(--color-primary)]" onclick="showContainerHistory('${num}')"><i class="fas fa-box"></i> ${num}</span></td><td class="p-3">${formatDate(estimatedAvailableDate)}</td>`;
                 availableTableBody.appendChild(row);
             }
         });
     }
 
 
+    // רינדור לוח הטיפול (Kanban Board)
     function renderTreatmentBoard() {
         const columns = {
             overdue: document.getElementById('column-overdue'),
             'in-progress': document.getElementById('column-in-progress'),
             resolved: document.getElementById('column-resolved'),
         };
+        // נקה את כל הכרטיסים הקיימים בכל עמודה
         Object.values(columns).forEach(col => col.querySelectorAll('.kanban-item').forEach(item => item.remove()));
 
-        // Filter orders that are effectively 'חורג' or 'פתוח' but have passed the overdue threshold
-        const ordersForTreatment = allOrders.filter(o => o._effectiveStatus === 'חורג' || (o._effectiveStatus === 'פתוח' && o._daysPassedCalculated >= OVERDUE_THRESHOLD_DAYS));
-        
+        // סנן הזמנות לטיפול:
+        // כולל הזמנות חורגות (שסטטוס הקנבן שלהן הוא null או 'חורג')
+        // וכן הזמנות שסטטוס הקנבן שלהן הוא 'בטיפול'
+        const ordersForTreatment = allOrders.filter(o => 
+            (o._effectiveStatus === 'חורג' && o['Kanban Status'] !== 'טופלו') || 
+            (o['Kanban Status'] === 'בטיפול')
+        ); 
+
+        // הצג/הסתר הודעת "אין הזמנות לטיפול"
         document.getElementById('no-treatment-orders').classList.toggle('hidden', ordersForTreatment.length > 0);
 
         ordersForTreatment.forEach(order => {
             const item = document.createElement('div');
-            item.className = 'kanban-item card p-4 cursor-grab';
-            item.draggable = true;
-            item.dataset.sheetRow = order.sheetRow;
-            item.ondragstart = e => e.dataTransfer.setData('text/plain', order.sheetRow);
+            item.className = 'kanban-item card p-4 cursor-grab bg-white border border-[var(--color-border)] rounded-lg shadow-sm';
+            item.draggable = true; // אפשרות גרירה
+            item.dataset.sheetRow = order.sheetRow; // שמור את sheetRow ב-dataset
+            item.ondragstart = e => e.dataTransfer.setData('text/plain', order.sheetRow); // העבר את sheetRow בגרירה
+            
+            // עיצוב ימי חריגה בתוך כרטיס הקנבן
+            const daysPassedHtml = order._effectiveStatus === 'חורג' ?
+                `<span class="overdue-text-blinking">${order._daysPassedCalculated || 0}</span>` :
+                `${order._daysPassedCalculated || 0}`;
+
             item.innerHTML = `
-                <p class="font-bold">${order['שם לקוח']}</p>
-                <p class="text-sm text-[var(--color-text-muted)]">${order['תעודה']}</p>
-                <p class="text-sm mt-2"><span class="font-semibold text-[var(--color-danger)]">${order._daysPassedCalculated || 0}</span> ימים</p>
+                <p class="font-bold text-lg text-[var(--color-text-base)]">${order['שם לקוח']}</p>
+                <p class="text-sm text-[var(--color-text-muted)]">תעודה: ${order['תעודה']}</p>
+                <p class="text-sm mt-2"><span class="font-semibold text-[var(--color-danger)]">${daysPassedHtml}</span> ימים שעברו</p>
                 <div class="flex justify-end gap-1 mt-3">
                     <button class="action-icon-btn whatsapp-btn" onclick="event.stopPropagation(); openWhatsAppAlertsForOrder(${order.sheetRow})" title="שלח WhatsApp"><i class="fab fa-whatsapp text-green-500"></i></button>
                     <button class="action-icon-btn" onclick="event.stopPropagation(); openOrderModal('edit', ${order.sheetRow})" title="ערוך"><i class="fas fa-edit text-[var(--color-info)]"></i></button>
                     <button class="action-icon-btn" onclick="event.stopPropagation(); duplicateOrder(${order.sheetRow})" title="שכפל"><i class="fas fa-copy text-[var(--color-primary)]"></i></button>
+                    ${order._effectiveStatus !== 'סגור' ? `<button class="action-icon-btn" onclick="event.stopPropagation(); openCloseOrderModal(${order.sheetRow}, '${order['תעודה']}')" title="סגור הזמנה"><i class="fas fa-check-circle text-[var(--color-success)]"></i></button>` : ''}
                     <button class="action-icon-btn" onclick="event.stopPropagation(); openDeleteConfirmModal(${order.sheetRow}, '${order['תעודה']}')" title="מחק"><i class="fas fa-trash text-[var(--color-danger)]"></i></button>
                 </div>
             `;
-            const targetColumn = order._effectiveStatus === 'חורג' ? 'overdue' : 'in-progress'; // Use overdue if it's explicitly overdue, otherwise in-progress (for newly overdue ones)
-            columns[targetColumn].appendChild(item);
+            
+            // קבע את העמודה הנכונה
+            let targetColumnElement;
+            if (order['Kanban Status'] === 'בטיפול') {
+                targetColumnElement = columns['in-progress'];
+            } else if (order._effectiveStatus === 'חורג' && order['Kanban Status'] !== 'טופלו') { // יופיעו בחורג אם לא טופלו
+                targetColumnElement = columns['overdue'];
+            } else {
+                // הזמנות בסטטוס 'טופלו' או 'סגור' לא יופיעו בלוח
+                return; 
+            }
+            targetColumnElement.appendChild(item);
         });
     }
     
+    // מניעת פעולת ברירת המחדל של הדפדפן בגרירה
     function allowDrop(event) { event.preventDefault(); }
 
+    // טיפול בשחרור פריט בלוח הקנבן
     async function drop(event) {
         event.preventDefault();
         const sheetRow = event.dataTransfer.getData('text/plain');
         const targetColumn = event.currentTarget;
-        const statusMap = {
-            'column-overdue': 'פתוח', // On the sheet, still 'פתוח', but _effectiveStatus will make it 'חורג' based on days
-            'column-in-progress': 'פתוח',
-            'column-resolved': 'סגור'
-        };
-        const newSheetStatus = statusMap[targetColumn.id];
-        if (!newSheetStatus) return;
-
-        const updateData = { 'סטטוס': newSheetStatus };
-        if (newSheetStatus === 'סגור') {
-            updateData['תאריך סגירה'] = new Date().toISOString().split('T')[0];
+        const currentOrder = allOrders.find(o => o.sheetRow === parseInt(sheetRow));
+        if (!currentOrder) {
+            console.error("[drop] Dropped item: Order not found for sheetRow:", sheetRow); // DEBUG
+            return;
         }
-        
+
+        let updateData = {};
+        if (targetColumn.id === 'column-overdue') {
+            updateData['Kanban Status'] = null; // חזרה לסטטוס קנבן רגיל (לא בטיפול)
+        } else if (targetColumn.id === 'column-in-progress') {
+            updateData['Kanban Status'] = 'בטיפול';
+        } else if (targetColumn.id === 'column-resolved') {
+            updateData['Kanban Status'] = 'טופלו';
+            updateData['סטטוס'] = 'סגור'; // סגור את ההזמנה בגיליון
+            updateData['תאריך סגירה'] = new Date().toISOString().split('T')[0];
+            updateData['הערות סיום'] = 'נסגר אוטומטית מלוח הקנבן.'; // הערת סגירה אוטומטית
+        }
+        console.log("[drop] Updating order status for sheetRow:", sheetRow, "to:", updateData['Kanban Status'] || 'null'); // DEBUG
+
         const response = await fetchData('edit', { id: sheetRow, data: JSON.stringify(updateData) });
         if (response.success) {
-            showAlert('סטטוס הזמנה עודכן', 'success');
-            loadOrders(); // Reload to re-evaluate effective status
+            showAlert('סטטוס הזמנה עודכן בהצלחה!', 'success');
+            console.log("[drop] Order status updated successfully, reloading orders."); // DEBUG
+            loadOrders(); // טען מחדש את ההזמנות כדי לרענן את הלוח באופן ויזואלי
         } else {
             showAlert(response.message || 'שגיאה בעדכון סטטוס', 'error');
+            console.error("[drop] Failed to update order status:", response.message); // DEBUG
         }
     }
 
+    // רענון נתונים
     function refreshData() {
-        showAlert('מרענן נתונים...', 'info');
+        showAlert('מרענן נתונים... אנא המתן.', 'info');
+        console.log("[refreshData] Refreshing all data."); // DEBUG
         loadOrders();
     }
 
+    // פונקציה להצגת עמוד ספציפי ועדכון ניווט
     function showPage(pageId) {
         document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
         document.getElementById(`${pageId}-page`).classList.remove('hidden');
         document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.toggle('active', b.id === `nav-${pageId}`));
         if (pageId === 'whatsapp-alerts') {
-            populateWhatsAppTemplates();
+            populateWhatsAppTemplates(); // אכלס תבניות וואטסאפ בעת מעבר לעמוד
         }
+        // אם עוברים לעמוד אחר ולא לוח טיפול, וודא שכפתור "סגור הזמנה" במודל חוזר למצב רגיל
+        if (pageId !== 'treatment-board') {
+             // לוודא שהפונקציה closeOrderConfirmation לא מופעלת בטעות
+        }
+        console.log(`[showPage] Navigated to: ${pageId}`); // DEBUG
     }
 
-    // WhatsApp Alerts Logic
+    // לוגיקת התראות WhatsApp
     const whatsappTemplates = [
-        { name: 'ברכה - ח. סבן', message: 'שלום [שם לקוח] יקר/ה, תודה שבחרת ב-ח. סבן חומרי בניין! אנו לרשותך בכל שאלה. 👷‍♂️🏗️' },
+        { name: 'ברכה - ח. סבן', message: 'שלום [שם לקוח] יקר/ה, תודה שבחרת ב-ח. סבן חומרי בניין! אנו לרשותך בכל שאלה. 🤔👷‍♂️🏗️' },
         { name: 'הצבת מכולה - הנחיות', message: 'שלום [שם לקוח], המכולה להזמנה [תעודה] הוצבה בהצלחה. אנא וודא גישה נוחה לפינוי. לשאלות: [טלפון עסק].' },
-        { name: 'התראה - לפני חריגה (8 ימים)', message: 'שלום [שם לקוח], המכולה בהזמנה [תעודה] נמצאת אצלך כ-8 ימים. לתשומת לבך, מעל 10 ימים מתאריך הזמנה, המכולה נחשבת חורגת. אנא צור קשר לתיאום המשך.' },
-        { name: 'התראה - חורגת (10 ימים +)', message: 'הודעה חשובה: המכולה בהזמנה [תעודה] חורגת ממועד השכירות ב-[ימים חורגים] ימים. אנא צור קשר בהקדם לתיאום החלפה/פינוי דחוף: [טלפון עסק].' },
-        { name: 'תיאום החלפה', message: 'שלום [שם לקוח], לגבי הזמנה [תעודה], נשמח לתאם החלפה. מתי נוח לך שנגיע? אנא השב להודעה זו.' },
-        { name: 'תיאום הוצאה', message: 'שלום [שם לקוח], נשמח לתאם הוצאת מכולה עבור הזמנה [תעודה]. מתי נוח לך שנגיע? אנא השב להודעה זו.' },
-        { name: 'תזכורת - תאריך סיום צפוי', message: 'שלום [שם לקוח], תזכורת: תאריך הסיום הצפוי של המכולה בהזמנה [תעודה] הוא ב-[תאריך סיום צפוי]. אנא צור קשר אם תרצה להאריך או לתאם פינוי.' },
+        { name: 'התראה - לפני חריגה (8 ימים)', message: 'שלום [שם לקוח], המכולה בהזמנה [תעודה] נמצאת אצלך כ-8 ימים. לתשומת לבך, מעל 10 ימים מתאריך הזמנה, המכולה נחשבת חורגת. אנא צור קשר לתיאום המשך. ⚠️' },
+        { name: 'התראה - חורגת (10 ימים +)', message: 'הודעה חשובה: המכולה בהזמנה [תעודה] חורגת ממועד השכירות ב-[ימים חורגים] ימים. אנא צור קשר בהקדם לתיאום החלפה/פינוי דחוף: [טלפון עסק]. 🚨' },
+        { name: 'תיאום החלפה', message: 'שלום [שם לקוח], לגבי הזמנה [תעודה], נשמח לתאם החלפה. מתי נוח לך שנגיע? אנא השב להודעה זו. 🗓️' },
+        { name: 'תיאום הוצאה', message: 'שלום [שם לקוח], נשמח לתאם הוצאת מכולה עבור הזמנה [תעודה]. מתי נוח לך שנגיע? אנא השב להודעה זו. 🗓️' },
+        { name: 'תזכורת - תאריך סיום צפוי', message: 'שלום [שם לקוח], תזכורת: תאריך הסיום הצפוי של המכולה בהזמנה [תעודה] הוא ב-[תאריך סיום צפוי]. אנא צור קשר אם תרצה להאריך או לתאם פינוי. 🔔' },
         { name: 'הודעה כללית', message: 'שלום [שם לקוח], בהמשך להזמנה [תעודה], רציתי לעדכן...' },
-        { name: 'הודעה על הגעת מכולה', message: 'שלום [שם לקוח], המכולה בהזמנה [תעודה] הגיעה ליעדה. תודה שבחרת בנו!' },
-        { name: 'הודעה על איסוף מכולה', message: 'שלום [שם לקוח], המכולה בהזמנה [תעודה] נאספה בהצלחה. נשמח לשרת אותך שוב בעתיד!' },
-        { name: 'שאלות כלליות', message: 'שלום [שם לקוח], אנו עומדים לרשותך לכל שאלה או בקשה לגבי השירות שלנו.' },
-        { name: 'תלונה/בעיה', message: 'שלום [שם לקוח], הבנו שיש לך בעיה עם הזמנה [תעודה]. אנו מצטערים על אי הנוחות ונחזור אליך בהקדם לטפל בעניין.' },
-        { name: 'בקשת חוות דעת', message: 'שלום [שם לקוח], אנו מקווים שנהנית מהשירות שלנו בהזמנה [תעודה]. נשמח אם תוכל/י להשאיר חוות דעת קצרה.' },
-        { name: 'הצעת שירותים נוספים', message: 'שלום [שם לקוח], ראינו שאתה לקוח פעיל. אולי יעניין אותך ללמוד על השירותים החדשים שלנו?' },
-        { name: 'עדכון זמינות', message: 'שלום [שם לקוח], רצינו לעדכן לגבי זמינות המכולות. כרגע יש לנו...' },
-        { name: 'אישור הזמנה', message: 'שלום [שם לקוח], הזמנתך מספר [תעודה] אושרה בהצלחה! תאריך אספקה צפוי: [תאריך סיום צפוי].' },
-        { name: 'הודעה על עיכוב', message: 'שלום [שם לקוח], אנו מתנצלים על עיכוב קל באספקת המכולה להזמנה [תעודה]. אנו צופים שתגיע ב-[תאריך חדש].' },
-        { name: 'תודה על תשלום', message: 'שלום [שם לקוח], קיבלנו את התשלום עבור הזמנה [תעודה]. תודה רבה!' },
-        { name: 'בקשת תשלום', message: 'שלום [שם לקוח], תזכורת לגבי תשלום עבור הזמנה [תעודה]. אנא בצע את התשלום בהקדם.' },
-        { name: 'פנוי במקום', message: 'שלום [שם לקוח], לגבי הזמנה [תעודה], נאשר כי בוצע פינוי מכולה באתר. אנו מעריכים את שיתוף הפעולה.' },
-        { name: 'אישור קבלת מסמכים', message: 'שלום [שם לקוח], אישור קבלת המסמכים הדרושים עבור הזמנה [תעודה]. תודה על שיתוף הפעולה.' },
-        { name: 'עדכון שעות פעילות', message: 'שלום [שם לקוח], לתשומת ליבך, שעות הפעילות שלנו עודכנו. פרטים באתר: [קישור לאתר].' },
-        { name: 'הודעה על שירות חדש', message: 'שלום [שם לקוח], אנו שמחים להודיע על שירות חדש שלנו: [שם שירות]. לפרטים נוספים: [קישור].' },
-        { name: 'אירוע חברה', message: 'שלום [שם לקוח], אנו מזמינים אותך לאירוע חברה מיוחד שיתקיים ב-[תאריך אירוע]. פרטים והרשמה: [קישור].' },
-        { name: 'טיפים לתחזוקה', message: 'שלום [שם לקוח], הנה כמה טיפים חשובים לתחזוקה נכונה של המכולה שלך.' },
-        { name: 'שינוי פרטי קשר', message: 'שלום [שם לקוח], אם שינית פרטי קשר, אנא עדכן אותנו כדי שנוכל להמשיך לתת שירות מיטבי.' },
-        { name: 'סקר שביעות רצון', message: 'שלום [שם לקוח], אנו מבקשים את עזרתך במילוי סקר שביעות רצון קצר כדי שנוכל להשתפר.' },
-        { name: 'חג שמח', message: 'חג שמח [שם לקוח]! מכולנו ב-ח. סבן חומרי בניין.' },
-        { name: 'שנה טובה', message: 'שנה טובה ומבורכת [שם לקוח]! מאחלים לך שנה של הצלחה ושגשוג.' },
-        { name: 'סוף שנה אזרחית', message: 'שלום [שם לקוח], תודה על שנה נפלאה של שיתוף פעולה. נשמח להמשיך לשרת אותך גם בשנה הבאה!' }
+        { name: 'הודעה על הגעת מכולה', message: 'שלום [שם לקוח], המכולה בהזמנה [תעודה] הגיעה ליעדה. תודה שבחרת בנו! 🎉' },
+        { name: 'הודעה על איסוף מכולה', message: 'שלום [שם לקוח], המכולה בהזמנה [תעודה] נאספה בהצלחה. נשמח לשרת אותך שוב בעתיד! 👋' },
+        { name: 'שאלות כלליות', message: 'שלום [שם לקוח], אנו עומדים לרשותך לכל שאלה או בקשה לגבי השירות שלנו. ❓' },
+        { name: 'תלונה/בעיה', message: 'שלום [שם לקוח], הבנו שיש לך בעיה עם הזמנה [תעודה]. אנו מצטערים על אי הנוחות ונחזור אליך בהקדם לטפל בעניין. 😔' },
+        { name: 'בקשת חוות דעת', message: 'שלום [שם לקוח], אנו מקווים שנהנית מהשירות שלנו בהזמנה [תעודה]. נשמח אם תוכל/י להשאיר חוות דעת קצרה. ⭐' },
+        { name: 'הצעת שירותים נוספים', message: 'שלום [שם לקוח], ראינו שאתה לקוח פעיל. אולי יעניין אותך ללמוד על השירותים החדשים שלנו? ✨' },
+        { name: 'עדכון זמינות', message: 'שלום [שם לקוח], רצינו לעדכן לגבי זמינות המכולות. כרגע יש לנו... ℹ️' },
+        { name: 'אישור הזמנה', message: 'שלום [שם לקוח], הזמנתך מספר [תעודה] אושרה בהצלחה! תאריך אספקה צפוי: [תאריך סיום צפוי]. ✅' },
+        { name: 'הודעה על עיכוב', message: 'שלום [שם לקוח], אנו מתנצלים על עיכוב קל באספקת המכולה להזמנה [תעודה]. אנו צופים שתגיע ב-[תאריך חדש]. ⏳' },
+        { name: 'תודה על תשלום', message: 'שלום [שם לקוח], קיבלנו את התשלום עבור הזמנה [תעודה]. תודה רבה! 🙏' },
+        { name: 'בקשת תשלום', message: 'שלום [שם לקוח], תזכורת לגבי תשלום עבור הזמנה [תעודה]. אנא בצע את התשלום בהקדם. 💸' },
+        { name: 'פנוי במקום', message: 'שלום [שם לקוח], לגבי הזמנה [תעודה], נאשר כי בוצע פינוי מכולה באתר. אנו מעריכים את שיתוף הפעולה. 👍' },
+        { name: 'אישור קבלת מסמכים', message: 'שלום [שם לקוח], אישור קבלת המסמכים הדרושים עבור הזמנה [תעודה]. תודה על שיתוף הפעולה. 📄' },
+        { name: 'עדכון שעות פעילות', message: 'שלום [שם לקוח], לתשומת ליבך, שעות הפעילות שלנו עודכנו. פרטים באתר: [קישור לאתר]. ⏰' },
+        { name: 'הודעה על שירות חדש', message: 'שלום [שם לקוח], אנו שמחים להודיע על שירות חדש שלנו: [שם שירות]. לפרטים נוספים: [קישור]. 🆕' },
+        { name: 'אירוע חברה', message: 'שלום [שם לקוח], אנו מזמינים אותך לאירוע חברה מיוחד שיתקיים ב-[תאריך אירוע]. פרטים והרשמה: [קישור]. 🥳' },
+        { name: 'טיפים לתחזוקה', message: 'שלום [שם לקוח], הנה כמה טיפים חשובים לתחזוקה נכונה של המכולה שלך. 💡' },
+        { name: 'שינוי פרטי קשר', message: 'שלום [שם לקוח], אם שינית פרטי קשר, אנא עדכן אותנו כדי שנוכל להמשיך לתת שירות מיטבי. 📞' },
+        { name: 'סקר שביעות רצון', message: 'שלום [שם לקוח], אנו מבקשים את עזרתך במילוי סקר שביעות רצון קצר כדי שנוכל להשתפר. 😊' },
+        { name: 'חג שמח', message: 'חג שמח [שם לקוח]! מכולנו ב-ח. סבן חומרי בניין. 🎊' },
+        { name: 'שנה טובה', message: 'שנה טובה ומבורכת [שם לקוח]! מאחלים לך שנה של הצלחה ושגשוג. 🌟' },
+        { name: 'סוף שנה אזרחית', message: 'שלום [שם לקוח], תודה על שנה נפלאה של שיתוף פעולה. נשמח להמשיך לשרת אותך גם בשנה הבאה! 👋' }
     ];
 
     let currentTypingIndex = 0;
     let currentTypingTemplateMessage = '';
     let typingInterval = null;
 
+    // אכלוס תבניות הודעות WhatsApp בדרופדאון
     function populateWhatsAppTemplates() {
         const select = document.getElementById('message-template-select');
         select.innerHTML = '<option value="">בחר תבנית...</option>';
@@ -1562,32 +2160,35 @@
             option.textContent = template.name;
             select.appendChild(option);
         });
+        console.log("[populateWhatsAppTemplates] WhatsApp templates populated."); // DEBUG
     }
 
+    // טעינת תבנית הודעת WhatsApp נבחרת עם מילוי אוטומטי של נתונים רלוונטיים
     function loadWhatsAppTemplate() {
         const select = document.getElementById('message-template-select');
         const messageInput = document.getElementById('whatsapp-message-input');
         const selectedIndex = select.value;
 
+        // נקה טיימר קודם אם קיים
         if (typingInterval) {
             clearInterval(typingInterval);
             typingInterval = null;
         }
-        messageInput.value = ''; // Clear immediately before typing effect
+        messageInput.value = ''; // נקה את תיבת הטקסט מיד לפני אפקט ההקלדה
 
         if (selectedIndex !== "") {
             const template = whatsappTemplates[parseInt(selectedIndex)];
             let message = template.message;
             
-            // Try to fill placeholders based on selected customer/order (if available)
+            // נסה למלא placeholder-ים בהתבסס על הלקוח/הזמנה שנבחרו (אם זמינים)
             const customerName = document.getElementById('whatsapp-customer-name').value;
             const phoneNumber = document.getElementById('whatsapp-phone-number').value; 
             const address = document.getElementById('whatsapp-address').value;
-            const orderId = document.getElementById('details-order-id').textContent; 
+            const orderId = document.getElementById('details-order-id').textContent; // מגיע ממודל פרטי הזמנה או לוח קנבן
             
             message = message.replace('[שם לקוח]', customerName || 'הלקוח');
             message = message.replace('[תעודה]', orderId || 'לא ידוע');
-            message = message.replace('[טלפון עסק]', '050-1234567'); 
+            message = message.replace('[טלפון עסק]', '050-1234567'); // מספר טלפון קבוע לעסק
             message = message.replace('[כתובת]', address || '');
             
             const selectedOrder = allOrders.find(o => o['תעודה'] === orderId);
@@ -1598,32 +2199,38 @@
                 if (selectedOrder['תאריך סיום צפוי']) {
                     message = message.replace('[תאריך סיום צפוי]', formatDate(selectedOrder['תאריך סיום צפוי']));
                 }
+                // אם יש placeholder עבור תאריך חדש (למשל, לעיכובים)
                  if (selectedOrder['תאריך חדש']) { 
                     message = message.replace('[תאריך חדש]', formatDate(selectedOrder['תאריך חדש']));
                 }
             }
 
-
-            // Remove any remaining placeholders
+            // הסר כל placeholder שנותר ולא מולא
             message = message.replace(/\[.*?\]/g, ''); 
 
             currentTypingTemplateMessage = message;
             currentTypingIndex = 0;
-            messageInput.classList.add('typing-effect');
+            messageInput.classList.add('typing-effect'); // הפעל אפקט הקלדה
             typingInterval = setInterval(() => {
                 if (currentTypingIndex < currentTypingTemplateMessage.length) {
                     messageInput.value += currentTypingTemplateMessage.charAt(currentTypingIndex);
                     currentTypingIndex++;
-                    messageInput.scrollTop = messageInput.scrollHeight; // Scroll to bottom
+                    messageInput.scrollTop = messageInput.scrollHeight; // גלול לתחתית תיבת הטקסט
                 } else {
                     clearInterval(typingInterval);
                     typingInterval = null;
-                    messageInput.classList.remove('typing-effect');
+                    messageInput.classList.remove('typing-effect'); // הסר אפקט הקלדה בסיום
                 }
-            }, 30); // Typing speed
+            }, 30); // מהירות הקלדה (מילישניות לאות)
+            console.log("[loadWhatsAppTemplate] Template loaded and typing effect started."); // DEBUG
+        } else {
+            messageInput.value = '';
+            messageInput.classList.remove('typing-effect');
+            console.log("[loadWhatsAppTemplate] No template selected, cleared message input."); // DEBUG
         }
     }
 
+    // ניקוי שדות הודעת WhatsApp
     function clearWhatsAppMessage() {
         if (typingInterval) {
             clearInterval(typingInterval);
@@ -1635,84 +2242,212 @@
         document.getElementById('whatsapp-customer-name').value = '';
         document.getElementById('whatsapp-phone-number').value = '';
         document.getElementById('whatsapp-address').value = '';
-        document.getElementById('details-order-id').textContent = ''; // Clear associated order ID
+        document.getElementById('details-order-id').textContent = ''; // נקה ID הזמנה משויך
+        console.log("[clearWhatsAppMessage] WhatsApp message fields cleared."); // DEBUG
     }
 
+    // שליחת הודעת WhatsApp (פתיחת וואטסאפ ורישום בלוג)
     function sendWhatsAppMessage() {
         const customerName = document.getElementById('whatsapp-customer-name').value;
         const phoneNumber = document.getElementById('whatsapp-phone-number').value;
         const message = document.getElementById('whatsapp-message-input').value;
-        const orderDocId = document.getElementById('details-order-id').textContent; // Get from order details modal or current order
+        const orderDocId = document.getElementById('details-order-id').textContent; // קבל ID מסמך עבור לוגינג
 
         if (!phoneNumber) {
             showAlert('אנא בחר לקוח עם מספר טלפון או הזן מספר.', 'warning');
+            console.warn("[sendWhatsAppMessage] No phone number provided."); // DEBUG
             return;
         }
         if (!message.trim()) {
-            showAlert('ההודעה ריקה.', 'warning');
+            showAlert('ההודעה ריקה. אנא כתוב הודעה או בחר תבנית.', 'warning');
+            console.warn("[sendWhatsAppMessage] Message is empty."); // DEBUG
             return;
         }
 
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        window.open(whatsappUrl, '_blank'); // פתח קישור לוואטסאפ בחלון חדש
         
         showAlert('פותח WhatsApp לשליחת הודעה...', 'info');
+        console.log("[sendWhatsAppMessage] Opening WhatsApp for:", phoneNumber); // DEBUG
 
-        // Log message to Google Sheet
+        // רשום את ההודעה לגיליון Google Sheets
         logWhatsAppMessage(orderDocId, message);
     }
 
+    // פתיחת עמוד התראות WhatsApp עבור הזמנה ספציפית
     function openWhatsAppAlertsForOrder(sheetRow) {
+        console.log("[openWhatsAppAlertsForOrder] Opening for sheetRow:", sheetRow); // DEBUG
         const order = allOrders.find(o => o.sheetRow === sheetRow);
         if (!order) {
             showAlert('הזמנה לא נמצאה.', 'error');
+            console.error("[openWhatsAppAlertsForOrder] Order not found for sheetRow:", sheetRow); // DEBUG
             return;
         }
         
         showPage('whatsapp-alerts');
         document.getElementById('whatsapp-customer-name').value = order['שם לקוח'] || '';
         document.getElementById('whatsapp-phone-number').value = order['טלפון לקוח'] || '';
-        document.getElementById('whatsapp-address').value = order['כתובת'] || ''; // Populate address
-        document.getElementById('details-order-id').textContent = order['תעודה'] || ''; // Store doc ID for logging
+        document.getElementById('whatsapp-address').value = order['כתובת'] || '';
+        document.getElementById('details-order-id').textContent = order['תעודה'] || ''; // שמור את ה-ID של המסמך עבור לוגינג
 
-        // Try to pre-select a relevant template
+        // נסה לבחור תבנית רלוונטית מראש
         if (order._effectiveStatus === 'חורג') {
             document.getElementById('message-template-select').value = whatsappTemplates.findIndex(t => t.name.includes('חורגת')).toString();
         } else if (order._daysPassedCalculated >= (OVERDUE_THRESHOLD_DAYS - 2) && order._effectiveStatus === 'פתוח') { 
             document.getElementById('message-template-select').value = whatsappTemplates.findIndex(t => t.name.includes('לפני חריגה')).toString();
         } else {
-            document.getElementById('message-template-select').value = ''; // Default
+            document.getElementById('message-template-select').value = ''; // ברירת מחדל
         }
-        loadWhatsAppTemplate();
+        loadWhatsAppTemplate(); // טען את התבנית שנבחרה (או נבחרה מראש)
+        console.log("[openWhatsAppAlertsForOrder] WhatsApp alerts page opened and fields populated."); // DEBUG
     }
 
-    // Scroll to Top functionality
+    // פונקציות לכלים החדשים
+    function renderToolResults(targetElementId, orders) {
+        const resultsDiv = document.getElementById(targetElementId);
+        resultsDiv.innerHTML = '';
+        if (orders.length === 0) {
+            resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-4">לא נמצאו הזמנות תואמות.</p>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'w-full text-right border-collapse table-auto';
+        table.innerHTML = `
+            <thead>
+                <tr class="bg-[var(--color-background)] border-b-2 border-[var(--color-border)]">
+                    <th class="p-3">תאריך</th>
+                    <th class="p-3">תעודה</th>
+                    <th class="p-3">לקוח</th>
+                    <th class="p-3">סוג פעולה</th>
+                    <th class="p-3">מכולות</th>
+                    <th class="p-3">סטטוס</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        const tbody = table.querySelector('tbody');
+
+        orders.forEach(order => {
+            const row = tbody.insertRow();
+            row.className = `border-b border-[var(--color-border)] transition-colors cursor-pointer`;
+            row.onclick = () => showOrderDetailsModal(order.sheetRow);
+
+            const containersTaken = String(order['מספר מכולה ירדה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+            const containersBrought = String(order['מספר מכולה עלתה'] || '').split(',').map(c => c.trim()).filter(Boolean);
+            const allContainers = new Set([...containersTaken, ...containersBrought]);
+            const containerHTML = [...allContainers].filter(Boolean).map(c => 
+                `<span class="container-badge inline-block bg-[var(--color-secondary)] text-[var(--color-text-base)] text-xs font-semibold px-2.5 py-0.5 rounded-full cursor-pointer" onclick="event.stopPropagation(); showContainerHistory('${c.trim()}')"><i class="fas fa-box"></i> ${c.trim()}</span>`
+            ).join(' ');
+
+            row.innerHTML = `
+                <td class="p-3">${formatDate(order['תאריך הזמנה'])}</td>
+                <td class="p-3">${order['תעודה'] || ''}</td>
+                <td class="p-3">${order['שם לקוח'] || ''}</td>
+                <td class="p-3">${order['סוג פעולה'] || ''}</td>
+                <td class="p-3">${containerHTML}</td>
+                <td class="p-3"><span class="status-${(order._effectiveStatus || '').replace(/[/ ]/g, '-').toLowerCase()}">${order._effectiveStatus || ''}</span></td>
+            `;
+        });
+        resultsDiv.appendChild(table);
+        console.log(`[renderToolResults] Rendered ${orders.length} results for ${targetElementId}.`); // DEBUG
+    }
+
+    async function searchOrdersByDocIds() {
+        console.log("[searchOrdersByDocIds] Initiating search by document IDs."); // DEBUG
+        const input = document.getElementById('tool-doc-ids-input').value;
+        const docIds = input.split(',').map(id => id.trim()).filter(Boolean);
+        if (docIds.length === 0) {
+            showAlert('אנא הזן לפחות מספר תעודה אחד.', 'warning');
+            console.warn("[searchOrdersByDocIds] No document IDs provided."); // DEBUG
+            return;
+        }
+        const response = await fetchData('getOrdersByDocIds', { docIds: JSON.stringify(docIds) });
+        if (response.success) {
+            renderToolResults('tool-doc-ids-results', response.data);
+            console.log("[searchOrdersByDocIds] Search successful."); // DEBUG
+        } else {
+            showAlert(response.message || 'שגיאה בחיפוש הזמנות לפי תעודה', 'error');
+            renderToolResults('tool-doc-ids-results', []);
+            console.error("[searchOrdersByDocIds] Search failed:", response.message); // DEBUG
+        }
+    }
+
+    async function searchOrdersByCustomerDetails() {
+        console.log("[searchOrdersByCustomerDetails] Initiating search by customer details."); // DEBUG
+        const customerName = document.getElementById('tool-customer-name-input').value.trim();
+        const address = document.getElementById('tool-customer-address-input').value.trim();
+        if (!customerName && !address) {
+            showAlert('אנא הזן שם לקוח או כתובת לחיפוש.', 'warning');
+            console.warn("[searchOrdersByCustomerDetails] No customer name or address provided."); // DEBUG
+            return;
+        }
+        const response = await fetchData('getOrdersByCustomerDetails', { customerName, address });
+        if (response.success) {
+            renderToolResults('tool-customer-details-results', response.data);
+            console.log("[searchOrdersByCustomerDetails] Search successful."); // DEBUG
+        } else {
+            showAlert(response.message || 'שגיאה בחיפוש הזמנות לפי לקוח וכתובת', 'error');
+            renderToolResults('tool-customer-details-results', []);
+            console.error("[searchOrdersByCustomerDetails] Search failed:", response.message); // DEBUG
+        }
+    }
+
+    async function searchOrdersByContainerNumbers() {
+        console.log("[searchOrdersByContainerNumbers] Initiating search by container numbers."); // DEBUG
+        const input = document.getElementById('tool-container-numbers-input').value;
+        const containerNumbers = input.split(',').map(num => num.trim()).filter(Boolean);
+        if (containerNumbers.length === 0) {
+            showAlert('אנא הזן לפחות מספר מכולה אחד.', 'warning');
+            console.warn("[searchOrdersByContainerNumbers] No container numbers provided."); // DEBUG
+            return;
+        }
+        const response = await fetchData('getOrdersByContainerNumbers', { containerNumbers: JSON.stringify(containerNumbers) });
+        if (response.success) {
+            renderToolResults('tool-container-numbers-results', response.data);
+            console.log("[searchOrdersByContainerNumbers] Search successful."); // DEBUG
+        } else {
+            showAlert(response.message || 'שגיאה בחיפוש הזמנות לפי מכולות', 'error');
+            renderToolResults('tool-container-numbers-results', []);
+            console.error("[searchOrdersByContainerNumbers] Search failed:", response.message); // DEBUG
+        }
+    }
+
+    // פונקציונליות "גלול למעלה"
     const scrollToTopBtn = document.getElementById('scroll-to-top-btn');
 
+    // הצג/הסתר כפתור הגלילה למעלה בהתאם למיקום הגלילה
     window.onscroll = function() {
-        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) { /* סף גלילה גבוה יותר */
             scrollToTopBtn.style.display = "block";
+            scrollToTopBtn.style.opacity = "1";
         } else {
-            scrollToTopBtn.style.display = "none";
+            scrollToTopBtn.style.opacity = "0";
+            setTimeout(() => { scrollToTopBtn.style.display = "none"; }, 300); /* הסתר לאחר מעבר אנימציה */
         }
     };
 
+    // גלילה חלקה לראש הדף
     function scrollToTop() {
         window.scrollTo({
             top: 0,
             behavior: "smooth"
         });
+        console.log("[scrollToTop] Scrolled to top."); // DEBUG
     }
 
+    // גלילה חלקה לטבלת ההזמנות
     function scrollToOrdersTable() {
         document.getElementById('orders-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        console.log("[scrollToOrdersTable] Scrolled to orders table."); // DEBUG
     }
 
-
+    // הרצת פונקציות אתחול בטעינת הדף
     window.onload = () => {
-        initializeTheme();
-        loadOrders();
-        populateWhatsAppTemplates(); // Populate templates on load
+        console.log("[Window.onload] Initializing application."); // DEBUG
+        initializeTheme(); // אתחל מצב תצוגה
+        loadOrders(); // טען הזמנות
+        populateWhatsAppTemplates(); // אכלס תבניות וואטסאפ
     };
 </script>
 
